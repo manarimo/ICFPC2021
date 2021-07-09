@@ -87,7 +87,10 @@ def index_tr(problem, solution)
   <<-TR
 <tr>
   <td>#{problem.id}</td>
-  <td><img src="images/#{problem.id}.svg" height="200"></td>
+  <td>
+    <img src="images/#{problem.id}.svg" height="200">
+    <a href="/kenkoooo/#/problem/#{problem.id}">kenkoooo</a>
+  </td>
   <td>
     <ul>
       <li>(w,h) = (#{problem.width}, #{problem.height})</li>
