@@ -36,6 +36,12 @@ def d(p, q):
     return (p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1])
 
 
+def is_valid_edge(orig_p, orig_q, dest_p, dest_q, epsilon):
+    orig_dist = d(orig_p, orig_q)
+    dest_dist = d(dest_p, dest_q)
+    return abs(dest_dist - orig_dist) * 1_000_000 <= epsilon * orig_dist
+
+
 def dislike(hole, positions):
     ds = 0
     for h in hole:
@@ -76,9 +82,7 @@ def solve(spec):
             for j in graph[i]:
                 if j >= i:
                     continue
-                dist = d(p, positions[j])
-                orig_dist = d(orig_positions[i], orig_positions[j])
-                if abs(dist - orig_dist) * 1_000_000 > spec["epsilon"] * orig_dist:
+                if not is_valid_edge(orig_positions[i], orig_positions[j], p, positions[j], spec["epsilon"]):
                     valid = False
                     break
             if not valid:
@@ -90,17 +94,21 @@ def solve(spec):
     return dfs(0)
 
 
-def main():
-    parser = ArgumentParser()
-    parser.add_argument("--input")
-    args = parser.parse_args()
-
-    with open(args.input) as f:
+def main(input_path, output_path):
+    with open(input_path) as f:
         spec = json.load(f)
-    solve(spec)
+    score, pose = solve(spec)
+    print(f"dislike: {score}")
+    if score < 10 ** 18:
+        with open(output_path, "w") as f:
+            json.dump(pose, f)
 
 
 if __name__ == '__main__':
-    with open("../problems/11.json") as f:
-        spec = json.load(f)
-        print(solve(spec))
+    output_dir = Path("../solutions/amylase-bruteforce/")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for problem_id in [17, 18, 19]:
+        print(f"problem_id: {problem_id}")
+        input_path = f"../problems/{problem_id}.json"
+        output_path = str(output_dir / f"{problem_id}.json")
+        main(input_path, output_path)
