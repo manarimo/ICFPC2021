@@ -22,6 +22,12 @@ jobs:
           ruby-version: 2.7
       - name: Generate web
         run: ruby gen_web/main.rb
+      - name: build visualizer
+        working-directory: kenkoooo
+        run: |
+          yarn
+          yarn build
+          mv ./docs ../web/kenkoooo
       - uses: jakejarvis/s3-sync-action@master
         env:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
