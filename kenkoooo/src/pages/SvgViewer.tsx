@@ -1,6 +1,7 @@
 import { Figure, Problem } from "../utils";
 import React from "react";
 import { EditorState } from "./EditorState";
+import { absoluteBigInt, sqDistance } from "../calcUtils";
 
 interface PointProps {
   x: number;
@@ -25,21 +26,7 @@ const Point = (props: PointProps) => {
   );
 };
 
-const sqDistance = (p: [number, number], q: [number, number]) => {
-  const dx = BigInt(p[0] - q[0]);
-  const dy = BigInt(p[1] - q[1]);
-  return dx * dx + dy * dy;
-};
-
-const absolute = (a: bigint, b: bigint) => {
-  if (a > b) {
-    return a - b;
-  } else {
-    return b - a;
-  }
-};
-
-const UserFigureLayer = (props: {
+const UserPoseLayer = (props: {
   problem: Problem;
   userVertices: [number, number][];
   onEdit: (pointId: number) => void;
@@ -59,7 +46,7 @@ const UserFigureLayer = (props: {
         const pj = props.userVertices[j];
         const userDist = sqDistance(pi, pj);
 
-        const difference = absolute(userDist, originalDist);
+        const difference = absoluteBigInt(userDist - originalDist);
 
         // difference/originalDist <= epsilon/1_000_000
         const ok = difference * BigInt(1_000_000) <= epsilon * originalDist;
@@ -154,7 +141,7 @@ export const SvgViewer = (props: Props) => {
         stroke="none"
       />
       <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
-      <UserFigureLayer
+      <UserPoseLayer
         problem={problem}
         userVertices={props.userFigure.vertices}
         editorState={props.editorState}
