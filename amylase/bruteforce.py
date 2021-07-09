@@ -95,23 +95,28 @@ def solve(spec):
     for fr, to in figure["edges"]:
         graph[fr].append(to)
         graph[to].append(fr)
-
+    vertex_ids = list(range(len(graph)))
+    vertex_ids.sort(key=lambda vid: len(graph[vid]), reverse=True)
+    vid2order = {}
+    for o, vid in enumerate(vertex_ids):
+        vid2order[vid] = o
     orig_positions = figure["vertices"]
     positions = []
     def dfs(i):
         if i >= len(orig_positions):
             return dislike(spec["hole"], positions), positions[:]
 
+        vid = vertex_ids[i]
         best = 10 ** 18, []
         for p in valid_positions:
             valid = True
-            for j in graph[i]:
-                if j >= i:
+            for j in graph[vid]:
+                if vid2order[j] >= i:
                     continue
-                if not is_valid_edge(orig_positions[i], orig_positions[j], p, positions[j], spec["epsilon"]):
+                if not is_valid_edge(orig_positions[vid], orig_positions[j], p, positions[vid2order[j]], spec["epsilon"]):
                     valid = False
                     break
-                if not is_edge_inside(spec["hole"], [p, positions[j]]):
+                if not is_edge_inside(spec["hole"], [p, positions[vid2order[j]]]):
                     valid = False
                     break
             if not valid:
@@ -120,10 +125,13 @@ def solve(spec):
             best = min(dfs(i + 1), best)
             positions.pop()
         return best
-    return dfs(0)
+    score, shuffled_positions = dfs(0)
+    positions = [shuffled_positions[vid2order[vid]] for vid in range(len(shuffled_positions))]
+    return score, positions
 
 
 def main(input_path, output_path):
+    print(f"start: {input_path} -> {output_path}")
     with open(input_path) as f:
         spec = json.load(f)
     score, pose = solve(spec)
@@ -131,13 +139,22 @@ def main(input_path, output_path):
     if score < 10 ** 18:
         with open(output_path, "w") as f:
             json.dump({"vertices": pose}, f)
+    print(f"end: {input_path} -> {output_path}")
+
+
+def _main(args):
+    main(*args)
 
 
 if __name__ == '__main__':
     output_dir = Path("../solutions/amylase-bruteforce/")
     output_dir.mkdir(parents=True, exist_ok=True)
-    for problem_id in [16]:
-        print(f"problem_id: {problem_id}")
+    from multiprocessing import Pool
+    pool = Pool()
+
+    args = []
+    for problem_id in range(11, 25):
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
-        main(input_path, output_path)
+        args.append((input_path, output_path))
+    pool.map(_main, args)
