@@ -3,6 +3,7 @@ import math
 from argparse import ArgumentParser
 from collections import defaultdict
 from pathlib import Path
+from functools import lru_cache
 
 
 def sub(p, q):
@@ -153,7 +154,8 @@ if __name__ == '__main__':
     pool = Pool()
 
     args = []
-    for problem_id in range(11, 25):
+    # for problem_id in [22, 24, 25, 26, 34]:
+    for problem_id in range(35, 45):
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))
