@@ -91,7 +91,10 @@ def index_tr(problem, solution)
       score = solution.verdict['score']
     end
       solution_td = solution && %Q(
-        <td><img src="images/#{solution.name}/#{problem.id}.svg" height="200"></td>
+        <td>
+          <img src="images/#{solution.name}/#{problem.id}.svg" height="200"><br>
+          <a href="kenkoooo/#/problem/#{problem.id}?solution=#{solution.name}/#{problem.id}.json">つづきからはじめる</a>
+        </td>
         <td>#{solution.name}</td>
         <td>#{score}
       )
@@ -101,8 +104,8 @@ def index_tr(problem, solution)
 <tr>
   <td>#{problem.id}</td>
   <td>
-    <img src="images/#{problem.id}.svg" height="200">
-    <a href="/kenkoooo/#/problem/#{problem.id}">kenkoooo</a>
+    <img src="images/#{problem.id}.svg" height="200"><br>
+    <a href="/kenkoooo/#/problem/#{problem.id}">さいしょからはじめる</a>
   </td>
   <td>
     <ul>
