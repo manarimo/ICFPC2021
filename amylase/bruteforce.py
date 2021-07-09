@@ -101,13 +101,13 @@ def main(input_path, output_path):
     print(f"dislike: {score}")
     if score < 10 ** 18:
         with open(output_path, "w") as f:
-            json.dump(pose, f)
+            json.dump({"vertices": pose}, f)
 
 
 if __name__ == '__main__':
     output_dir = Path("../solutions/amylase-bruteforce/")
     output_dir.mkdir(parents=True, exist_ok=True)
-    for problem_id in [17, 18, 19]:
+    for problem_id in [11, 12, 13, 15]:
         print(f"problem_id: {problem_id}")
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
