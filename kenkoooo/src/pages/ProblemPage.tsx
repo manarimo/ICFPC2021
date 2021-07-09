@@ -185,19 +185,19 @@ const SvgEditor = (props: SvgEditorProps) => {
               <Form.Check inline>
                 <Form.Check.Input
                   type="checkbox"
-                  onClick={() => toggleAllVertices()}
+                  onChange={() => toggleAllVertices()}
                   checked={isAllSelected()}
                 />
-                <Form.Check.Label onClick={() => toggleAllVertices()}>
+                <Form.Check.Label onChange={() => toggleAllVertices()}>
                   All
                 </Form.Check.Label>
               </Form.Check>
               <Form>
                 {userPose.map((_p, idx) => (
-                  <Form.Check inline>
+                  <Form.Check inline key={idx}>
                     <Form.Check.Input
                       type="checkbox"
-                      onClick={() => toggleAVertex(idx)}
+                      onChange={() => toggleAVertex(idx)}
                       checked={selectedVertices.includes(idx)}
                     />
                     <Form.Check.Label onClick={() => toggleAVertex(idx)}>

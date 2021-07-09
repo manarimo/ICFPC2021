@@ -70,6 +70,7 @@ const UserPoseLayer = (props: {
       {props.userPose.map(([x, y], pointId) => {
         return (
           <text
+            key={pointId}
             x={x}
             y={y}
             fontSize="3"
