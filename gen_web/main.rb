@@ -78,8 +78,11 @@ def write_svg(f, problem, solution = nil)
 SVG
 end
 
-def index_tr(problem, solution_name)
-  solution_td = solution_name && %Q(<td><img src="images/#{solution_name}/#{problem.id}.svg" height="200"></td>)
+def index_tr(problem, solution)
+  solution_td = solution && %Q(
+  <td><img src="images/#{solution[:name]}/#{problem.id}.svg" height="200"></td>
+  <td><pre>#{solution[:verdict]}</pre></td>
+)
   <<-TR
 <tr>
   <td>#{problem.id}</td>
@@ -128,6 +131,7 @@ LINKS
       <th style="text-align:left">Thumbnail</th>
       <th>Spec</th>
       <th>Solution</th>
+      <th>Verdict</th>
     </tr>
     #{problems.map {|prob| index_tr(prob, solutions[prob.id]) }.join}
   </table>
@@ -153,17 +157,24 @@ Dir.glob("#{__dir__}/../solutions/*").each do |dir|
 
   solutions = {}
   Dir.glob("#{dir}/*.json") do |file|
+    next if file.match(/_verdict.json/)
+
     id = File.basename(file, '.json').to_i
     json = File.open(file) do |f|
       JSON.load(f)
     end
+
+    verdict = File.read(file.sub(/\.json$/, '_verdict.json')) rescue '(not yet checked)'
 
     solution = new_vertices(json['vertices'])
     File.open("#{output_dir}/#{id}.svg", 'w') do |f|
       write_svg(f, problems_dict[id], solution)
     end
 
-    solutions[id] = solution_name
+    solutions[id] = {
+      name: solution_name,
+      verdict: verdict
+    }
   end
 
   File.open("#{__dir__}/../web/#{solution_name}.html", 'w') do |f|
