@@ -7,4 +7,10 @@ module.exports = function (app) {
       changeOrigin: true,
     })
   );
+  app.use(
+    createProxyMiddleware("/solutions", {
+      target: "http://icfpc2021-manarimo.s3-website-us-east-1.amazonaws.com",
+      changeOrigin: true,
+    })
+  );
 };

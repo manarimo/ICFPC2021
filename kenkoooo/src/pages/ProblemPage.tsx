@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
-import { parseUserInput, Problem, useProblemData } from "../utils";
+import React, { useEffect, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
+import { parseUserInput, Problem } from "../utils";
 import {
   Alert,
   Container,
@@ -14,12 +14,18 @@ import { SvgViewer } from "./SvgViewer";
 import { EditorState } from "./EditorState";
 import { PoseInfoPanel } from "./PoseInfoPanel";
 import { SinglePointSolverPanel } from "./SinglePointSolverPanel";
+import { useProblemData, useSolutionData } from "../API";
 
 interface SvgEditorProps {
   problem: Problem;
 }
 const SvgEditor = (props: SvgEditorProps) => {
   const { problem } = props;
+
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const solution = useSolutionData(params.get("solution"));
+
   const [editorState, setEditState] = useState<EditorState | null>(null);
   const [userPose, setUserPose] = useState([...problem.figure.vertices]);
   const [text, setText] = useState<string>("");
@@ -32,9 +38,19 @@ const SvgEditor = (props: SvgEditorProps) => {
       vertices: userPose,
     });
   };
-  const onOutput = () => {
-    setText(getOutput());
-  };
+  useEffect(() => {
+    if (solution.data) {
+      setUserPose([...solution.data.vertices]);
+    }
+  }, [solution]);
+  useEffect(() => {
+    setText(
+      JSON.stringify({
+        vertices: userPose,
+      })
+    );
+  }, [userPose]);
+
   const onCopyOutput = async () => {
     setText(getOutput());
     await navigator.clipboard.writeText(getOutput());
@@ -48,7 +64,6 @@ const SvgEditor = (props: SvgEditorProps) => {
       setErrorMessage(null);
     }
   };
-
   const toggleAVertex = (idx: number) => {
     if (selectedVertices.includes(idx)) {
       setSelectedVertices(selectedVertices.filter((v) => v !== idx));
@@ -116,9 +131,6 @@ const SvgEditor = (props: SvgEditorProps) => {
         <Col>
           <Row>
             <Button onClick={onLoadInput}>Load</Button>
-            <Button onClick={onOutput} className="ml-3">
-              Output
-            </Button>
             <Button onClick={onCopyOutput} className="ml-3">
               Copy
             </Button>
