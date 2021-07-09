@@ -24,6 +24,15 @@ def ccw(p, q, r):
     return cross(sub(q, p), sub(r, p))
 
 
+def is_on_segment(segment, point):
+    d1 = sub(segment[0], point)
+    d2 = sub(segment[1], point)
+    area = cross(d1, d2)
+    if area == 0 and d1[0] * d2[0] <= 0 and d1[1] * d2[1] <= 0:
+        return True
+    return False
+
+
 def is_point_inside(hole, point):
     xs = []
     for x, y in hole:
@@ -35,11 +44,7 @@ def is_point_inside(hole, point):
     crossings = 0
     for i in range(len(hole)):
         j = (i + 1) % len(hole)
-        d1 = sub(hole[i], point)
-        d2 = sub(hole[j], point)
-        area = cross(d1, d2)
-        if area == 0 and d1[0] * d2[0] <= 0 and d1[1] * d2[1] <= 0:
-            # on this edge.
+        if is_on_segment([hole[i], hole[j]], point):
             return True
         if ccw(point, outer, hole[i]) * ccw(point, outer, hole[j]) < 0 and ccw(hole[i], hole[j], point) * ccw(hole[i], hole[j], outer) < 0:
             crossings += 1
@@ -54,10 +59,18 @@ def is_edge_inside(hole, edge):
         j = (i + 1) % len(hole)
         if ccw(edge[0], edge[1], hole[i]) * ccw(edge[0], edge[1], hole[j]) < 0 and ccw(hole[i], hole[j], edge[0]) * ccw(hole[i], hole[j], edge[1]) < 0:
             return False
-    double_mid = [edge[0][0] + edge[1][0], edge[0][1] + edge[1][1]]
+
+    splitting_points = edge[:]
+    for point in hole:
+        if is_on_segment(edge, point):
+            splitting_points.append(point)
+    splitting_points.sort()
+
     double_hole = [[p[0] * 2, p[1] * 2] for p in hole]
-    if not is_point_inside(double_hole, double_mid):
-        return False
+    for sub_edge in zip(splitting_points[:-1], splitting_points[1:]):
+        double_mid = [sub_edge[0][0] + sub_edge[1][0], sub_edge[0][1] + sub_edge[1][1]]
+        if not is_point_inside(double_hole, double_mid):
+            return False
     return True
 
 
