@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from collections import defaultdict
 from pathlib import Path
 from functools import lru_cache
+import random
 
 
 def sub(p, q):
@@ -77,7 +78,7 @@ def dislike(hole, positions):
     return ds
 
 
-def solve(spec):
+def solve(spec, report_result):
     xs, ys = [], []
     for v in spec["hole"]:
         xs.append(v[0])
@@ -91,6 +92,7 @@ def solve(spec):
         for y in range(min_y, max_y + 1):
             if is_point_inside(spec["hole"], [x, y]):
                 valid_positions.append([x, y])
+    random.shuffle(valid_positions)
     figure = spec["figure"]
     graph = defaultdict(list)
     for fr, to in figure["edges"]:
@@ -103,12 +105,16 @@ def solve(spec):
         vid2order[vid] = o
     orig_positions = figure["vertices"]
     positions = []
-    def dfs(i):
+    def dfs(i, best):
         if i >= len(orig_positions):
-            return dislike(spec["hole"], positions), positions[:]
+            result = dislike(spec["hole"], positions)
+            if result < best:
+                best = result
+                reconstructed_positions = [positions[vid2order[vid]] for vid in range(len(positions))]
+                report_result(best, reconstructed_positions)
+            return best
 
         vid = vertex_ids[i]
-        best = 10 ** 18, []
         for p in valid_positions:
             valid = True
             for j in graph[vid]:
@@ -123,23 +129,21 @@ def solve(spec):
             if not valid:
                 continue
             positions.append(p)
-            best = min(dfs(i + 1), best)
+            best = dfs(i + 1, best)
             positions.pop()
         return best
-    score, shuffled_positions = dfs(0)
-    positions = [shuffled_positions[vid2order[vid]] for vid in range(len(shuffled_positions))]
-    return score, positions
+    dfs(0, 10 ** 18)
 
 
 def main(input_path, output_path):
     print(f"start: {input_path} -> {output_path}")
     with open(input_path) as f:
         spec = json.load(f)
-    score, pose = solve(spec)
-    print(f"dislike: {score}")
-    if score < 10 ** 18:
+    def report_result(score, pose):
+        print(f"{input_path} dislike: {score}")
         with open(output_path, "w") as f:
             json.dump({"vertices": pose}, f)
+    solve(spec, report_result)
     print(f"end: {input_path} -> {output_path}")
 
 
@@ -151,10 +155,10 @@ if __name__ == '__main__':
     output_dir = Path("../solutions/amylase-bruteforce/")
     output_dir.mkdir(parents=True, exist_ok=True)
     from multiprocessing import Pool
-    pool = Pool(processes=4)
+    pool = Pool(processes=7)
 
     args = []
-    for problem_id in [22, 24, 25, 26, 34, 35, 38, 39]:
+    for problem_id in [38, 41, 47, 49, 51, 54, 57, 58, 2, 4, 5, 9, 10]:
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))
