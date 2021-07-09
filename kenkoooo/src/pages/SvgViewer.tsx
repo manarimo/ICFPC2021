@@ -25,16 +25,47 @@ const Point = (props: PointProps) => {
   );
 };
 
+const sqDistance = (p: [number, number], q: [number, number]) => {
+  const dx = BigInt(p[0] - q[0]);
+  const dy = BigInt(p[1] - q[1]);
+  return dx * dx + dy * dy;
+};
+
+const absolute = (a: bigint, b: bigint) => {
+  if (a > b) {
+    return a - b;
+  } else {
+    return b - a;
+  }
+};
+
 const UserFigureLayer = (props: {
-  userFigure: Figure;
+  problem: Problem;
+  userVertices: [number, number][];
   onEdit: (pointId: number) => void;
   editorState: EditorState | null;
 }) => {
+  const epsilon = BigInt(props.problem.epsilon);
+  const originalVertices = props.problem.figure.vertices;
+
   return (
     <>
-      {props.userFigure.edges.map(([i, j]) => {
-        const pi = props.userFigure.vertices[i];
-        const pj = props.userFigure.vertices[j];
+      {props.problem.figure.edges.map(([i, j]) => {
+        const piOriginal = originalVertices[i];
+        const pjOriginal = originalVertices[j];
+        const originalDist = sqDistance(piOriginal, pjOriginal);
+
+        const pi = props.userVertices[i];
+        const pj = props.userVertices[j];
+        const userDist = sqDistance(pi, pj);
+
+        const difference = absolute(userDist, originalDist);
+
+        // difference/originalDist <= epsilon/1_000_000
+        const ok = difference * BigInt(1_000_000) <= epsilon * originalDist;
+        const color = ok ? "red" : "blue";
+        const strokeWidth = ok ? "0.3" : "0.5";
+
         const key = `${i}-${j}`;
         return (
           <line
@@ -43,12 +74,12 @@ const UserFigureLayer = (props: {
             y1={pi[1]}
             x2={pj[0]}
             y2={pj[1]}
-            stroke="red"
-            strokeWidth="0.3"
+            stroke={color}
+            strokeWidth={strokeWidth}
           />
         );
       })}
-      {props.userFigure.vertices.map(([x, y], pointId) => {
+      {props.userVertices.map(([x, y], pointId) => {
         return (
           <Point
             key={pointId}
@@ -124,7 +155,8 @@ export const SvgViewer = (props: Props) => {
       />
       <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
       <UserFigureLayer
-        userFigure={props.userFigure}
+        problem={problem}
+        userVertices={props.userFigure.vertices}
         editorState={props.editorState}
         onEdit={props.onEdit}
       />
