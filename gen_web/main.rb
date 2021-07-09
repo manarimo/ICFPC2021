@@ -153,6 +153,8 @@ Dir.glob("#{__dir__}/../solutions/*").each do |dir|
 
   solutions = {}
   Dir.glob("#{dir}/*.json") do |file|
+    next if file.match(/_verdict.json/)
+
     id = File.basename(file, '.json').to_i
     json = File.open(file) do |f|
       JSON.load(f)

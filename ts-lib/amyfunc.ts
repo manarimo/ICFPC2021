@@ -1,15 +1,15 @@
-interface Point {
+export interface Point {
     x: number;
     y: number;
 }
 
-interface Edge {
+export interface Edge {
     src: Point;
     dst: Point;
 }
 
-type Vector = Point;
-type Polygon = Point[];
+export type Vector = Point;
+export type Polygon = Point[];
 
 export function sub(p: Point, q: Point): Point {
     return {
@@ -40,8 +40,9 @@ export function isPointInside(hole: Polygon, point: Point): boolean {
     };
 
     let crossings = 0;
-    hole.forEach((p1, idx) => {
-        const next = (idx + 1) % hole.length;
+    for (let i = 0; i < hole.length; ++i) {
+        const next = (i + 1) % hole.length;
+        const p1 = hole[i];
         const p2 = hole[next];
         const d1 = sub(p1, point);
         const d2 = sub(p2, point);
@@ -53,7 +54,7 @@ export function isPointInside(hole: Polygon, point: Point): boolean {
         if (ccw(point, outer, p1) * ccw(point, outer, p2) < 0 && ccw(p1, p2, point) * ccw(p1, p2, outer) < 0) {
             ++crossings;
         }
-    });
+    }
     return crossings % 2 == 1;
 }
 
