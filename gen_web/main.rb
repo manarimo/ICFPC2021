@@ -80,10 +80,23 @@ SVG
 end
 
 def index_tr(problem, solution)
-  solution_td = solution && %Q(
-  <td><img src="images/#{solution.name}/#{problem.id}.svg" height="200"></td>
-  <td><pre>#{solution.verdict}</pre></td>
-)
+  if solution == nil
+    solution_td = nil
+  else
+    if solution.verdict == nil
+      score = '(not yet evaluated)'
+    elsif !solution.verdict['isValid']
+      score = 'INVALID'
+    else
+      score = solution.verdict['score']
+    end
+      solution_td = solution && %Q(
+        <td><img src="images/#{solution.name}/#{problem.id}.svg" height="200"></td>
+        <td>#{solution.name}</td>
+        <td>#{score}
+      )
+  end
+
   <<-TR
 <tr>
   <td>#{problem.id}</td>
@@ -104,11 +117,11 @@ TR
 end
 
 def write_index(f, problems, solutions = {}, solution_title = nil, solution_names = [])
-  solution_header = solution_title && %Q(<h2>Solutions: #{solution_title}</h2>)
+  solution_header = solution_title && %Q(<h2>Name: #{solution_title}</h2>)
   if solution_names.size > 0
     solution_links = <<-LINKS
 <div style="margin-bottom: 32px">
-  <h2>Solutions</h2>
+  <div><a href="best.html"><h3>Best</h3></a></div>
   <div style="display: flex">
     #{solution_names.map { |sn| %Q(<div style="margin-right: 10px"><a href="#{sn}.html">#{sn}</a></div>) }.join}
   </div>
@@ -129,13 +142,14 @@ LINKS
   <h1><a href="index.html">Manarimo Portal</a></h1>
   #{solution_header}
   #{solution_links}
-  <table>
+  <table border>
     <tr>
       <th>Problem ID</th>
       <th style="text-align:left">Thumbnail</th>
       <th>Spec</th>
       <th>Solution</th>
-      <th>Verdict</th>
+      <th>Solver</ht>
+      <th>Score</th>
     </tr>
     #{problems.map {|prob| index_tr(prob, solutions[prob.id]) }.join}
   </table>
@@ -166,7 +180,7 @@ Dir.glob("#{__dir__}/../solutions/*").each do |dir|
     end
     vertices = new_vertices(json['vertices'])
 
-    verdict = File.read(file.sub(/\.json$/, '_verdict.json')) rescue '(not yet checked)'
+    verdict = JSON.load(File.read(file.sub(/\.json$/, '_verdict.json'))) rescue nil
 
     solutions[solution_name] ||= {}
     solutions[solution_name][id] = Solution.new(solution_name, verdict, vertices)
@@ -192,4 +206,20 @@ end
 
 File.open("#{__dir__}/../web/index.html", 'w') do |f|
   write_index(f, problems, {}, nil, solutions.keys)
+end
+
+# Top solutions
+best_solutions = {}
+solutions.each do |name, list|
+  list.each do |id, solution|
+    next if solution.verdict == nil
+    current_verdict = best_solutions[id]&.verdict
+    if current_verdict == nil || (current_verdict['isValid'] && current_verdict['score'] > solution.verdict['score'])
+      best_solutions[id] = solution
+    end
+  end
+end
+
+File.open("#{__dir__}/../web/best.html", 'w') do |f|
+  write_index(f, problems, best_solutions, 'Best', solutions.keys)
 end
