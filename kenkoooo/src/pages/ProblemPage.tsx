@@ -52,7 +52,7 @@ const SvgEditor = (props: SvgEditorProps) => {
                 const pointId = editorState.pointId;
                 const [curX, curY] = userPose[pointId];
                 if (curX !== x || curY !== y) {
-                  const newPose = { ...userPose };
+                  const newPose = [...userPose];
                   newPose[pointId] = [x, y];
                   setUserPose(newPose);
                 }

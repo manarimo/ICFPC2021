@@ -34,7 +34,6 @@ const UserPoseLayer = (props: {
 }) => {
   const epsilon = BigInt(props.problem.epsilon);
   const originalVertices = props.problem.figure.vertices;
-
   return (
     <>
       {props.problem.figure.edges.map(([i, j]) => {
