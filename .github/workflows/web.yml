@@ -12,10 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
-      - run: npm install
+      - name: run checker
         working-directory: checker
-      - run: npm run check
-        working-directory: checker
+        run: |
+          npm install
+          npm run check
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
