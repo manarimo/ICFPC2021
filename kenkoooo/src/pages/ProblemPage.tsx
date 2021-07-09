@@ -49,12 +49,12 @@ const SvgEditor = (props: SvgEditorProps) => {
   };
 
   const toggleAVertex = (idx: number) => {
-    if (selectedVertices.includes((idx))) {
-      setSelectedVertices(selectedVertices.filter(v => v !== idx));
+    if (selectedVertices.includes(idx)) {
+      setSelectedVertices(selectedVertices.filter((v) => v !== idx));
     } else {
       setSelectedVertices([...selectedVertices, idx]);
     }
-  }
+  };
 
   const isAllSelected = () => selectedVertices.length === userPose.length;
 
@@ -64,13 +64,21 @@ const SvgEditor = (props: SvgEditorProps) => {
     } else {
       setSelectedVertices(userPose.map((_p, idx) => idx));
     }
-  }
+  };
 
-  // const slideSelectedVertices = (dir: string) => {
-  //   // let dx = dir === '';
-  //   // let dy = 0;
-  //
-  // }
+  const slideSelectedVertices = (dir: string) => {
+    const dx = dir === "L" ? -1 : dir === "R" ? 1 : 0;
+    const dy = dir === "D" ? 1 : dir === "U" ? -1 : 0;
+    setUserPose(
+      userPose.map(([x, y], idx) => {
+        if (selectedVertices.includes(idx)) {
+          return [x + dx * slideSize, y + dy * slideSize];
+        } else {
+          return [x, y];
+        }
+      })
+    );
+  };
 
   return (
     <Container>
@@ -133,24 +141,28 @@ const SvgEditor = (props: SvgEditorProps) => {
           <Row>
             <Col>
               <Row>
-                <Button onClick={onOutput}>L</Button>
+                <Button onClick={() => slideSelectedVertices("L")}>L</Button>
                 <div>
                   <div>
-                    <Button onClick={onOutput}>U</Button>
+                    <Button onClick={() => slideSelectedVertices("U")}>
+                      U
+                    </Button>
                   </div>
                   <div>
-                    <Button onClick={onOutput}>D</Button>
+                    <Button onClick={() => slideSelectedVertices("D")}>
+                      D
+                    </Button>
                   </div>
                 </div>
-                <Button onClick={onOutput}>R</Button>
+                <Button onClick={() => slideSelectedVertices("R")}>R</Button>
               </Row>
             </Col>
             <Col>
               <Row>
                 <Form.Control
-                    type="number"
-                    value={slideSize}
-                    onChange={(e) => setSlideSize(parseInt(e.target.value))}
+                  type="number"
+                  value={slideSize}
+                  onChange={(e) => setSlideSize(parseInt(e.target.value))}
                 />
               </Row>
             </Col>
@@ -158,19 +170,27 @@ const SvgEditor = (props: SvgEditorProps) => {
           <Row>
             <div>
               <Form.Check inline>
-                <Form.Check.Input type="checkbox"
-                                  onClick={() => toggleAllVertices()}
-                                  checked={isAllSelected()}/>
-                <Form.Check.Label onClick={() => toggleAllVertices()}>All</Form.Check.Label>
+                <Form.Check.Input
+                  type="checkbox"
+                  onClick={() => toggleAllVertices()}
+                  checked={isAllSelected()}
+                />
+                <Form.Check.Label onClick={() => toggleAllVertices()}>
+                  All
+                </Form.Check.Label>
               </Form.Check>
               <Form>
                 {userPose.map((_p, idx) => (
-                    <Form.Check inline>
-                      <Form.Check.Input type="checkbox"
-                                        onClick={() => toggleAVertex(idx)}
-                                        checked={selectedVertices.includes(idx)}/>
-                      <Form.Check.Label onClick={() => toggleAVertex(idx)}>{ idx }</Form.Check.Label>
-                    </Form.Check>
+                  <Form.Check inline>
+                    <Form.Check.Input
+                      type="checkbox"
+                      onClick={() => toggleAVertex(idx)}
+                      checked={selectedVertices.includes(idx)}
+                    />
+                    <Form.Check.Label onClick={() => toggleAVertex(idx)}>
+                      {idx}
+                    </Form.Check.Label>
+                  </Form.Check>
                 ))}
               </Form>
             </div>
