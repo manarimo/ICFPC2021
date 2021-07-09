@@ -106,8 +106,8 @@ export const SvgViewer = (props: Props) => {
       onMouseLeave={props.onMouseUp}
       onMouseMove={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
-        const absoluteX = e.pageX - rect.left;
-        const absoluteY = e.pageY - rect.top;
+        const absoluteX = e.clientX - rect.left;
+        const absoluteY = e.clientY - rect.top;
         const x = Math.round((absoluteX * width) / rect.width) - offset;
         const y = Math.round((absoluteY * width) / rect.height) - offset;
 
