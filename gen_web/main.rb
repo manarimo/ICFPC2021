@@ -4,7 +4,7 @@ require 'json'
 require 'pp'
 
 Point = Struct.new(:x, :y)
-Problem = Struct.new(:id, :hole, :figure, :epsilon)
+Problem = Struct.new(:id, :hole, :figure, :epsilon, :width, :height)
 Edge = Struct.new(:from, :to)
 Figure = Struct.new(:edges, :vertices)
 
@@ -25,7 +25,14 @@ def new_figure(json)
 end
 
 def new_problem(id, json)
-  Problem.new(id, new_hole(json['hole']), new_figure(json['figure']), json['epsilon'].to_i)
+  hole = new_hole(json['hole'])
+  figure = new_figure(json['figure'])
+  eps = json['epsilon'].to_i
+  min_x = hole.map(&:x).min
+  min_y = hole.map(&:y).min
+  max_x = hole.map(&:x).max
+  max_y = hole.map(&:y).max
+  Problem.new(id, hole, figure, eps, max_x - min_x, max_y - min_y)
 end
 
 def load_problems
@@ -68,18 +75,39 @@ def write_svg(f, problem)
 SVG
 end
 
+def index_tr(problem)
+  <<-TR
+<tr>
+  <td>#{problem.id}</td>
+  <td><img src="images/#{problem.id}.svg" height="200"></td>
+  <td>
+    <ul>
+      <li>(w,h) = (#{problem.width}, #{problem.height})</li>
+      <li>ε = #{problem.epsilon}</li>
+    </ul>
+  </td>
+</tr>
+TR
+end
+
 def write_index(f, problems)
   f.puts <<-EOF
 <!doctype html>
 <html>
 <head>
   <title>Manarimo Portal</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 </head>
 <body style="margin: 0 100px">
   <h1>Manarimo Portal</h1>
   <table>
-  <tr><th>Problem ID</th><th style="text-align:left">Thumbnail</th></tr>
-  #{problems.map {|prob| %Q(<tr><td>#{prob.id}</td><td><img src="images/#{prob.id}.svg" height="200"></td></tr>)}.join}
+    <tr>
+      <th>Problem ID</th>
+      <th style="text-align:left">Thumbnail</th>
+      <th>Spec</th>
+    </tr>
+    #{problems.map {|prob| index_tr(prob) }.join}
+  </table>
 </body>
 </html>
 EOF
