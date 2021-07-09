@@ -29,6 +29,8 @@ jobs:
           yarn
           yarn build
           mv ./docs ../web/kenkoooo
+      - name: copy solutions
+        run: cp -r solutions web
       - uses: jakejarvis/s3-sync-action@master
         env:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
