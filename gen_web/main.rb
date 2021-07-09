@@ -2,6 +2,7 @@
 
 require 'json'
 require 'pp'
+require 'fileutils'
 
 Point = Struct.new(:x, :y)
 Problem = Struct.new(:id, :hole, :figure, :epsilon, :width, :height)
@@ -49,12 +50,14 @@ def load_problems
   problems.sort_by(&:id)
 end
 
-def write_svg(f, problem)
+def write_svg(f, problem, solution = nil)
   hole_d = 'M ' + problem.hole.map { |p| "#{p.x},#{p.y}"}.join(' L ')
   hole = %Q(<path d="#{hole_d}" style="fill:#ffffff; fill-rule:evenodd; stroke:none" />)
+
+  vertices = solution || problem.figure.vertices
   figure_paths = problem.figure.edges.map { |e|
-    from = problem.figure.vertices[e.from]
-    to = problem.figure.vertices[e.to]
+    from =vertices[e.from]
+    to = vertices[e.to]
     d = "M #{from.x},#{from.y} L #{to.x},#{to.y}"
     %Q(<path d="#{d}" />)
   }
@@ -75,7 +78,8 @@ def write_svg(f, problem)
 SVG
 end
 
-def index_tr(problem)
+def index_tr(problem, solution_name)
+  solution_td = solution_name && %Q(<td><img src="images/#{solution_name}/#{problem.id}.svg" height="200"></td>)
   <<-TR
 <tr>
   <td>#{problem.id}</td>
@@ -84,13 +88,29 @@ def index_tr(problem)
     <ul>
       <li>(w,h) = (#{problem.width}, #{problem.height})</li>
       <li>ε = #{problem.epsilon}</li>
+      <li>√ε = #{Math.sqrt(problem.epsilon)}</li>
     </ul>
   </td>
+  #{solution_td}
 </tr>
 TR
 end
 
-def write_index(f, problems)
+def write_index(f, problems, solutions = {}, solution_title = nil, solution_names = [])
+  solution_header = solution_title && %Q(<h2>Solutions: #{solution_title}</h2>)
+  if solution_names.size > 0
+    solution_links = <<-LINKS
+<div style="margin-bottom: 32px">
+  <h2>Solutions</h2>
+  <div style="display: flex">
+    #{solution_names.map { |sn| %Q(<div style="margin-right: 10px"><a href="#{sn}.html">#{sn}</a></div>) }.join}
+  </div>
+</div>
+LINKS
+  else
+    solution_links = nil
+  end
+
   f.puts <<-EOF
 <!doctype html>
 <html>
@@ -100,13 +120,16 @@ def write_index(f, problems)
 </head>
 <body style="margin: 0 100px">
   <h1>Manarimo Portal</h1>
+  #{solution_header}
+  #{solution_links}
   <table>
     <tr>
       <th>Problem ID</th>
       <th style="text-align:left">Thumbnail</th>
       <th>Spec</th>
+      <th>Solution</th>
     </tr>
-    #{problems.map {|prob| index_tr(prob) }.join}
+    #{problems.map {|prob| index_tr(prob, solutions[prob.id]) }.join}
   </table>
 </body>
 </html>
@@ -120,6 +143,36 @@ problems.each do |prob|
   end
 end
 
+problems_dict = problems.map { |prob| [prob.id, prob] }.to_h
+
+solution_names = []
+Dir.glob("#{__dir__}/../solutions/*").each do |dir|
+  solution_name = File.basename(dir)
+  output_dir = "#{__dir__}/../web/images/#{solution_name}"
+  FileUtils.makedirs(output_dir)
+
+  solutions = {}
+  Dir.glob("#{dir}/*.json") do |file|
+    id = File.basename(file, '.json').to_i
+    json = File.open(file) do |f|
+      JSON.load(f)
+    end
+
+    solution = new_vertices(json['vertices'])
+    File.open("#{output_dir}/#{id}.svg", 'w') do |f|
+      write_svg(f, problems_dict[id], solution)
+    end
+
+    solutions[id] = solution_name
+  end
+
+  File.open("#{__dir__}/../web/#{solution_name}.html", 'w') do |f|
+    write_index(f, problems.select{|prob| solutions.has_key?(prob.id) }, solutions, solution_name)
+  end
+
+  solution_names.push(solution_name)
+end
+
 File.open("#{__dir__}/../web/index.html", 'w') do |f|
-  write_index(f, problems)
+  write_index(f, problems, {}, nil, solution_names)
 end
