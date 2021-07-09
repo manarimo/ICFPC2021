@@ -32,7 +32,7 @@ const UserPoseLayer = (props: {
   userPose: [number, number][];
   onEdit: (pointId: number) => void;
   editorState: EditorState | null;
-  selectedVertices: number[],
+  selectedVertices: number[];
 }) => {
   const epsilon = BigInt(props.problem.epsilon);
   const originalVertices = props.problem.figure.vertices;
@@ -69,6 +69,20 @@ const UserPoseLayer = (props: {
       })}
       {props.userPose.map(([x, y], pointId) => {
         return (
+          <text
+            x={x}
+            y={y}
+            fontSize="3"
+            style={{
+              userSelect: "none",
+            }}
+          >
+            {pointId}
+          </text>
+        );
+      })}
+      {props.userPose.map(([x, y], pointId) => {
+        return (
           <Point
             key={pointId}
             x={x}
@@ -78,13 +92,6 @@ const UserPoseLayer = (props: {
             isEditing={props.editorState?.pointId === pointId}
             isSelected={props.selectedVertices.includes(pointId)}
           />
-        );
-      })}
-      {props.userPose.map(([x, y], pointId) => {
-        return (
-          <text x={x} y={y} fontSize="3" style={{
-            userSelect: 'none',
-          }}>{pointId}</text>
         );
       })}
     </>
