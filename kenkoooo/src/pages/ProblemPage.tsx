@@ -74,6 +74,9 @@ const SvgEditor = (props: SvgEditorProps) => {
           <Form.Control as="textarea" rows={10} value={output} />
         </Col>
       </Row>
+      <Row>
+        <Col></Col>
+      </Row>
     </Container>
   );
 };
