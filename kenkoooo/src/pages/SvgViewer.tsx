@@ -49,7 +49,7 @@ const UserPoseLayer = (props: {
 
         // difference/originalDist <= epsilon/1_000_000
         const ok = difference * BigInt(1_000_000) <= epsilon * originalDist;
-        const color = ok ? "red" : "blue";
+        const color = ok ? "green" : originalDist < userDist ? "red" : "blue";
         const strokeWidth = ok ? "0.3" : "0.5";
 
         const key = `${i}-${j}`;
