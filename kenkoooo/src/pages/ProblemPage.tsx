@@ -23,6 +23,8 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [userPose, setUserPose] = useState([...problem.figure.vertices]);
   const [text, setText] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [slideSize, setSlideSize] = useState<number>(1);
+  const [selectedVertices, setSelectedVertices] = useState<number[]>([]);
 
   const getOutput = () => {
     return JSON.stringify({
@@ -45,6 +47,30 @@ const SvgEditor = (props: SvgEditorProps) => {
       setErrorMessage(null);
     }
   };
+
+  const toggleAVertex = (idx: number) => {
+    if (selectedVertices.includes((idx))) {
+      setSelectedVertices(selectedVertices.filter(v => v !== idx));
+    } else {
+      setSelectedVertices([...selectedVertices, idx]);
+    }
+  }
+
+  const isAllSelected = () => selectedVertices.length === userPose.length;
+
+  const toggleAllVertices = () => {
+    if (isAllSelected()) {
+      setSelectedVertices([]);
+    } else {
+      setSelectedVertices(userPose.map((_p, idx) => idx));
+    }
+  }
+
+  // const slideSelectedVertices = (dir: string) => {
+  //   // let dx = dir === '';
+  //   // let dy = 0;
+  //
+  // }
 
   return (
     <Container>
@@ -75,6 +101,7 @@ const SvgEditor = (props: SvgEditorProps) => {
               }
             }}
             editorState={editorState}
+            selectedVertices={selectedVertices}
           />
         </Col>
         <Col>
@@ -102,6 +129,51 @@ const SvgEditor = (props: SvgEditorProps) => {
           </Row>
           <Row>
             <PoseInfoPanel userPose={userPose} problem={problem} />
+          </Row>
+          <Row>
+            <Col>
+              <Row>
+                <Button onClick={onOutput}>L</Button>
+                <div>
+                  <div>
+                    <Button onClick={onOutput}>U</Button>
+                  </div>
+                  <div>
+                    <Button onClick={onOutput}>D</Button>
+                  </div>
+                </div>
+                <Button onClick={onOutput}>R</Button>
+              </Row>
+            </Col>
+            <Col>
+              <Row>
+                <Form.Control
+                    type="number"
+                    value={slideSize}
+                    onChange={(e) => setSlideSize(parseInt(e.target.value))}
+                />
+              </Row>
+            </Col>
+          </Row>
+          <Row>
+            <div>
+              <Form.Check inline>
+                <Form.Check.Input type="checkbox"
+                                  onClick={() => toggleAllVertices()}
+                                  checked={isAllSelected()}/>
+                <Form.Check.Label onClick={() => toggleAllVertices()}>All</Form.Check.Label>
+              </Form.Check>
+              <Form>
+                {userPose.map((_p, idx) => (
+                    <Form.Check inline>
+                      <Form.Check.Input type="checkbox"
+                                        onClick={() => toggleAVertex(idx)}
+                                        checked={selectedVertices.includes(idx)}/>
+                      <Form.Check.Label onClick={() => toggleAVertex(idx)}>{ idx }</Form.Check.Label>
+                    </Form.Check>
+                ))}
+              </Form>
+            </div>
           </Row>
         </Col>
       </Row>

@@ -8,11 +8,12 @@ interface PointProps {
   y: number;
   pointId: number;
   isEditing: boolean;
+  isSelected: boolean;
   onMouseDown: () => void;
 }
 const Point = (props: PointProps) => {
-  const { x, y, pointId, isEditing } = props;
-  const color = isEditing ? "blue" : "black";
+  const { x, y, pointId, isEditing, isSelected } = props;
+  const color = isEditing ? "blue" : isSelected ? "yellow" : "black";
   return (
     <circle
       key={pointId}
@@ -31,6 +32,7 @@ const UserPoseLayer = (props: {
   userPose: [number, number][];
   onEdit: (pointId: number) => void;
   editorState: EditorState | null;
+  selectedVertices: number[],
 }) => {
   const epsilon = BigInt(props.problem.epsilon);
   const originalVertices = props.problem.figure.vertices;
@@ -74,7 +76,15 @@ const UserPoseLayer = (props: {
             pointId={pointId}
             onMouseDown={() => props.onEdit(pointId)}
             isEditing={props.editorState?.pointId === pointId}
+            isSelected={props.selectedVertices.includes(pointId)}
           />
+        );
+      })}
+      {props.userPose.map(([x, y], pointId) => {
+        return (
+          <text x={x} y={y} fontSize="3" style={{
+            userSelect: 'none',
+          }}>{pointId}</text>
         );
       })}
     </>
@@ -88,6 +98,7 @@ interface Props {
   onMouseUp: () => void;
   onLatticeTouch: (p: [number, number]) => void;
   onEdit: (pointId: number) => void;
+  selectedVertices: number[];
 }
 
 export const SvgViewer = (props: Props) => {
@@ -145,6 +156,7 @@ export const SvgViewer = (props: Props) => {
         userPose={props.userPose}
         editorState={props.editorState}
         onEdit={props.onEdit}
+        selectedVertices={props.selectedVertices}
       />
     </svg>
   );
