@@ -22,7 +22,7 @@ def ccw(p, q, r):
     return cross(sub(q, p), sub(r, p))
 
 
-def is_inside(hole, point):
+def is_point_inside(hole, point):
     xs = []
     for x, y in hole:
         xs.append(x)
@@ -44,6 +44,22 @@ def is_inside(hole, point):
         if ccw(point, outer, hole[i]) * ccw(point, outer, hole[j]) < 0 and ccw(hole[i], hole[j], point) * ccw(hole[i], hole[j], outer) < 0:
             crossings += 1
     return crossings % 2 == 1
+
+
+def is_edge_inside(hole, edge):
+    for point in edge:
+        if not is_point_inside(hole, point):
+            return False
+    for i in range(len(hole)):
+        j = (i + 1) % len(hole)
+        if ccw(edge[0], edge[1], hole[i]) * ccw(edge[0], edge[1], hole[j]) < 0 and ccw(hole[i], hole[j], edge[0]) * ccw(hole[i], hole[j], edge[1]) < 0:
+            return False
+    double_mid = [edge[0][0] + edge[1][0], edge[0][1] + edge[1][1]]
+    double_hole = [[p[0] * 2, p[1] * 2] for p in hole]
+    if not is_point_inside(double_hole, double_mid):
+        return False
+    return True
+
 
 def d(p, q):
     return (p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1])
@@ -74,9 +90,8 @@ def solve(spec):
     valid_positions = []
     for x in range(min_x, max_x + 1):
         for y in range(min_y, max_y + 1):
-            if is_inside(spec["hole"], [x, y]):
+            if is_point_inside(spec["hole"], [x, y]):
                 valid_positions.append([x, y])
-    print(valid_positions)
     figure = spec["figure"]
     graph = defaultdict(list)
     for fr, to in figure["edges"]:
@@ -96,6 +111,9 @@ def solve(spec):
                 if j >= i:
                     continue
                 if not is_valid_edge(orig_positions[i], orig_positions[j], p, positions[j], spec["epsilon"]):
+                    valid = False
+                    break
+                if not is_edge_inside(spec["hole"], [p, positions[j]]):
                     valid = False
                     break
             if not valid:
