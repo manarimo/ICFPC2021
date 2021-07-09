@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-10 -10 80 118" style="background-color: #00000066">
+  <path d="M 14,0 L 38,6 L 58,33 L 10,98 L 0,96" style="fill:#ffffff; fill-rule:evenodd; stroke:none" />
+  <g style="fill:none;stroke:#ff0000;stroke-linecap:round"><path d="M 10,90 L 20,60" /><path d="M 20,60 L 20,30" /><path d="M 20,30 L 0,35" /><path d="M 0,35 L 0,25" /><path d="M 0,25 L 25,20" /><path d="M 25,20 L 20,10" /><path d="M 20,10 L 25,0" /><path d="M 25,0 L 35,0" /><path d="M 35,0 L 40,10" /><path d="M 40,10 L 35,20" /><path d="M 35,20 L 60,25" /><path d="M 60,25 L 60,35" /><path d="M 60,35 L 40,30" /><path d="M 40,30 L 40,60" /><path d="M 40,60 L 50,90" /><path d="M 50,90 L 40,90" /><path d="M 40,90 L 30,65" /><path d="M 30,65 L 20,90" /><path d="M 20,90 L 10,90" /><path d="M 25,20 L 35,20" /><path d="M 25,0 L 30,10" /><path d="M 30,10 L 20,10" /><path d="M 25,20 L 30,10" /><path d="M 30,10 L 35,20" /><path d="M 40,10 L 30,10" /><path d="M 30,10 L 35,0" /><path d="M 20,30 L 25,20" /><path d="M 35,20 L 40,30" /><path d="M 20,60 L 30,65" /><path d="M 30,65 L 40,60" /></g>
+</svg>
