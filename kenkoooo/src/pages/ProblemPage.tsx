@@ -12,6 +12,7 @@ import {
 } from "react-bootstrap";
 import { SvgViewer } from "./SvgViewer";
 import { EditorState } from "./EditorState";
+import { PoseInfoPanel } from "./PoseInfoPanel";
 
 interface SvgEditorProps {
   problem: Problem;
@@ -67,15 +68,19 @@ const SvgEditor = (props: SvgEditorProps) => {
           />
         </Col>
         <Col>
-          <Button onClick={onOutput}>Output</Button>
-          <Button onClick={onCopyOutput} className="ml-3">
-            Copy
-          </Button>
-          <Form.Control as="textarea" rows={10} value={output} />
+          <Row>
+            <Button onClick={onOutput}>Output</Button>
+            <Button onClick={onCopyOutput} className="ml-3">
+              Copy
+            </Button>
+          </Row>
+          <Row>
+            <Form.Control as="textarea" rows={10} value={output} />
+          </Row>
+          <Row>
+            <PoseInfoPanel userPose={userPose} problem={problem} />
+          </Row>
         </Col>
-      </Row>
-      <Row>
-        <Col></Col>
       </Row>
     </Container>
   );
