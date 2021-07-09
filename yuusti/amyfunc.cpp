@@ -32,9 +32,8 @@ bool is_point_inside(vector<P> hole, P point) {
     for (auto p: hole) {
         xs.push_back(p.X);
     }
-    number min_x, max_x;
-    tie(min_x, max_x) = minmax(xs.begin(), xs.end());
-    P outer = make_pair(max_x + (max_x - min_x) * 2 + 1, point.Y + 1);
+    auto minmax_x = minmax_element(xs.begin(), xs.end());
+    P outer = make_pair(*minmax_x.second + (*minmax_x.second - *minmax_x.first) * 2 + 1, point.Y + 1);
 
     int crossings = 0;
     for (int i = 0; i < hole.size(); ++i) {
@@ -85,4 +84,8 @@ number dislike(vector<P> hole, vector<P> positions) {
         }
         ds += min_p;
     }
+}
+
+int main() {
+
 }
