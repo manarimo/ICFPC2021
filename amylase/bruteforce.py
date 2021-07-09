@@ -91,7 +91,7 @@ def dislike(hole, positions):
     return ds
 
 
-def solve(spec, report_result):
+def solve(spec, report_result, skip=1):
     xs, ys = [], []
     for v in spec["hole"]:
         xs.append(v[0])
@@ -101,8 +101,8 @@ def solve(spec, report_result):
     min_y = min(ys)
     max_y = max(ys)
     valid_positions = []
-    for x in range(min_x, max_x + 1):
-        for y in range(min_y, max_y + 1):
+    for x in range(min_x, max_x + 1, step=skip):
+        for y in range(min_y, max_y + 1, step=skip):
             if is_point_inside(spec["hole"], [x, y]):
                 valid_positions.append([x, y])
     random.shuffle(valid_positions)
@@ -156,7 +156,7 @@ def main(input_path, output_path):
         print(f"{input_path} dislike: {score}")
         with open(output_path, "w") as f:
             json.dump({"vertices": pose}, f)
-    solve(spec, report_result)
+    solve(spec, report_result, skip=2)
     print(f"end: {input_path} -> {output_path}")
 
 
