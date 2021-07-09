@@ -2,3 +2,4 @@ node_modules/
 target/
 docs
 .idea
+src/wasm/build/

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Figure, Problem, useProblemData } from "../utils";
-import { Alert, Container, Spinner } from "react-bootstrap";
+import { Alert, Container, Spinner, Row, Col, Button, Form } from "react-bootstrap";
 import { SvgViewer } from "./SvgViewer";
 import { EditorState } from "./EditorState";
 
@@ -15,33 +15,63 @@ const SvgEditor = (props: SvgEditorProps) => {
     edges: [...problem.figure.edges],
     vertices: [...problem.figure.vertices],
   });
+  const [output, setOutput] = useState<string>('');
+
+  const getOutput = () => {
+    return JSON.stringify({
+      vertices: userFigure.vertices,
+    });
+  }
+  const onOutput = () => {
+    setOutput(getOutput());
+  }
+  const onCopyOutput = () => {
+    setOutput(getOutput());
+    navigator.clipboard.writeText(getOutput());
+  }
+
   return (
-    <SvgViewer
-      userFigure={userFigure}
-      problem={problem}
-      onEdit={(pointId) => {
-        if (!editorState) {
-          setEditState({ pointId });
-        }
-      }}
-      onLatticeTouch={([x, y]) => {
-        if (editorState) {
-          const pointId = editorState.pointId;
-          const [curX, curY] = userFigure.vertices[pointId];
-          if (curX !== x || curY !== y) {
-            const newFigure = { ...userFigure };
-            newFigure.vertices[pointId] = [x, y];
-            setUserFigure(newFigure);
-          }
-        }
-      }}
-      onMouseUp={() => {
-        if (editorState) {
-          setEditState(null);
-        }
-      }}
-      editorState={editorState}
-    />
+    <Container>
+      <Row>
+        <Col>
+          <SvgViewer
+            userFigure={userFigure}
+            problem={problem}
+            onEdit={(pointId) => {
+              if (!editorState) {
+                setEditState({ pointId });
+              }
+            }}
+            onLatticeTouch={([x, y]) => {
+              if (editorState) {
+                const pointId = editorState.pointId;
+                const [curX, curY] = userFigure.vertices[pointId];
+                if (curX !== x || curY !== y) {
+                  const newFigure = { ...userFigure };
+                  newFigure.vertices[pointId] = [x, y];
+                  setUserFigure(newFigure);
+                }
+              }
+            }}
+            onMouseUp={() => {
+              if (editorState) {
+                setEditState(null);
+              }
+            }}
+            editorState={editorState}
+          />
+        </Col>
+        <Col>
+            <Button onClick={onOutput}>Output</Button>
+            <Button onClick={onCopyOutput} className="ml-3">Copy</Button>
+            <Form.Control
+              as="textarea"
+              rows={10}
+              value={output}
+            />
+        </Col>
+      </Row>
+    </Container>
   );
 };
 
