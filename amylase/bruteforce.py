@@ -36,9 +36,7 @@ def is_point_inside(hole, point):
         d1 = sub(hole[i], point)
         d2 = sub(hole[j], point)
         area = cross(d1, d2)
-        if area != 0:
-            continue
-        if d1[0] * d2[0] <= 0 and d1[1] * d2[1] <= 0:
+        if area == 0 and d1[0] * d2[0] <= 0 and d1[1] * d2[1] <= 0:
             # on this edge.
             return True
         if ccw(point, outer, hole[i]) * ccw(point, outer, hole[j]) < 0 and ccw(hole[i], hole[j], point) * ccw(hole[i], hole[j], outer) < 0:
@@ -138,7 +136,7 @@ def main(input_path, output_path):
 if __name__ == '__main__':
     output_dir = Path("../solutions/amylase-bruteforce/")
     output_dir.mkdir(parents=True, exist_ok=True)
-    for problem_id in [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]:
+    for problem_id in [16]:
         print(f"problem_id: {problem_id}")
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
