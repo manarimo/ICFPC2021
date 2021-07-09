@@ -151,11 +151,10 @@ if __name__ == '__main__':
     output_dir = Path("../solutions/amylase-bruteforce/")
     output_dir.mkdir(parents=True, exist_ok=True)
     from multiprocessing import Pool
-    pool = Pool()
+    pool = Pool(processes=4)
 
     args = []
-    # for problem_id in [22, 24, 25, 26, 34]:
-    for problem_id in range(35, 45):
+    for problem_id in [22, 24, 25, 26, 34, 35, 38, 39]:
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))
