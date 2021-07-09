@@ -18,19 +18,32 @@ def cross(p, q):
     return p[0] * q[1] - p[1] * q[0]
 
 
+def ccw(p, q, r):
+    return cross(sub(q, p), sub(r, p))
+
+
 def is_inside(hole, point):
-    areas = []
+    xs = []
+    for x, y in hole:
+        xs.append(x)
+    max_x = max(xs)
+    min_x = min(xs)
+    outer = [max_x + (max_x - min_x) * 2 + 1, point[1] + 1]
+
+    crossings = 0
     for i in range(len(hole)):
         j = (i + 1) % len(hole)
-        areas.append(cross(sub(hole[i], point), sub(hole[j], point)))
-    for area in areas:
+        d1 = sub(hole[i], point)
+        d2 = sub(hole[j], point)
+        area = cross(d1, d2)
         if area != 0:
-            sig = area
-    for area in areas:
-        if area * sig < 0:
-            return False
-    return True
-
+            continue
+        if d1[0] * d2[0] <= 0 and d1[1] * d2[1] <= 0:
+            # on this edge.
+            return True
+        if ccw(point, outer, hole[i]) * ccw(point, outer, hole[j]) < 0 and ccw(hole[i], hole[j], point) * ccw(hole[i], hole[j], outer) < 0:
+            crossings += 1
+    return crossings % 2 == 1
 
 def d(p, q):
     return (p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1])
@@ -63,7 +76,7 @@ def solve(spec):
         for y in range(min_y, max_y + 1):
             if is_inside(spec["hole"], [x, y]):
                 valid_positions.append([x, y])
-
+    print(valid_positions)
     figure = spec["figure"]
     graph = defaultdict(list)
     for fr, to in figure["edges"]:
@@ -107,7 +120,7 @@ def main(input_path, output_path):
 if __name__ == '__main__':
     output_dir = Path("../solutions/amylase-bruteforce/")
     output_dir.mkdir(parents=True, exist_ok=True)
-    for problem_id in [11, 12, 13, 15]:
+    for problem_id in [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]:
         print(f"problem_id: {problem_id}")
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
