@@ -158,7 +158,7 @@ if __name__ == '__main__':
     pool = Pool(processes=7)
 
     args = []
-    for problem_id in [38, 41, 47, 49, 51, 54, 57, 58, 2, 4, 5, 9, 10]:
+    for problem_id in [41, 49, 51, 57, 58, 2, 4, 5, 9, 10]:
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))
