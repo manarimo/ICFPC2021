@@ -31,7 +31,14 @@ def solve(spec, report_result):
         graph[to].append(fr)
 
     for assigned in itertools.permutations(range(len(nodes)), len(hole)):
-        assignments = { assigned_node: [hole[hole_node]] for hole_node, assigned_node in enumerate(assigned)}
+        assignments = {assigned_node: [hole[hole_node]] for hole_node, assigned_node in enumerate(assigned)}
+        valid = True
+        for i, j in itertools.combinations(assignments.keys(), 2):
+            if j not in graph[i]:
+                continue
+            valid &= is_valid_edge(nodes[i], nodes[j], assignments[i][0], assignments[j][0], spec["epsilon"])
+        if not valid:
+            continue
         positions = []
         def dfs(i):
             if i >= len(nodes):
@@ -63,7 +70,6 @@ def solve(spec, report_result):
             return
 
 
-
 def main(input_path, output_path):
     print(f"start: {input_path} -> {output_path}")
     with open(input_path) as f:
@@ -87,7 +93,7 @@ if __name__ == '__main__':
     pool = Pool(processes=7)
 
     args = []
-    for problem_id in [35, 38, 41, 43, 46, 47, 49, 51, 52, 53, 54]:
+    for problem_id in [4, 38, 41, 43, 46, 47, 49, 51, 52, 53, 54]:
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))
