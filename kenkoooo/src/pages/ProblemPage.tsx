@@ -13,6 +13,7 @@ import {
 import { SvgViewer } from "./SvgViewer";
 import { EditorState } from "./EditorState";
 import { PoseInfoPanel } from "./PoseInfoPanel";
+import { SinglePointSolverPanel } from "./SinglePointSolverPanel";
 
 interface SvgEditorProps {
   problem: Problem;
@@ -194,6 +195,19 @@ const SvgEditor = (props: SvgEditorProps) => {
                 ))}
               </Form>
             </div>
+          </Row>
+          <Row>
+            <SinglePointSolverPanel
+              problem={problem}
+              userPose={userPose}
+              selectedVertices={selectedVertices}
+              onSolve={([x, y]) => {
+                const target = selectedVertices[0];
+                const newPose = [...userPose];
+                newPose[target] = [x, y];
+                setUserPose(newPose);
+              }}
+            />
           </Row>
         </Col>
       </Row>

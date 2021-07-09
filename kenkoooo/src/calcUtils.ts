@@ -11,5 +11,3 @@ export const absoluteBigInt = (a: bigint) => {
     return -a;
   }
 };
-
-export const calcDislike = (hole: [number, number][]) => {};
