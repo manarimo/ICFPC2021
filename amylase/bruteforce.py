@@ -78,7 +78,7 @@ def solve(spec):
                     continue
                 dist = d(p, positions[j])
                 orig_dist = d(orig_positions[i], orig_positions[j])
-                if abs(dist / orig_dist - 1) > spec["epsilon"] / 1_000_000:
+                if abs(dist - orig_dist) * 1_000_000 > spec["epsilon"] * orig_dist:
                     valid = False
                     break
             if not valid:
