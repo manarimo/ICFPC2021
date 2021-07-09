@@ -1,0 +1,12 @@
+{
+  "name": "ICFPC2021-checker",
+  "version": "1.0.0",
+  "private": true,
+  "homepage": "http://icfpc2021-manarimo.s3-website-us-east-1.amazonaws.com/kenkoooo",
+  "dependencies": {
+    "typescript": "^4.1.2"
+  },
+  "scripts": {
+    "check": "tsc checker.ts && node checker.js"
+  }
+}
