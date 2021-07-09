@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Problem, useProblemData } from "../utils";
+import { Figure, Problem, useProblemData } from "../utils";
 import { Alert, Container, Spinner } from "react-bootstrap";
 import { SvgViewer } from "./SvgViewer";
 import { EditorState } from "./EditorState";
@@ -11,7 +11,10 @@ interface SvgEditorProps {
 const SvgEditor = (props: SvgEditorProps) => {
   const { problem } = props;
   const [editorState, setEditState] = useState<EditorState | null>(null);
-  const [userFigure, setUserFigure] = useState({ ...problem.figure });
+  const [userFigure, setUserFigure] = useState<Figure>({
+    edges: [...problem.figure.edges],
+    vertices: [...problem.figure.vertices],
+  });
   return (
     <SvgViewer
       userFigure={userFigure}
