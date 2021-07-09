@@ -8,6 +8,7 @@ Point = Struct.new(:x, :y)
 Problem = Struct.new(:id, :hole, :figure, :epsilon, :width, :height)
 Edge = Struct.new(:from, :to)
 Figure = Struct.new(:edges, :vertices)
+Solution = Struct.new(:name, :verdict, :vertices)
 
 def new_hole(json)
   json.map { |a| Point.new(a[0], a[1]) }
@@ -54,7 +55,7 @@ def write_svg(f, problem, solution = nil)
   hole_d = 'M ' + problem.hole.map { |p| "#{p.x},#{p.y}"}.join(' L ')
   hole = %Q(<path d="#{hole_d}" style="fill:#ffffff; fill-rule:evenodd; stroke:none" />)
 
-  vertices = solution || problem.figure.vertices
+  vertices = solution&.vertices || problem.figure.vertices
   figure_paths = problem.figure.edges.map { |e|
     from =vertices[e.from]
     to = vertices[e.to]
@@ -80,8 +81,8 @@ end
 
 def index_tr(problem, solution)
   solution_td = solution && %Q(
-  <td><img src="images/#{solution[:name]}/#{problem.id}.svg" height="200"></td>
-  <td><pre>#{solution[:verdict]}</pre></td>
+  <td><img src="images/#{solution.name}/#{problem.id}.svg" height="200"></td>
+  <td><pre>#{solution.verdict}</pre></td>
 )
   <<-TR
 <tr>
@@ -122,7 +123,7 @@ LINKS
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 </head>
 <body style="margin: 0 100px">
-  <h1>Manarimo Portal</h1>
+  <h1><a href="index.html">Manarimo Portal</a></h1>
   #{solution_header}
   #{solution_links}
   <table>
@@ -149,13 +150,10 @@ end
 
 problems_dict = problems.map { |prob| [prob.id, prob] }.to_h
 
-solution_names = []
+solutions = {}
 Dir.glob("#{__dir__}/../solutions/*").each do |dir|
   solution_name = File.basename(dir)
-  output_dir = "#{__dir__}/../web/images/#{solution_name}"
-  FileUtils.makedirs(output_dir)
 
-  solutions = {}
   Dir.glob("#{dir}/*.json") do |file|
     next if file.match(/_verdict.json/)
 
@@ -163,27 +161,32 @@ Dir.glob("#{__dir__}/../solutions/*").each do |dir|
     json = File.open(file) do |f|
       JSON.load(f)
     end
+    vertices = new_vertices(json['vertices'])
 
     verdict = File.read(file.sub(/\.json$/, '_verdict.json')) rescue '(not yet checked)'
 
-    solution = new_vertices(json['vertices'])
+    solutions[solution_name] ||= {}
+    solutions[solution_name][id] = Solution.new(solution_name, verdict, vertices)
+  end
+end
+
+solutions.each do |solution_name, solution_list|
+  output_dir = "#{__dir__}/../web/images/#{solution_name}"
+  FileUtils.makedirs(output_dir)
+
+  # Generate solution SVG files
+  solution_list.each do |id, sol|
     File.open("#{output_dir}/#{id}.svg", 'w') do |f|
-      write_svg(f, problems_dict[id], solution)
+      write_svg(f, problems_dict[id], sol)
     end
-
-    solutions[id] = {
-      name: solution_name,
-      verdict: verdict
-    }
   end
 
+  # Generate solution overview
   File.open("#{__dir__}/../web/#{solution_name}.html", 'w') do |f|
-    write_index(f, problems.select{|prob| solutions.has_key?(prob.id) }, solutions, solution_name)
+    write_index(f, problems.select{|prob| solutions[solution_name].has_key?(prob.id) }, solutions[solution_name], solution_name, solutions.keys)
   end
-
-  solution_names.push(solution_name)
 end
 
 File.open("#{__dir__}/../web/index.html", 'w') do |f|
-  write_index(f, problems, {}, nil, solution_names)
+  write_index(f, problems, {}, nil, solutions.keys)
 end
