@@ -1,4 +1,4 @@
-import { Figure, Problem } from "../utils";
+import { Problem } from "../utils";
 import React from "react";
 import { EditorState } from "./EditorState";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
@@ -28,7 +28,7 @@ const Point = (props: PointProps) => {
 
 const UserPoseLayer = (props: {
   problem: Problem;
-  userVertices: [number, number][];
+  userPose: [number, number][];
   onEdit: (pointId: number) => void;
   editorState: EditorState | null;
 }) => {
@@ -42,8 +42,8 @@ const UserPoseLayer = (props: {
         const pjOriginal = originalVertices[j];
         const originalDist = sqDistance(piOriginal, pjOriginal);
 
-        const pi = props.userVertices[i];
-        const pj = props.userVertices[j];
+        const pi = props.userPose[i];
+        const pj = props.userPose[j];
         const userDist = sqDistance(pi, pj);
 
         const difference = absoluteBigInt(userDist - originalDist);
@@ -66,7 +66,7 @@ const UserPoseLayer = (props: {
           />
         );
       })}
-      {props.userVertices.map(([x, y], pointId) => {
+      {props.userPose.map(([x, y], pointId) => {
         return (
           <Point
             key={pointId}
@@ -84,7 +84,7 @@ const UserPoseLayer = (props: {
 
 interface Props {
   problem: Problem;
-  userFigure: Figure;
+  userPose: [number, number][];
   editorState: EditorState | null;
   onMouseUp: () => void;
   onLatticeTouch: (p: [number, number]) => void;
@@ -143,7 +143,7 @@ export const SvgViewer = (props: Props) => {
       <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
       <UserPoseLayer
         problem={problem}
-        userVertices={props.userFigure.vertices}
+        userPose={props.userPose}
         editorState={props.editorState}
         onEdit={props.onEdit}
       />

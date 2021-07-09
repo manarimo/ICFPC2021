@@ -1,7 +1,15 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Figure, Problem, useProblemData } from "../utils";
-import { Alert, Container, Spinner, Row, Col, Button, Form } from "react-bootstrap";
+import { Problem, useProblemData } from "../utils";
+import {
+  Alert,
+  Container,
+  Spinner,
+  Row,
+  Col,
+  Button,
+  Form,
+} from "react-bootstrap";
 import { SvgViewer } from "./SvgViewer";
 import { EditorState } from "./EditorState";
 
@@ -11,31 +19,28 @@ interface SvgEditorProps {
 const SvgEditor = (props: SvgEditorProps) => {
   const { problem } = props;
   const [editorState, setEditState] = useState<EditorState | null>(null);
-  const [userFigure, setUserFigure] = useState<Figure>({
-    edges: [...problem.figure.edges],
-    vertices: [...problem.figure.vertices],
-  });
-  const [output, setOutput] = useState<string>('');
+  const [userPose, setUserPose] = useState([...problem.figure.vertices]);
+  const [output, setOutput] = useState<string>("");
 
   const getOutput = () => {
     return JSON.stringify({
-      vertices: userFigure.vertices,
+      vertices: userPose,
     });
-  }
+  };
   const onOutput = () => {
     setOutput(getOutput());
-  }
-  const onCopyOutput = () => {
+  };
+  const onCopyOutput = async () => {
     setOutput(getOutput());
-    navigator.clipboard.writeText(getOutput());
-  }
+    await navigator.clipboard.writeText(getOutput());
+  };
 
   return (
     <Container>
       <Row>
         <Col>
           <SvgViewer
-            userFigure={userFigure}
+            userPose={userPose}
             problem={problem}
             onEdit={(pointId) => {
               if (!editorState) {
@@ -45,11 +50,11 @@ const SvgEditor = (props: SvgEditorProps) => {
             onLatticeTouch={([x, y]) => {
               if (editorState) {
                 const pointId = editorState.pointId;
-                const [curX, curY] = userFigure.vertices[pointId];
+                const [curX, curY] = userPose[pointId];
                 if (curX !== x || curY !== y) {
-                  const newFigure = { ...userFigure };
-                  newFigure.vertices[pointId] = [x, y];
-                  setUserFigure(newFigure);
+                  const newPose = { ...userPose };
+                  newPose[pointId] = [x, y];
+                  setUserPose(newPose);
                 }
               }
             }}
@@ -62,13 +67,11 @@ const SvgEditor = (props: SvgEditorProps) => {
           />
         </Col>
         <Col>
-            <Button onClick={onOutput}>Output</Button>
-            <Button onClick={onCopyOutput} className="ml-3">Copy</Button>
-            <Form.Control
-              as="textarea"
-              rows={10}
-              value={output}
-            />
+          <Button onClick={onOutput}>Output</Button>
+          <Button onClick={onCopyOutput} className="ml-3">
+            Copy
+          </Button>
+          <Form.Control as="textarea" rows={10} value={output} />
         </Col>
       </Row>
     </Container>
