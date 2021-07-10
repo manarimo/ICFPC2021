@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from amylase.bruteforce import dislike, is_point_inside, is_edge_inside, is_valid_edge
+from amylase.bruteforce import dislike, is_point_inside, is_edge_inside, is_valid_edge, d
 from collections import defaultdict
 import random
 from multiprocessing import Pool
@@ -53,16 +53,18 @@ def optimize(spec, pose):
         def dfs(i):
             if i >= len(orig_positions):
                 score = dislike(spec["hole"], positions)
+                if score < global_best[0]:
+                    print(score, global_best[0])
                 return score, positions[:]
 
             candidates = valid_positions if i in subgraph else [orig_positions[i]]
-            best = 10 ** 18, []
+            best = global_best
             for p in candidates:
                 valid = True
                 for j in graph[i]:
                     if j >= i:
                         continue
-                    if not is_valid_edge(orig_positions[i], orig_positions[j], p, positions[j], spec["epsilon"]):
+                    if not is_valid_edge(figure["vertices"][i], figure["vertices"][j], p, positions[j], spec["epsilon"]):
                         valid = False
                         break
                     if not is_edge_inside(spec["hole"], [p, positions[j]]):
@@ -86,8 +88,11 @@ def run_optimize(args):
     print(f"problem id: {problem_id}, solution name: {solution_name}, current score: {prev_score}")
     optimized_pose = optimize(spec, pose)
     optimized_score = dislike(spec["hole"], optimized_pose["vertices"])
-    print(f"problem id: {problem_id}, solution name: {solution_name}, score: {optimized_score} (improvement: {prev_score - optimized_score})")
-    return optimized_pose
+    improvement = prev_score - optimized_score
+    print(f"problem id: {problem_id}, solution name: {solution_name}, score: {optimized_score} (improvement: {improvement})")
+    if improvement > 0:
+        with open(f"../solutions/amylase-postprocess/{problem_id}.json", "w") as f:
+            json.dump(optimized_pose, f)
 
 
 def main():
@@ -111,26 +116,21 @@ def main():
                 existing_best[problem_id] = existing_score
             existing_best[problem_id] = min(existing_best[problem_id], existing_score)
 
+    good_problem_ids = set(list(range(1, 11)) + list(range(50, 79)))
     def args_filter(args):
         solution_name, problem_id, spec, pose = args
         score = dislike(spec["hole"], pose["vertices"])
-        return score <= existing_best[problem_id] and int(problem_id) <= 1
+        if score == 0:
+            return False
+        if score > existing_best[problem_id]:
+            return False
+        if int(problem_id) not in good_problem_ids:
+            return False
+        return True
 
     args_list = list(filter(args_filter, args_list))
     pool = Pool(processes=7)
-    results = pool.map(run_optimize, args_list)
-    best_poses = {}
-    for (solution_name, problem_id, spec, pose), optimized_pose in zip(args_list, results):
-        score = dislike(spec["hole"], optimized_pose["vertices"])
-        if score >= existing_best[problem_id]:
-            continue
-        if problem_id not in best_poses:
-            best_poses[problem_id] = score, optimized_pose
-        best_poses[problem_id] = min(best_poses[problem_id], (score, optimized_pose))
-    for problem_id, (score, optimized_pose) in best_poses.items():
-        print(f"problem_id: {problem_id}, optimized score: {score} (improbement: {existing_best[problem_id] - score})")
-        with open(f"../solutions/amylase-postprocess/{problem_id}.json", "w") as f:
-            json.dump(optimized_pose, f)
+    pool.map(run_optimize, args_list)
 
 
 if __name__ == '__main__':
