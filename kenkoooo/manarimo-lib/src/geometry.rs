@@ -6,6 +6,15 @@ pub struct Point {
     pub y: i64,
 }
 
+impl From<[i64; 2]> for Point {
+    fn from(pair: [i64; 2]) -> Self {
+        Self {
+            x: pair[0],
+            y: pair[1],
+        }
+    }
+}
+
 pub struct Edge {
     pub src: Point,
     pub dst: Point,
@@ -30,7 +39,15 @@ impl Point {
         self.x * rhs.y - self.y * rhs.x
     }
     pub fn d(&self, rhs: &Self) -> i64 {
-        (*self - *rhs).dot(&(*self - *rhs))
+        let dx = self.x - rhs.x;
+        let dy = self.y - rhs.y;
+        dx * dx + dy * dy
+    }
+    pub fn is_on_segment(&self, segment: Edge) -> bool {
+        let d1 = segment.src - *self;
+        let d2 = segment.dst - *self;
+        let area = d1.cross(&d2);
+        area == 0 && d1.x * d2.x <= 0 && d1.y * d2.y <= 0
     }
     pub fn is_contained(&self, hole: &[Point]) -> bool {
         let n = hole.len();
@@ -44,18 +61,12 @@ impl Point {
 
         let mut crossings = 0;
         for i in 0..n {
-            let next = (i + 1) % n;
-            let p1 = hole[i];
-            let p2 = hole[next];
-            let d1 = p1 - *self;
-            let d2 = p2 - *self;
-            let area = d1.cross(&d2);
-            if area == 0 && d1.x * d2.x <= 0 && d1.y * d2.y <= 0 {
-                // On this edge.
+            let j = (i + 1) % n;
+            if self.is_on_segment(Edge::new(hole[i], hole[j])) {
                 return true;
             }
-            if ccw(*self, outer, p1) * ccw(*self, outer, p2) < 0
-                && ccw(p1, p2, *self) * ccw(p1, p2, outer) < 0
+            if ccw(*self, outer, hole[i]) * ccw(*self, outer, hole[j]) < 0
+                && ccw(hole[i], hole[j], *self) * ccw(hole[i], hole[j], outer) < 0
             {
                 crossings += 1;
             }
@@ -65,6 +76,12 @@ impl Point {
 }
 
 impl Edge {
+    pub fn new(p: Point, q: Point) -> Self {
+        Self { src: p, dst: q }
+    }
+    pub fn sq_dist(&self) -> i64 {
+        self.src.d(&self.dst)
+    }
     pub fn is_contained(&self, hole: &[Point]) -> bool {
         let n = hole.len();
 
@@ -100,8 +117,8 @@ impl Edge {
     }
 
     pub fn is_valid(&self, source: &Edge, epsilon: i64) -> bool {
-        let src_dist = source.src.d(&source.dst);
-        let dst_dist = self.src.d(&self.dst);
+        let src_dist = source.sq_dist();
+        let dst_dist = self.sq_dist();
         (dst_dist - src_dist).abs() * 1_000_000 <= epsilon * src_dist
     }
 }
