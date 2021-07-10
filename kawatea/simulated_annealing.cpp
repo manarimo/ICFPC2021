@@ -488,6 +488,7 @@ int main(int argc, char* argv[]) {
     double penalty_edge = calc_penalty_edge(hole, edge, figure);
     double penalty_length = calc_penalty_length(edge, figure);
     number dislike = calc_dislike(hole, figure);
+    double weight = sqrt(dislike);
     fprintf(stderr, "initial_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
     fflush(stderr);
     
@@ -497,7 +498,7 @@ int main(int argc, char* argv[]) {
     vector<P> best_figure(n);
     while (!sa.end()) {
         int select = random::get(100);
-        double time = (sa.get_time() + 1) * (sa.get_time() + 1) * (sa.get_time() + 1);
+        double penalty_weight = weight * (sa.get_time() + 1) * (sa.get_time() + 1);
         double new_penalty_vertex = 0;
         double new_penalty_edge = 0;
         double new_penalty_length = 0;
@@ -505,6 +506,7 @@ int main(int argc, char* argv[]) {
         for (int i = 0; i < n; i++) new_figure[i] = figure[i];
         
         if (select < 40) {
+            // ランダムな点を動かす
             int dx = random::get(3);
             int dy = random::get(3);
             dx--;
@@ -515,6 +517,7 @@ int main(int argc, char* argv[]) {
             new_figure[v].X += dx;
             new_figure[v].Y += dy;
         } else if (select < 80) {
+            // ランダムな辺を動かす
             int dx = random::get(3);
             int dy = random::get(3);
             dx--;
@@ -529,6 +532,7 @@ int main(int argc, char* argv[]) {
             new_figure[w].X += dx;
             new_figure[w].Y += dy;
         } else if (select < 85) {
+            // 全体を平行移動する
             int dx = random::get(3);
             int dy = random::get(3);
             dx--;
@@ -540,6 +544,7 @@ int main(int argc, char* argv[]) {
                 new_figure[i].Y += dy;
             }
         } else if (select < 90) {
+            // 次数1の頂点を選び、点対称な位置に移す
             int v = random::get(n);
             if (graph[v].size() != 1) continue;
             
@@ -547,6 +552,7 @@ int main(int argc, char* argv[]) {
             new_figure[v].X = figure[w].X * 2 - figure[v].X;
             new_figure[v].Y = figure[w].Y * 2 - figure[v].Y;
         } else if (select < 95) {
+            // 次数2の頂点を選び、三角形の対辺に対して鏡像移動する
             int v = random::get(n);
             if (graph[v].size() != 2) continue;
             
@@ -554,6 +560,7 @@ int main(int argc, char* argv[]) {
             int w2 = graph[v][1];
             new_figure[v] = reflection(figure[w1], figure[w2], figure[v]);
         } else if (select < 100) {
+            // ランダムな点をランダムなholeの頂点に移す
             int vf = random::get(n);
             int vh = random::get(hole.size());
             
@@ -566,7 +573,7 @@ int main(int argc, char* argv[]) {
         new_penalty_edge = calc_penalty_edge(hole, edge, new_figure);
         new_penalty_length = calc_penalty_length(edge, new_figure);
         new_dislike = calc_dislike(hole, new_figure);
-        if (sa.accept((penalty_vertex + penalty_edge + penalty_length) * time + dislike, (new_penalty_vertex + new_penalty_edge + new_penalty_length) * time + new_dislike)) {
+        if (sa.accept((penalty_vertex + penalty_edge + penalty_length) * penalty_weight + dislike, (new_penalty_vertex + new_penalty_edge + new_penalty_length) * penalty_weight + new_dislike)) {
             penalty_vertex = new_penalty_vertex;
             penalty_edge = new_penalty_edge;
             penalty_length = new_penalty_length;
