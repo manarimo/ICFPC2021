@@ -50,10 +50,10 @@ pub fn solve_brute_force(
             let this = JsValue::null();
             let _ = f.call1(&this, &pose_string);
         },
-        Some(|step: usize| {
+        |step: usize| {
             if step % 10000 == 0 {
                 log(&format!("step={}", step));
             }
-        }),
+        },
     );
 }

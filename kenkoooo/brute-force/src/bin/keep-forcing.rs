@@ -19,14 +19,26 @@ fn main() -> Result<(), Box<dyn Error>> {
     let output_dir = PathBuf::from(&args[2]);
     let output = output_dir.join(path);
 
-    let file = File::open(&args[3])?;
-    let reader = BufReader::new(file);
-    let solution: Pose = serde_json::from_reader(reader)?;
+    let solution: Pose;
+    if args.len() >= 4 {
+        let file = File::open(&args[3])?;
+        let reader = BufReader::new(file);
+        solution = serde_json::from_reader(reader)?;
+    } else {
+        solution = Pose {
+            vertices: problem.figure.vertices.clone(),
+        };
+    }
 
-    let fixed = args[4]
-        .split(',')
-        .map(|x| x.parse::<usize>())
-        .collect::<Result<Vec<_>, _>>()?;
+    let fixed: Vec<usize>;
+    if args.len() >= 5 {
+        fixed = args[4]
+            .split(',')
+            .map(|x| x.parse::<usize>())
+            .collect::<Result<Vec<_>, _>>()?;
+    } else {
+        fixed = vec![];
+    }
 
     amylase_bruteforce::solve(
         problem,
@@ -38,7 +50,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             serde_json::to_writer(writer, &pose).expect("write error");
             println!("{:?} dislike:{}", output, dislike);
         },
-        None,
+        |_| {
+            // do nothing
+        },
     );
 
     Ok(())

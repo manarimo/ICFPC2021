@@ -28,13 +28,9 @@ impl<T> Shuffle for Vec<T> {
         }
     }
 }
-pub fn solve<F, G>(
-    problem: Problem,
-    fixed: &[usize],
-    solution: Pose,
-    report: F,
-    progress_report: Option<G>,
-) where
+
+pub fn solve<F, G>(problem: Problem, fixed: &[usize], solution: Pose, report: F, progress_report: G)
+where
     F: Fn(Pose, i64),
     G: Fn(usize) + Copy,
 {
@@ -113,15 +109,13 @@ struct DfsSolver<F, G> {
     template_solution: Pose,
     is_fixed: Vec<bool>,
     report: F,
-    progress_report: Option<G>,
+    progress_report: G,
 }
 
 impl<F: Fn(Pose, i64), G: Fn(usize) + Copy> DfsSolver<F, G> {
     fn dfs(&self, positions: &mut Vec<Point>, best: i64, step: &mut usize) -> i64 {
         *step += 1;
-        if let Some(progress_report) = self.progress_report {
-            (progress_report)(*step);
-        }
+        (self.progress_report)(*step);
 
         if positions.len() >= self.original_pose.len() {
             let result = dislike(&self.hole, positions);

@@ -45,7 +45,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     serde_json::to_writer(writer, &pose).expect("write error");
                     println!("{:?} dislike:{}", output, dislike);
                 },
-                None,
+                |_| {
+                    // do nothing
+                },
             );
         });
 
