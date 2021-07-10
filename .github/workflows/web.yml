@@ -22,7 +22,9 @@ jobs:
         env:
           cache-name: cache-cargo-modules
         with:
-          path: kenkoooo/target
+          path: |
+            kenkoooo/target
+            ~/.cargo
           key: ${{ hashFiles('kenkoooo/wasm-rust/Cargo.toml') }}
       - name: run checker
         working-directory: checker
