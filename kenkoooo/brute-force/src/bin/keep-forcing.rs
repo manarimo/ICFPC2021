@@ -28,12 +28,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|x| x.parse::<usize>())
         .collect::<Result<Vec<_>, _>>()?;
 
-    amylase_bruteforce::solve(problem, &fixed, solution, |pose, dislike| {
-        let file = File::create(&output).expect("file creation error");
-        let writer = BufWriter::new(file);
-        serde_json::to_writer(writer, &pose).expect("write error");
-        println!("{:?} dislike:{}", output, dislike);
-    });
+    amylase_bruteforce::solve(
+        problem,
+        &fixed,
+        solution,
+        |pose, dislike| {
+            let file = File::create(&output).expect("file creation error");
+            let writer = BufWriter::new(file);
+            serde_json::to_writer(writer, &pose).expect("write error");
+            println!("{:?} dislike:{}", output, dislike);
+        },
+        None,
+    );
 
     Ok(())
 }

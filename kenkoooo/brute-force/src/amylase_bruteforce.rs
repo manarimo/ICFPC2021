@@ -1,13 +1,44 @@
 use manarimo_lib::geometry::{dislike, Edge, Point};
 use manarimo_lib::types::{Pose, Problem};
-use rand::prelude::*;
 use std::cmp::Reverse;
 
-pub fn solve<F>(problem: Problem, fixed: &[usize], solution: Pose, report: F)
-where
+pub struct Xorshift(u64);
+
+impl Xorshift {
+    pub fn get(&mut self) -> u64 {
+        let mut x = self.0;
+        x ^= x << 13;
+        x ^= x >> 7;
+        x ^= x << 17;
+        self.0 = x;
+        x
+    }
+}
+
+trait Shuffle {
+    fn shuffle(&mut self, rng: &mut Xorshift);
+}
+impl<T> Shuffle for Vec<T> {
+    fn shuffle(&mut self, rng: &mut Xorshift) {
+        let mut length = self.len();
+        while length > 0 {
+            let next = (rng.get() as usize) % length;
+            self.swap(next, length - 1);
+            length -= 1;
+        }
+    }
+}
+pub fn solve<F, G>(
+    problem: Problem,
+    fixed: &[usize],
+    solution: Pose,
+    report: F,
+    progress_report: Option<G>,
+) where
     F: Fn(Pose, i64),
+    G: Fn(usize) + Copy,
 {
-    let mut rng = StdRng::seed_from_u64(101);
+    let mut rng = Xorshift(101);
     let hole = problem
         .hole
         .into_iter()
@@ -66,11 +97,12 @@ where
         report,
         template_solution: solution,
         is_fixed,
+        progress_report,
     };
-    dfs.dfs(&mut vec![], 1 << 60);
+    dfs.dfs(&mut vec![], 1 << 60, &mut 0);
 }
 
-struct DfsSolver<F> {
+struct DfsSolver<F, G> {
     valid_positions: Vec<Point>,
     original_pose: Vec<Point>,
     hole: Vec<Point>,
@@ -81,10 +113,16 @@ struct DfsSolver<F> {
     template_solution: Pose,
     is_fixed: Vec<bool>,
     report: F,
+    progress_report: Option<G>,
 }
 
-impl<F: Fn(Pose, i64)> DfsSolver<F> {
-    fn dfs(&self, positions: &mut Vec<Point>, best: i64) -> i64 {
+impl<F: Fn(Pose, i64), G: Fn(usize) + Copy> DfsSolver<F, G> {
+    fn dfs(&self, positions: &mut Vec<Point>, best: i64, step: &mut usize) -> i64 {
+        *step += 1;
+        if let Some(progress_report) = self.progress_report {
+            (progress_report)(*step);
+        }
+
         if positions.len() >= self.original_pose.len() {
             let result = dislike(&self.hole, positions);
             return if result < best {
@@ -135,7 +173,7 @@ impl<F: Fn(Pose, i64)> DfsSolver<F> {
             }
 
             positions.push(p);
-            best = self.dfs(positions, best);
+            best = self.dfs(positions, best, step);
             positions.pop();
         }
         best

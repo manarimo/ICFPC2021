@@ -28,3 +28,32 @@ pub fn solve_annealing(problem_json: &str) -> String {
     let ans = serde_json::to_string(&ans).unwrap();
     ans
 }
+
+#[wasm_bindgen]
+pub fn solve_brute_force(
+    problem_json: &str,
+    solution_json: &str,
+    fixed_indices_json: &str,
+    f: &js_sys::Function,
+) {
+    let problem: Problem = serde_json::from_str(problem_json).unwrap();
+    let solution: Pose = serde_json::from_str(solution_json).unwrap();
+    let fixed: Vec<usize> = serde_json::from_str(fixed_indices_json).unwrap();
+    log("started");
+    brute_force::amylase_bruteforce::solve(
+        problem,
+        &fixed,
+        solution,
+        |pose, _score| {
+            let pose_string = serde_json::to_string(&pose).unwrap();
+            let pose_string = JsValue::from_str(&pose_string);
+            let this = JsValue::null();
+            let _ = f.call1(&this, &pose_string);
+        },
+        Some(|step: usize| {
+            if step % 10000 == 0 {
+                log(&format!("step={}", step));
+            }
+        }),
+    );
+}

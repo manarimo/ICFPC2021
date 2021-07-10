@@ -213,11 +213,8 @@ const SvgEditor = (props: SvgEditorProps) => {
               problem={problem}
               userPose={userPose}
               selectedVertices={selectedVertices}
-              onSolve={([x, y]) => {
-                const target = selectedVertices[0];
-                const newPose = [...userPose];
-                newPose[target] = [x, y];
-                setUserPose(newPose);
+              onSolve={(newPose) => {
+                setUserPose([...newPose]);
               }}
             />
           </Row>

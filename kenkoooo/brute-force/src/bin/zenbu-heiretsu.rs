@@ -35,12 +35,18 @@ fn main() -> Result<(), Box<dyn Error>> {
             let solution = Pose {
                 vertices: input.figure.vertices.clone(),
             };
-            amylase_bruteforce::solve(input, &[], solution, |pose, dislike| {
-                let file = File::create(&output).expect("file creation error");
-                let writer = BufWriter::new(file);
-                serde_json::to_writer(writer, &pose).expect("write error");
-                println!("{:?} dislike:{}", output, dislike);
-            });
+            amylase_bruteforce::solve(
+                input,
+                &[],
+                solution,
+                |pose, dislike| {
+                    let file = File::create(&output).expect("file creation error");
+                    let writer = BufWriter::new(file);
+                    serde_json::to_writer(writer, &pose).expect("write error");
+                    println!("{:?} dislike:{}", output, dislike);
+                },
+                None,
+            );
         });
 
     Ok(())
