@@ -24,6 +24,7 @@ bool inside_double[MAX_C * 2][MAX_C * 2];
 double dist[MAX_C][MAX_C];
 number min_len[MAX_M];
 number max_len[MAX_M];
+number min_x = 1e18, min_y = 1e18, max_x = 0, max_y = 0;
 double penalty_weight;
 P outer;
 
@@ -468,7 +469,7 @@ double penalty_length_diff(const vector<vector<pair<int, int>>>& graph, const ve
 }
 
 bool outside(const P& p) {
-    return p.X < 0 || p.X >= MAX_C || p.Y < 0 || p.Y >= MAX_C;
+    return p.X < min_x || p.X > max_x || p.Y < min_y || p.Y > max_y;
 }
 
 bool outside(const vector<P>& figure) {
@@ -561,15 +562,16 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    number mx = 0, my = 0;
     for (const P& p : hole) {
-        mx = max(mx, p.X);
-        my = max(my, p.Y);
+        min_x = min(min_x, p.X);
+        min_y = min(min_y, p.Y);
+        max_x = max(max_x, p.X);
+        max_y = max(max_y, p.Y);
     }
-    outer = make_pair(mx * 2 + 1, my * 2 + 1);
+    outer = make_pair(max_x * 2 + 1, max_y * 2 + 1);
     
-    for (int x = 0; x < MAX_C; x++) {
-        for (int y = 0; y < MAX_C; y++) {
+    for (int x = min_x; x <= max_x; x++) {
+        for (int y = min_y; y <= max_y; y++) {
             inside[x][y] = is_point_inside(hole, make_pair(x, y));
             if (!inside[x][y]) dist[x][y] = dist_hole_point(hole, make_pair(x, y));
         }
@@ -577,8 +579,8 @@ int main(int argc, char* argv[]) {
     
     vector<P> double_hole(hole.size());
     for (int i = 0; i < hole.size(); i++) double_hole[i] = make_pair(hole[i].X * 2, hole[i].Y * 2);
-    for (int x = 0; x < MAX_C * 2; x++) {
-        for (int y = 0; y < MAX_C * 2; y++) {
+    for (int x = min_x * 2; x <= max_x * 2; x++) {
+        for (int y = min_y * 2; y <= max_y * 2; y++) {
             inside_double[x][y] = is_point_inside(double_hole, make_pair(x, y));
         }
     }
@@ -591,6 +593,13 @@ int main(int argc, char* argv[]) {
     }
     
     if (!figure_hint.empty()) figure = figure_hint;
+    
+    for (int i = 0; i < n; i++) {
+        if (outside(figure[i])) {
+            figure[i].X = clamp(figure[i].X, min_x, max_x);
+            figure[i].Y = clamp(figure[i].Y, min_y, max_y);
+        }
+    }
     
     number dislike = calc_dislike(hole, figure);
     double weight = sqrt(dislike);
