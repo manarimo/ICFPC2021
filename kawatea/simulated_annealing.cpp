@@ -257,7 +257,6 @@ number d(const P& p, const P& q) {
 number calc_dislike(const vector<P>& hole, const vector<P>& positions) {
     number ds = 0;
 
-    #pragma omp parallel
     for (const P& h: hole) {
         number min_p = 1e18;
 
@@ -279,6 +278,7 @@ number calc_dislike(const vector<P>& hole, const vector<P>& figure, const vector
         v = update[0];
         w = update[1];
     }
+
     for (const P& h: hole) {
         number min_p = 1e18;
         for (int i = 0; i < figure.size(); i++) {
