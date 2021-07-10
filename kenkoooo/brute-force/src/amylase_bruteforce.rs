@@ -2,12 +2,11 @@ use manarimo_lib::geometry::{dislike, Edge, Point};
 use manarimo_lib::types::{Pose, Problem};
 use rand::prelude::*;
 use std::cmp::Reverse;
-use std::env;
-use std::error::Error;
-use std::fs::{File, OpenOptions};
-use std::io::{BufReader, BufWriter};
 
-fn solve(problem: Problem, step_by: usize, output_path: &str) {
+pub fn solve<F>(problem: Problem, step_by: usize, report: F)
+where
+    F: Fn(Pose, i64),
+{
     let mut rng = StdRng::seed_from_u64(101);
     let hole = problem
         .hole
@@ -59,12 +58,12 @@ fn solve(problem: Problem, step_by: usize, output_path: &str) {
         graph,
         vid_to_order,
         eps: problem.epsilon,
-        output_path: output_path.into(),
+        report,
     };
     dfs.dfs(&mut vec![], 1 << 60);
 }
 
-struct DfsSolver {
+struct DfsSolver<F> {
     valid_positions: Vec<Point>,
     original_pose: Vec<Point>,
     hole: Vec<Point>,
@@ -72,10 +71,10 @@ struct DfsSolver {
     graph: Vec<Vec<usize>>,
     vid_to_order: Vec<usize>,
     eps: i64,
-    output_path: String,
+    report: F,
 }
 
-impl DfsSolver {
+impl<F: Fn(Pose, i64)> DfsSolver<F> {
     fn dfs(&self, positions: &mut Vec<Point>, best: i64) -> i64 {
         if positions.len() >= self.original_pose.len() {
             let result = dislike(&self.hole, positions);
@@ -86,10 +85,7 @@ impl DfsSolver {
                     .map(|p| [p.x, p.y])
                     .collect::<Vec<_>>();
                 let pose = Pose { vertices };
-                let file = File::create(&self.output_path).expect("file creation error");
-                let writer = BufWriter::new(file);
-                serde_json::to_writer(writer, &pose).expect("write error");
-                println!("{} dislike:{}", self.output_path, result);
+                (self.report)(pose, result);
                 result
             } else {
                 best
@@ -127,18 +123,4 @@ impl DfsSolver {
         }
         best
     }
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    let args = env::args().collect::<Vec<_>>();
-    let input_path = &args[1];
-    let output_path = &args[2];
-    println!("{} ->{}", input_path, output_path);
-
-    let file = File::open(&input_path)?;
-    let reader = BufReader::new(file);
-    let problem: Problem = serde_json::from_reader(reader)?;
-    solve(problem, 1, output_path);
-
-    Ok(())
 }
