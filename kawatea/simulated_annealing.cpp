@@ -19,8 +19,6 @@ using E = pair<int, int>;
 
 const int MAX_C = 1000;
 const int MAX_M = 1000;
-const double COS = cos(0.1);
-const double SIN = sin(0.1);
 bool inside[MAX_C][MAX_C];
 bool inside_double[MAX_C * 2][MAX_C * 2];
 double dist[MAX_C][MAX_C];
@@ -473,8 +471,8 @@ int main(int argc, char* argv[]) {
     vector<P> new_figure(n);
     vector<P> best_figure(n);
     while (!sa.end()) {
-        int select = random::get(105);
-        double time = sa.get_time() * 1000;
+        int select = random::get(100);
+        double time = sa.get_time() * sa.get_time();
         double new_penalty_vertex = 0;
         double new_penalty_edge = 0;
         double new_penalty_length = 0;
@@ -517,41 +515,20 @@ int main(int argc, char* argv[]) {
                 new_figure[i].Y += dy;
             }
         } else if (select < 90) {
-            double sum_x = 0, sum_y = 0;
-            for (const P& p : figure) {
-                sum_x += p.X;
-                sum_y += p.Y;
-            }
-            sum_x /= n;
-            sum_y /= n;
-            
-            int r = random::get(2);
-            for (int i = 0; i < n; i++) {
-                double x = figure[i].X - sum_x;
-                double y = figure[i].Y - sum_y;
-                if (r == 0) {
-                    new_figure[i].X = round(sum_x + x * COS - y * SIN);
-                    new_figure[i].Y = round(sum_y + y * COS + x * SIN);
-                } else {
-                    new_figure[i].X = round(sum_x + x * COS + y * SIN);
-                    new_figure[i].Y = round(sum_y + y * COS - x * SIN);
-                }
-            }
-        } else if (select < 95) {
             int v = random::get(n);
             if (graph[v].size() != 1) continue;
             
             int w = graph[v][0];
             new_figure[v].X = figure[w].X * 2 - figure[v].X;
             new_figure[v].Y = figure[w].Y * 2 - figure[v].Y;
-        } else if (select < 100) {
+        } else if (select < 95) {
             int v = random::get(n);
             if (graph[v].size() != 2) continue;
             
             int w1 = graph[v][0];
             int w2 = graph[v][1];
             new_figure[v] = reflection(figure[w1], figure[w2], figure[v]);
-        } else if (select < 105) {
+        } else if (select < 100) {
             int vf = random::get(n);
             int vh = random::get(hole.size());
             
