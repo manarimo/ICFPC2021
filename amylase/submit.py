@@ -27,7 +27,7 @@ def main():
             if problem_id not in bests:
                 bests[problem_id] = tup
             bests[problem_id] = min(bests[problem_id], tup)
-    for problem_id in range(1, 78):
+    for problem_id in range(1, 79):
         if problem_id in bests:
             print(f"{problem_id}: global: {global_bests[problem_id]}, ours: {bests[problem_id][0]}")
             headers = {'Authorization': 'Bearer 78145a42-91f5-4559-af81-3b0990463771'}

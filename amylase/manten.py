@@ -1,4 +1,6 @@
-from amylase.bruteforce import is_point_inside, dislike, is_edge_inside, is_valid_edge
+import math
+
+from amylase.bruteforce import is_point_inside, dislike, is_edge_inside, is_valid_edge, d
 from collections import defaultdict
 from pathlib import Path
 import json
@@ -29,6 +31,17 @@ def solve(spec, report_result):
     for fr, to in edges:
         graph[fr].append(to)
         graph[to].append(fr)
+    distance_inf = (max_x - min_x) + (max_y - min_y)
+    distance_upperbounds = [[distance_inf for _ in nodes] for _ in nodes]
+    for i in range(len(nodes)):
+        distance_upperbounds[i][i] = 0
+    for fr, tos in graph.items():
+        for to in tos:
+            distance_upperbounds[fr][to] = ((1 + spec["epsilon"] / 1_000_000) * d(nodes[fr], nodes[to])) ** 0.5
+    for k in range(len(nodes)):
+        for i in range(len(nodes)):
+            for j in range(len(nodes)):
+                distance_upperbounds[i][j] = min(distance_upperbounds[i][j], distance_upperbounds[i][k] + distance_upperbounds[k][j])
 
     positions = []
     def dfs(i, hints, best):
@@ -40,16 +53,21 @@ def solve(spec, report_result):
         candidate_positions = [hints[i]] if i in hints else valid_positions
         for p in candidate_positions:
             valid = True
-            for j in graph[i]:
+            for j in range(len(nodes)):
                 if j >= i and j not in hints:
                     continue
                 if j in hints:
                     j_position = hints[j]
                 else:
                     j_position = positions[j]
-                if not is_valid_edge(nodes[i], nodes[j], p, j_position, spec["epsilon"]):
-                    valid = False
-                    break
+                if j in graph[i]:
+                    if not is_valid_edge(nodes[i], nodes[j], p, j_position, spec["epsilon"]):
+                        valid = False
+                        break
+                else:
+                    if d(p, j_position) > math.ceil(distance_upperbounds[i][j] ** 2):
+                        valid = False
+                        break
                 if not is_edge_inside(hole, [p, j_position]):
                     valid = False
                     break
@@ -74,14 +92,19 @@ def solve(spec, report_result):
         for assignment in candidate:
             valid = True
             if assignment != -1:
-                for j in graph[i]:
+                for j in range(len(nodes)):
                     if j >= i:
                         continue
                     if j not in hints:
                         continue
-                    if not is_valid_edge(nodes[i], nodes[j], hole[assignment], hints[j], spec["epsilon"]):
-                        valid = False
-                        break
+                    if j in graph[i]:
+                        if not is_valid_edge(nodes[i], nodes[j], hole[assignment], hints[j], spec["epsilon"]):
+                            valid = False
+                            break
+                    else:
+                        if d(hole[assignment], hints[j]) > math.ceil(distance_upperbounds[i][j] ** 2):
+                            valid = False
+                            break
                     if not is_edge_inside(hole, [hole[assignment], hints[j]]):
                         valid = False
                         break
