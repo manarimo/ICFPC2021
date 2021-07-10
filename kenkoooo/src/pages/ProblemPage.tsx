@@ -32,6 +32,9 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [slideSize, setSlideSize] = useState<number>(1);
   const [selectedVertices, setSelectedVertices] = useState<number[]>([]);
+  const [breakALeg, setBreakALeg] = useState<boolean>(false);
+  const [breakALegSrc, setBreakALegSrc] = useState<number>(0);
+  const [breakALegDst, setBreakALegDst] = useState<number>(0);
 
   const getOutput = () => {
     return JSON.stringify({
@@ -96,6 +99,38 @@ const SvgEditor = (props: SvgEditorProps) => {
     );
   };
 
+  const canBreakALeg = () => {
+    return !!problem.figure.edges.find(
+      ([i, j]) =>
+        Math.min(i, j) === Math.min(breakALegSrc, breakALegDst) &&
+        Math.max(i, j) === Math.max(breakALegSrc, breakALegDst)
+    );
+  };
+
+  const updateBreakALeg = (value: boolean) => {
+    if (breakALeg && !value) {
+      setBreakALeg(false);
+      return;
+    }
+    if (canBreakALeg()) {
+      setBreakALeg(true);
+    }
+  };
+
+  const updateBreakALegSrc = (val: number) => {
+    if (breakALeg) {
+      return;
+    }
+    setBreakALegSrc(val);
+  };
+
+  const updateBreakALegDst = (val: number) => {
+    if (breakALeg) {
+      return;
+    }
+    setBreakALegDst(val);
+  };
+
   return (
     <Container>
       <Row>
@@ -143,10 +178,39 @@ const SvgEditor = (props: SvgEditorProps) => {
           <Row>
             <Form.Control
               as="textarea"
-              rows={10}
+              rows={4}
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
+          </Row>
+          <Row>
+            <Col>
+              <Form.Check
+                type="checkbox"
+                label="Break A Leg"
+                checked={breakALeg}
+                disabled={!canBreakALeg()}
+                onChange={(e) => updateBreakALeg(e.target.value === "true")}
+              />
+            </Col>
+            <Col>
+              <Form.Control
+                type="number"
+                min={0}
+                max={problem.figure.vertices.length - 1}
+                value={breakALegSrc}
+                onChange={(e) => updateBreakALegSrc(parseInt(e.target.value))}
+              />
+            </Col>
+            <Col>
+              <Form.Control
+                type="number"
+                min={0}
+                max={problem.figure.vertices.length - 1}
+                value={breakALegDst}
+                onChange={(e) => updateBreakALegDst(parseInt(e.target.value))}
+              />
+            </Col>
           </Row>
           <Row>
             <PoseInfoPanel userPose={userPose} problem={problem} />
