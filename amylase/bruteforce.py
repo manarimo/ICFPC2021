@@ -3,7 +3,7 @@ import math
 from argparse import ArgumentParser
 from collections import defaultdict
 from pathlib import Path
-from functools import lru_cache
+import itertools
 import random
 
 
@@ -94,7 +94,8 @@ def dislike(hole, positions):
     return ds
 
 
-def solve(spec, report_result, skip=1):
+def solve(spec, hint, report_result, best=10**18, skip=1):
+    # hint: vertex id -> List[Position]
     xs, ys = [], []
     for v in spec["hole"]:
         xs.append(v[0])
@@ -131,7 +132,8 @@ def solve(spec, report_result, skip=1):
             return best
 
         vid = vertex_ids[i]
-        for p in valid_positions:
+        candidate_positions = hint.get(vid, valid_positions)
+        for p in candidate_positions:
             valid = True
             for j in graph[vid]:
                 if vid2order[j] >= i:
@@ -148,7 +150,7 @@ def solve(spec, report_result, skip=1):
             best = dfs(i + 1, best)
             positions.pop()
         return best
-    dfs(0, 10 ** 18)
+    return dfs(0, best)
 
 
 def main(input_path, output_path):
@@ -159,7 +161,26 @@ def main(input_path, output_path):
         print(f"{input_path} dislike: {score}")
         with open(output_path, "w") as f:
             json.dump({"vertices": pose}, f)
-    solve(spec, report_result, skip=2)
+    solve(spec, {}, report_result, skip=2)
+    print(f"end: {input_path} -> {output_path}")
+
+
+def main_bonus(input_path, output_path):
+    with open(input_path) as f:
+        spec = json.load(f)
+    bonuses = spec["bonuses"]
+    vertices = spec["figure"]["vertices"]
+    if len(vertices) < len(bonuses):
+        return
+    best = 10 ** 18
+    print(f"start: {input_path} -> {output_path}")
+    for assignment in itertools.permutations(range(len(vertices)), len(bonuses)):
+        hint = {vid: [bonus["position"]] for vid, bonus in zip(assignment, bonuses)}
+        def report_result(score, pose):
+            print(f"{input_path} dislike: {score}")
+            with open(output_path, "w") as f:
+                json.dump({"vertices": pose}, f)
+        best = solve(spec, hint, report_result, best, skip=1)
     print(f"end: {input_path} -> {output_path}")
 
 
@@ -167,15 +188,25 @@ def _main(args):
     main(*args)
 
 
-if __name__ == '__main__':
-    output_dir = Path("../solutions/amylase-bruteforce/")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    from multiprocessing import Pool
-    pool = Pool(processes=7)
+def _main_bonus(args):
+    main_bonus(*args)
 
-    args = []
-    for problem_id in [41, 49, 58, 2, 4, 5, 9, 10]:
-        input_path = f"../problems/{problem_id}.json"
-        output_path = str(output_dir / f"{problem_id}.json")
-        args.append((input_path, output_path))
-    pool.map(_main, args)
+
+if __name__ == '__main__':
+    bonus = True
+    if bonus:
+        output_dir = Path("../solutions/amylase-bruteforce-bonus/")
+        func = _main_bonus
+    else:
+        output_dir = Path("../solutions/amylase-bruteforce/")
+        func = _main
+    output_dir.mkdir(parents=True, exist_ok=True)
+    from pebble import ProcessPool
+    import multiprocessing
+    with ProcessPool(max_workers=multiprocessing.cpu_count() - 1) as pool:
+        args = []
+        for problem_id in range(1, 89):
+            input_path = f"../problems/{problem_id}.json"
+            output_path = str(output_dir / f"{problem_id}.json")
+            args.append((input_path, output_path))
+        future = pool.map(_main_bonus, args, chunksize=1, timeout=300)
