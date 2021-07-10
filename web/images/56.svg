@@ -3,4 +3,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-10 -10 89 122" style="background-color: #00000066">
   <path d="M 0,34 L 1,14 L 15,13 L 7,0 L 35,0 L 53,2 L 67,12 L 56,26 L 40,34 L 40,60 L 65,54 L 63,78 L 50,83 L 30,99 L 24,77 L 1,95 L 8,72 L 14,54 L 0,56" style="fill:#ffffff; fill-rule:evenodd; stroke:none" />
   <g style="fill:none;stroke:#ff0000;stroke-linecap:round"><path d="M 0,32 L 20,12" /><path d="M 0,32 L 20,52" /><path d="M 20,12 L 40,32" /><path d="M 20,52 L 35,74" /><path d="M 20,52 L 40,32" /><path d="M 34,0 L 40,32" /><path d="M 34,0 L 65,12" /><path d="M 35,74 L 40,102" /><path d="M 35,74 L 63,69" /><path d="M 40,32 L 65,12" /><path d="M 40,32 L 67,46" /><path d="M 40,102 L 69,95" /><path d="M 63,69 L 67,46" /><path d="M 63,69 L 69,95" /><path d="M 65,12 L 67,46" /></g>
+  <circle cx="1" cy="95" r="5px" style="fill:#d0d00080" />
 </svg>
