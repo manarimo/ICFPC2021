@@ -1,4 +1,5 @@
 import math
+import random
 
 from amylase.bruteforce import is_point_inside, dislike, is_edge_inside, is_valid_edge, d
 from collections import defaultdict
@@ -90,6 +91,7 @@ def solve(spec, report_result):
             return dfs(0, hints, best)
         used = set(assignments) - {-1}
         candidate = [assign for assign in range(len(hole)) if assign not in used] + [-1]
+        random.shuffle(candidate)
         for assignment in candidate:
             valid = True
             if assignment != -1:
@@ -142,7 +144,7 @@ if __name__ == '__main__':
     pool = Pool(processes=7)
 
     args = []
-    for problem_id in [64, 70, 72, 73, 77]:
+    for problem_id in [10, 64, 72, 73, 77]:
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))
