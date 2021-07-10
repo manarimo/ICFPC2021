@@ -15,7 +15,7 @@ pub struct Figure {
     pub vertices: Vec<Pair>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Pose {
     pub vertices: Vec<Pair>,
 }

@@ -1,5 +1,5 @@
 use brute_force::amylase_bruteforce;
-use manarimo_lib::types::Problem;
+use manarimo_lib::types::{Pose, Problem};
 use rayon::prelude::*;
 use std::env;
 use std::error::Error;
@@ -29,14 +29,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         inputs.push((problem, output));
     }
 
-    inputs.into_par_iter().for_each(|(input, output)| {
-        amylase_bruteforce::solve(input, 1, |pose, dislike| {
-            let file = File::create(&output).expect("file creation error");
-            let writer = BufWriter::new(file);
-            serde_json::to_writer(writer, &pose).expect("write error");
-            println!("{:?} dislike:{}", output, dislike);
+    inputs
+        .into_par_iter()
+        .for_each(|(input, output): (Problem, _)| {
+            let solution = Pose {
+                vertices: input.figure.vertices.clone(),
+            };
+            amylase_bruteforce::solve(input, &[], solution, |pose, dislike| {
+                let file = File::create(&output).expect("file creation error");
+                let writer = BufWriter::new(file);
+                serde_json::to_writer(writer, &pose).expect("write error");
+                println!("{:?} dislike:{}", output, dislike);
+            });
         });
-    });
 
     Ok(())
 }

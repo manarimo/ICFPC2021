@@ -3,7 +3,7 @@ use manarimo_lib::types::{Pose, Problem};
 use rand::prelude::*;
 use std::cmp::Reverse;
 
-pub fn solve<F>(problem: Problem, step_by: usize, report: F)
+pub fn solve<F>(problem: Problem, fixed: &[usize], solution: Pose, report: F)
 where
     F: Fn(Pose, i64),
 {
@@ -19,8 +19,8 @@ where
     let max_y = hole.iter().map(|p| p.y).max().unwrap();
 
     let mut valid_positions = vec![];
-    for x in (min_x..=max_x).step_by(step_by) {
-        for y in (min_y..=max_y).step_by(step_by) {
+    for x in min_x..=max_x {
+        for y in min_y..=max_y {
             let p = Point { x, y };
             if p.is_contained(&hole) {
                 valid_positions.push(p);
@@ -50,6 +50,11 @@ where
         .into_iter()
         .map(Point::from)
         .collect::<Vec<_>>();
+
+    let mut is_fixed = vec![false; n];
+    for &vid in fixed {
+        is_fixed[vid] = true;
+    }
     let dfs = DfsSolver {
         valid_positions,
         original_pose,
@@ -59,6 +64,8 @@ where
         vid_to_order,
         eps: problem.epsilon,
         report,
+        template_solution: solution,
+        is_fixed,
     };
     dfs.dfs(&mut vec![], 1 << 60);
 }
@@ -71,6 +78,8 @@ struct DfsSolver<F> {
     graph: Vec<Vec<usize>>,
     vid_to_order: Vec<usize>,
     eps: i64,
+    template_solution: Pose,
+    is_fixed: Vec<bool>,
     report: F,
 }
 
@@ -95,7 +104,15 @@ impl<F: Fn(Pose, i64)> DfsSolver<F> {
         let i = positions.len();
         let vid = self.vertex_ids[i];
         let mut best = best;
-        for &p in self.valid_positions.iter() {
+
+        let template_p = [Point::from(self.template_solution.vertices[vid])];
+        let iter = if self.is_fixed[vid] {
+            template_p.iter()
+        } else {
+            self.valid_positions.iter()
+        };
+
+        for &p in iter {
             let mut valid = true;
             for &next_vid in self.graph[vid].iter() {
                 if self.vid_to_order[next_vid] >= i {
