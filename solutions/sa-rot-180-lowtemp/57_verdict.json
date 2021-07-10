@@ -1,0 +1,27 @@
+{
+    "isValid": false,
+    "score": 0,
+    "error": {
+        "srcEdge": {
+            "src": {
+                "x": 0,
+                "y": 100
+            },
+            "dst": {
+                "x": 15,
+                "y": 68
+            }
+        },
+        "dstEdge": {
+            "src": {
+                "x": 107,
+                "y": 31
+            },
+            "dst": {
+                "x": 107,
+                "y": 64
+            }
+        },
+        "message": "Edge 0 violates length constraint"
+    }
+}

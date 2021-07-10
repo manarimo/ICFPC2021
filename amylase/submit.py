@@ -11,7 +11,7 @@ def main():
         global_bests = {d["problem_id"]: d["minimal_dislikes"] for d in minimal_dislikes}
     for solution_dir in Path("../solutions").iterdir():
         solution_name = solution_dir.name
-        for problem_id in range(1, 78):
+        for problem_id in range(1, 79):
             solution_file = solution_dir / f"{problem_id}.json"
             verdict_file = solution_dir / f"{problem_id}_verdict.json"
             if not solution_file.exists() or not verdict_file.exists():

@@ -427,8 +427,8 @@ double penalty_edge_diff(const vector<P>& hole, const vector<vector<pair<int, in
 }
 
 number len_diff(number len, number min_len, number max_len) {
-    if (len < min_len) return min_len - len;
-    if (len > max_len) return len - max_len;
+    if (len < min_len) return (min_len - len) * (min_len - len);
+    if (len > max_len) return (len - max_len) * (len - max_len);
     return 0;
 }
 
@@ -596,14 +596,22 @@ int main(int argc, char* argv[]) {
     
     for (int i = 0; i < n; i++) {
         if (outside(figure[i])) {
-            figure[i].X = clamp(figure[i].X, min_x, max_x);
-            figure[i].Y = clamp(figure[i].Y, min_y, max_y);
+            if (figure[i].X < min_x) {
+                figure[i].X = min_x;
+            } else if (figure[i].X > max_x) {
+                figure[i].X = max_x;
+            }
+            if (figure[i].Y < min_y) {
+                figure[i].Y = min_y;
+            } else if (figure[i].Y > max_y) {
+                figure[i].Y = max_y;
+            }
         }
     }
     
     number dislike = calc_dislike(hole, figure);
     double weight = sqrt(dislike);
-    penalty_weight = weight;
+    penalty_weight = dislike / edge.size();
     
     double penalty_vertex = calc_penalty_vertex(figure);
     double penalty_edge = calc_penalty_edge(hole, edge, figure);
@@ -616,7 +624,7 @@ int main(int argc, char* argv[]) {
     vector<P> new_figure(n);
     vector<P> best_figure(n);
     while (!sa.end()) {
-        int select = random::get(100);
+        int select = random::get(105);
         double penalty_weight = weight * (sa.get_time() + 1) * (sa.get_time() + 1);
         double new_penalty_vertex = penalty_vertex;
         double new_penalty_edge = penalty_edge;
@@ -694,6 +702,31 @@ int main(int argc, char* argv[]) {
             int vf = random::get(n);
             int vh = random::get(hole.size());
             
+            new_figure[vf] = hole[vh];
+            if (outside(new_figure[vf])) continue;
+            update.push_back(vf);
+        } else if (select < 105) {
+            // はみ出している辺の端点をもう一方の端点に近いholeの頂点に移す
+            static vector<int> candidate;
+            candidate.clear();
+            for (int i = 0; i < edge.size(); i++) {
+                if (!is_edge_inside(hole, figure[edge[i].first], figure[edge[i].second])) candidate.push_back(i);
+            }
+            if (candidate.size() == 0) continue;
+            
+            int r = random::get(candidate.size());
+            int vf = edge[r].first;
+            int wf = edge[r].second;
+            if (random::toss()) swap(vf, wf);
+            int vh = -1;
+            number md = 1e18;
+            for (int i = 0; i < hole.size(); i++) {
+                number cd = d(figure[wf], hole[i]);
+                if (cd < md) {
+                    vh = i;
+                    md = cd;
+                }
+            }
             new_figure[vf] = hole[vh];
             if (outside(new_figure[vf])) continue;
             update.push_back(vf);
