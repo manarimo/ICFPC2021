@@ -11,16 +11,11 @@
 using namespace std;
 using namespace manarimo;
 
-const int MAX_C = 1000;
 const int MAX_M = 1000;
-bool inside[MAX_C][MAX_C];
-bool inside_double[MAX_C * 2][MAX_C * 2];
-double dist[MAX_C][MAX_C];
 number min_len[MAX_M];
 number max_len[MAX_M];
-number min_x = 1e18, min_y = 1e18, max_x = 0, max_y = 0;
 double penalty_weight;
-P outer;
+problem_t problem;
 
 class random {
     public:
@@ -148,67 +143,6 @@ void simulated_annealing::print() const {
     fprintf(stderr, "rejected: %lld\n", rejected);
 }
 
-bool is_point_inside(const vector<P>& hole, const P& point) {
-    int crossings = 0;
-    for (int i = 0; i < hole.size(); ++i) {
-        int j = i + 1;
-        if (__builtin_expect(j >= hole.size(), 0)) {
-            j = 0;
-        }
-        if (is_on_segment(hole[i], hole[j], point)) return true;
-        if (ccw(point, outer, hole[i]) * ccw(point, outer, hole[j]) < 0 && ccw(hole[i], hole[j], point) * ccw(hole[i], hole[j], outer) < 0) {
-            ++crossings;
-        }
-    }
-    return crossings % 2 == 1;
-}
-
-bool is_edge_inside(const vector<P>& hole, const P& p1, const P& p2) {
-    if (!inside[p1.X][p1.Y]) return false;
-    if (!inside[p2.X][p2.Y]) return false;
-
-    int prev_ccw = ccw(p1, p2, hole[0]);
-    for (int i = 0; i < hole.size(); ++i) {
-        int j = i + 1;
-        if (__builtin_expect(j >= hole.size(), 0)) {
-            j = 0;
-        }
-        const int next_ccw = ccw(p1, p2, hole[j]);
-        if (prev_ccw * next_ccw < 0 && ccw(hole[i], hole[j], p1) * ccw(hole[i], hole[j], p2) < 0) return false;
-        prev_ccw = next_ccw;
-    }
-    
-    static vector<P> splitting_points;
-    splitting_points.clear();
-    splitting_points.push_back(p1);
-    splitting_points.push_back(p2);
-    for (const P& p : hole) {
-        if (is_on_segment(p1, p2, p)) splitting_points.push_back(p);
-    }
-    sort(splitting_points.begin(), splitting_points.end());
-
-    for (int i = 0; i + 1 < splitting_points.size(); i++) {
-        if (!inside_double[splitting_points[i].X + splitting_points[i + 1].X][splitting_points[i].Y + splitting_points[i + 1].Y]) return false;
-    }
-    
-    return true;
-}
-
-number calc_dislike(const vector<P>& hole, const vector<P>& positions) {
-    number ds = 0;
-
-    for (const P& h: hole) {
-        number min_p = 1e18;
-
-        for (const P& p: positions) {
-            min_p = min(min_p, d(h, p));
-            if (min_p == 0) break;
-        }
-        ds += min_p;
-    }
-    return ds;
-}
-
 number calc_dislike(const vector<P>& hole, const vector<P>& figure, const vector<P>& new_figure, const vector<int>& update) {
     number ds = 0;
     int v = -1, w = -1;
@@ -233,28 +167,20 @@ number calc_dislike(const vector<P>& hole, const vector<P>& figure, const vector
     return ds;
 }
 
-double dist_hole_point(const vector<P>& hole, const P& p) {
-    double dist = 1e18;
-    for (int i = 0; i < hole.size(); i++) {
-        dist = min(dist, dist_line(hole[i], hole[(i + 1) % hole.size()], p));
-    }
-    return dist;
-}
-
 double calc_penalty_vertex(const vector<P>& figure) {
     double penalty = 0;
-    for (const P& p : figure) penalty += dist[p.X][p.Y];
+    for (const P& p : figure) penalty += problem.dist[p.X][p.Y];
     return penalty;
 }
 
 double penalty_vertex_diff(const P& orig, const P& dest) {
-    return dist[dest.X][dest.Y] - dist[orig.X][orig.Y];
+    return problem.dist[dest.X][dest.Y] - problem.dist[orig.X][orig.Y];
 }
 
 double calc_penalty_edge(const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
     double penalty = 0;
     for (const pair<int, int>& p : edge) {
-        if (!is_edge_inside(hole, figure[p.first], figure[p.second])) penalty += penalty_weight;
+        if (!problem.is_edge_inside(figure[p.first], figure[p.second])) penalty += penalty_weight;
     }
     return penalty;
 }
@@ -262,8 +188,8 @@ double calc_penalty_edge(const vector<P>& hole, const vector<pair<int, int>>& ed
 double penalty_edge_diff(const vector<P>& hole, const vector<vector<pair<int, int>>>& graph, const vector<P>& figure, int v, const P& orig, const P& dest) {
     double diff = 0;
     for (const pair<int, int>& p : graph[v]) {
-        if (!is_edge_inside(hole, orig, figure[p.first])) diff -= penalty_weight;
-        if (!is_edge_inside(hole, dest, figure[p.first])) diff += penalty_weight;
+        if (!problem.is_edge_inside(orig, figure[p.first])) diff -= penalty_weight;
+        if (!problem.is_edge_inside(dest, figure[p.first])) diff += penalty_weight;
     }
     return diff;
 }
@@ -272,17 +198,17 @@ double penalty_edge_diff(const vector<P>& hole, const vector<vector<pair<int, in
     double diff = 0;
     for (const pair<int, int>& p : graph[v1]) {
         if (p.first == v2) {
-            if (!is_edge_inside(hole, orig1, orig2)) diff -= penalty_weight;
-            if (!is_edge_inside(hole, dest1, dest2)) diff += penalty_weight;
+            if (!problem.is_edge_inside(orig1, orig2)) diff -= penalty_weight;
+            if (!problem.is_edge_inside(dest1, dest2)) diff += penalty_weight;
             continue;
         }
-        if (!is_edge_inside(hole, orig1, figure[p.first])) diff -= penalty_weight;
-        if (!is_edge_inside(hole, dest1, figure[p.first])) diff += penalty_weight;
+        if (!problem.is_edge_inside(orig1, figure[p.first])) diff -= penalty_weight;
+        if (!problem.is_edge_inside(dest1, figure[p.first])) diff += penalty_weight;
     }
     for (const pair<int, int>& p : graph[v2]) {
         if (p.first == v1) continue;
-        if (!is_edge_inside(hole, orig2, figure[p.first])) diff -= penalty_weight;
-        if (!is_edge_inside(hole, dest2, figure[p.first])) diff += penalty_weight;
+        if (!problem.is_edge_inside(orig2, figure[p.first])) diff -= penalty_weight;
+        if (!problem.is_edge_inside(dest2, figure[p.first])) diff += penalty_weight;
     }
     return diff;
 }
@@ -330,7 +256,7 @@ double penalty_length_diff(const vector<vector<pair<int, int>>>& graph, const ve
 }
 
 bool outside(const P& p) {
-    return p.X < min_x || p.X > max_x || p.Y < min_y || p.Y > max_y;
+    return p.X < problem.min_x || p.X > problem.max_x || p.Y < problem.min_y || p.Y > problem.max_y;
 }
 
 bool outside(const vector<P>& figure) {
@@ -389,12 +315,12 @@ void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, 
 }
 
 int main(int argc, char* argv[]) {
-    problem prob = load_problem(std::cin);
+    load_problem(std::cin, problem);
 
-    vector<P> hole = prob.hole;
-    vector<pair<int, int>> edge = prob.figure.edges;
-    vector<P> figure = prob.figure.vertices;
-    number epsilon = prob.epsilon;
+    vector<P> hole = problem.hole;
+    vector<pair<int, int>> edge = problem.figure.edges;
+    vector<P> figure = problem.figure.vertices;
+    number epsilon = problem.epsilon;
     
     vector<P> figure_hint;
     if (argc >= 3) {
@@ -421,29 +347,6 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    for (const P& p : hole) {
-        min_x = min(min_x, p.X);
-        min_y = min(min_y, p.Y);
-        max_x = max(max_x, p.X);
-        max_y = max(max_y, p.Y);
-    }
-    outer = make_pair(max_x * 2 + 1, max_y * 2 + 1);
-    
-    for (int x = min_x; x <= max_x; x++) {
-        for (int y = min_y; y <= max_y; y++) {
-            inside[x][y] = is_point_inside(hole, make_pair(x, y));
-            if (!inside[x][y]) dist[x][y] = dist_hole_point(hole, make_pair(x, y));
-        }
-    }
-    
-    vector<P> double_hole(hole.size());
-    for (int i = 0; i < hole.size(); i++) double_hole[i] = make_pair(hole[i].X * 2, hole[i].Y * 2);
-    for (int x = min_x * 2; x <= max_x * 2; x++) {
-        for (int y = min_y * 2; y <= max_y * 2; y++) {
-            inside_double[x][y] = is_point_inside(double_hole, make_pair(x, y));
-        }
-    }
-    
     for (int i = 0; i < edge.size(); i++) {
         number orig = d(figure[edge[i].first], figure[edge[i].second]);
         number diff = orig * epsilon / 1000000;
@@ -455,20 +358,20 @@ int main(int argc, char* argv[]) {
     
     for (int i = 0; i < n; i++) {
         if (outside(figure[i])) {
-            if (figure[i].X < min_x) {
-                figure[i].X = min_x;
-            } else if (figure[i].X > max_x) {
-                figure[i].X = max_x;
+            if (figure[i].X < problem.min_x) {
+                figure[i].X = problem.min_x;
+            } else if (figure[i].X > problem.max_x) {
+                figure[i].X = problem.max_x;
             }
-            if (figure[i].Y < min_y) {
-                figure[i].Y = min_y;
-            } else if (figure[i].Y > max_y) {
-                figure[i].Y = max_y;
+            if (figure[i].Y < problem.min_y) {
+                figure[i].Y = problem.min_y;
+            } else if (figure[i].Y > problem.max_y) {
+                figure[i].Y = problem.max_y;
             }
         }
     }
     
-    number dislike = calc_dislike(hole, figure);
+    number dislike = problem.calc_dislike(figure);
     double weight = sqrt(dislike);
     penalty_weight = dislike / edge.size();
     
@@ -569,7 +472,7 @@ int main(int argc, char* argv[]) {
             static vector<int> candidate;
             candidate.clear();
             for (int i = 0; i < edge.size(); i++) {
-                if (!is_edge_inside(hole, figure[edge[i].first], figure[edge[i].second])) candidate.push_back(i);
+                if (!problem.is_edge_inside(figure[edge[i].first], figure[edge[i].second])) candidate.push_back(i);
             }
             if (candidate.size() == 0) continue;
             
