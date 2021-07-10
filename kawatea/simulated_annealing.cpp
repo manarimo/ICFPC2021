@@ -729,7 +729,7 @@ int main(int argc, char* argv[]) {
             } else {
                 for (int v : update) figure[v] = new_figure[v];
             }
-            if (penalty_vertex + penalty_edge + penalty_length == 0 && dislike < best_dislike) {
+            if (penalty_vertex + penalty_edge + penalty_length <= 1e-9 && dislike < best_dislike) {
                 best_dislike = dislike;
                 for (int i = 0; i < n; i++) best_figure[i] = figure[i];
                 if (best_dislike == 0) break;
