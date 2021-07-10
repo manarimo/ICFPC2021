@@ -242,6 +242,13 @@ double dist_hole_point(const vector<P>& hole, const P& p) {
     return dist;
 }
 
+P reflection(const P& p1, const P& p2, const P& p) {
+    double t = get_ratio(p1, p2, p);
+    double x = p1.X + t * (p2.X - p1.X) * 2 - p.X;
+    double y = p1.Y + t * (p2.Y - p1.Y) * 2 - p.Y;
+    return make_pair(round(x), round(y));
+}
+
 number read_number() {
     number x;
     scanf("%lld", &x);
@@ -261,17 +268,17 @@ vector<P> read_hole() {
     return hole;
 }
 
-vector<pair<int, int>> read_graph() {
+vector<pair<int, int>> read_edge() {
     int m = read_number();
     
-    vector<pair<int, int>> graph(m);
+    vector<pair<int, int>> edge(m);
     for (int i = 0; i < m; i++) {
         int x = read_number();
         int y = read_number();
-        graph[i] = make_pair(x, y);
+        edge[i] = make_pair(x, y);
     }
     
-    return graph;
+    return edge;
 }
 
 vector<P> read_figure() {
@@ -293,9 +300,9 @@ double calc_penalty_vertex(const vector<P>& figure) {
     return penalty;
 }
 
-double calc_penalty_edge(const vector<P>& hole, const vector<pair<int, int>>& graph, const vector<P>& figure) {
+double calc_penalty_edge(const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
     double penalty = 0;
-    for (const pair<int, int>& p : graph) {
+    for (const pair<int, int>& p : edge) {
         if (!is_edge_inside(hole, figure[p.first], figure[p.second])) penalty += 10;
     }
     return penalty;
@@ -307,10 +314,10 @@ number len_diff(number len, number min_len, number max_len) {
     return 0;
 }
 
-double calc_penalty_length(const vector<pair<int, int>>& graph, const vector<P>& figure) {
+double calc_penalty_length(const vector<pair<int, int>>& edge, const vector<P>& figure) {
     double penalty = 0;
-    for (int i = 0; i < graph.size(); i++) {
-        penalty += len_diff(d(figure[graph[i].first], figure[graph[i].second]), min_len[i], max_len[i]);
+    for (int i = 0; i < edge.size(); i++) {
+        penalty += len_diff(d(figure[edge[i].first], figure[edge[i].second]), min_len[i], max_len[i]);
     }
     return penalty;
 }
@@ -331,7 +338,7 @@ void output(const vector<P>& figure) {
     printf("]}");
 }
 
-void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, int>>& graph, const vector<P>& figure) {
+void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
     FILE* fp = fopen(file, "w");
     
     number min_x = 1e18, min_y = 1e18, max_x = 0, max_y = 0;
@@ -349,7 +356,7 @@ void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, 
     }
     
     fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
-    fprintf(fp, "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
+    fprintf(fp, "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/graphics/SVG/1.1/DTD/svg11.dtd\">\n");
     fprintf(fp, "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"%lld %lld %lld %lld\" style=\"background-color: #00000066\">\n", min_x, min_y, max_x - min_x, max_y - min_y);
     
     fprintf(fp, "  <path d=\"M ");
@@ -360,7 +367,7 @@ void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, 
     fprintf(fp, "\" style=\"fill:#ffffff; fill-rule:evenodd; stroke: none\" />\n");
     
     fprintf(fp, "  <g style=\"fill:none;stroke:#ff0000;stroke-linecap:round\">");
-    for (const pair<int, int>& p : graph) {
+    for (const pair<int, int>& p : edge) {
         fprintf(fp, "<path d=\"M %lld,%lld L %lld,%lld\" />", figure[p.first].X, figure[p.first].Y, figure[p.second].X, figure[p.second].Y);
     }
     fprintf(fp, "</g>\n");
@@ -372,10 +379,16 @@ void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, 
 
 int main(int argc, char* argv[]) {
     vector<P> hole = read_hole();
-    vector<pair<int, int>> graph = read_graph();
+    vector<pair<int, int>> edge = read_edge();
     vector<P> figure = read_figure();
     number epsilon = read_number();
     int n = figure.size();
+    
+    vector<vector<int>> graph(n);
+    for (const pair<int, int>& p : edge) {
+        graph[p.first].push_back(p.second);
+        graph[p.second].push_back(p.first);
+    }
     
     number mx = 0, my = 0;
     for (const P& p : hole) {
@@ -399,15 +412,15 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    for (int i = 0; i < graph.size(); i++) {
-        number orig = d(figure[graph[i].first], figure[graph[i].second]);
+    for (int i = 0; i < edge.size(); i++) {
+        number orig = d(figure[edge[i].first], figure[edge[i].second]);
         number diff = orig * epsilon / 1000000;
         min_len[i] = orig - diff;
         max_len[i] = orig + diff;
     }
     
     double penalty_vertex = calc_penalty_vertex(figure);
-    double penalty_edge = calc_penalty_edge(hole, graph, figure);
+    double penalty_edge = calc_penalty_edge(hole, edge, figure);
     double penalty_length = 0;
     number dislike = calc_dislike(hole, figure);
     fprintf(stderr, "initial_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
@@ -418,7 +431,7 @@ int main(int argc, char* argv[]) {
     vector<P> new_figure(n);
     vector<P> best_figure(n);
     while (!sa.end()) {
-        int select = random::get(90);
+        int select = random::get(100);
         double time = sa.get_time() * 1000;
         double new_penalty_vertex = 0;
         double new_penalty_edge = 0;
@@ -443,9 +456,9 @@ int main(int argc, char* argv[]) {
             dy--;
             if (dx == 0 && dy == 0) continue;
             
-            int r = random::get(graph.size());
-            int v = graph[r].first;
-            int w = graph[r].second;
+            int r = random::get(edge.size());
+            int v = edge[r].first;
+            int w = edge[r].second;
             new_figure[v].X += dx;
             new_figure[v].Y += dy;
             new_figure[w].X += dx;
@@ -482,13 +495,27 @@ int main(int argc, char* argv[]) {
                     new_figure[i].Y = round(sum_y + y * COS - x * SIN);
                 }
             }
+        } else if (select < 95) {
+            int v = random::get(n);
+            if (graph[v].size() != 1) continue;
+            
+            int w = graph[v][0];
+            new_figure[v].X = figure[w].X * 2 - figure[v].X;
+            new_figure[v].Y = figure[w].Y * 2 - figure[v].Y;
+        } else if (select < 100) {
+            int v = random::get(n);
+            if (graph[v].size() != 2) continue;
+            
+            int w1 = graph[v][0];
+            int w2 = graph[v][1];
+            new_figure[v] = reflection(figure[w1], figure[w2], figure[v]);
         }
         
         if (outside(new_figure)) continue;
         
         new_penalty_vertex = calc_penalty_vertex(new_figure);
-        new_penalty_edge = calc_penalty_edge(hole, graph, new_figure);
-        new_penalty_length = calc_penalty_length(graph, new_figure);
+        new_penalty_edge = calc_penalty_edge(hole, edge, new_figure);
+        new_penalty_length = calc_penalty_length(edge, new_figure);
         new_dislike = calc_dislike(hole, new_figure);
         if (sa.accept((penalty_vertex + penalty_edge + penalty_length) * time + dislike, (new_penalty_vertex + new_penalty_edge + new_penalty_length) * time + new_dislike)) {
             penalty_vertex = new_penalty_vertex;
@@ -508,10 +535,10 @@ int main(int argc, char* argv[]) {
     if (best_dislike < 1e18) {
         fprintf(stderr, "dislike: %lld\n", best_dislike);
         output(best_figure);
-        if (argc >= 2) output_svg(argv[1], hole, graph, best_figure);
+        if (argc >= 2) output_svg(argv[1], hole, edge, best_figure);
     } else {
         fprintf(stderr, "final_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
-        if (argc >= 2) output_svg(argv[1], hole, graph, figure);
+        if (argc >= 2) output_svg(argv[1], hole, edge, figure);
     }
     
     return 0;

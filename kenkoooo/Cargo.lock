@@ -60,6 +60,9 @@ dependencies = [
 [[package]]
 name = "manarimo-lib"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "memory_units"
