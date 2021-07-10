@@ -79,29 +79,40 @@ def write_svg(f, problem, solution = nil)
 SVG
 end
 
-def index_tr(problem, solution)
+def index_tr(problem, solution, global_dislike)
+  score_base = 1000 * Math.log(problem.figure.vertices.size * problem.figure.edges.size * problem.hole.size / 6)
+  max_score = score_base.ceil
+
+  style = nil
   if solution == nil
     solution_td = nil
   else
     if solution.verdict == nil
-      score = '(not yet evaluated)'
+      dislike = '(not yet evaluated)'
+      score = 0
     elsif !solution.verdict['isValid']
-      score = 'INVALID'
+      dislike = 'INVALID'
+      score = 0
     else
-      score = solution.verdict['score']
+      dislike = solution.verdict['score']
+      score = (score_base * Math.sqrt((global_dislike+1.0) / (dislike+1.0))).ceil
+      if score == max_score
+        style = "background-color: lightgreen"
+      end
     end
-      solution_td = solution && %Q(
+    solution_td = solution && %Q(
         <td>
           <img src="images/#{solution.name}/#{problem.id}.svg" height="200"><br>
           <a href="kenkoooo/#/problem/#{problem.id}?solution=#{solution.name}/#{problem.id}.json">つづきからはじめる</a>
         </td>
         <td>#{solution.name}</td>
-        <td>#{score}
+        <td>#{dislike} / #{global_dislike}</td>
+        <td>#{score} / #{max_score}</td>
       )
   end
 
   <<-TR
-<tr>
+<tr style="#{style}">
   <td>#{problem.id}</td>
   <td>
     <img src="images/#{problem.id}.svg" height="200"><br>
@@ -119,7 +130,7 @@ def index_tr(problem, solution)
 TR
 end
 
-def write_index(f, problems, solutions = {}, solution_title = nil, solution_names = [])
+def write_index(f, problems, solutions = {}, solution_title = nil, solution_names = [], dislikes)
   solution_header = solution_title && %Q(<h2>Name: #{solution_title}</h2>)
   if solution_names.size > 0
     solution_links = <<-LINKS
@@ -152,9 +163,10 @@ LINKS
       <th>Spec</th>
       <th>Solution</th>
       <th>Solver</ht>
-      <th>Score</th>
+      <th>Dislikes</th>
+      <th>Score</ht>
     </tr>
-    #{problems.map {|prob| index_tr(prob, solutions[prob.id]) }.join}
+    #{problems.map {|prob| index_tr(prob, solutions[prob.id], dislikes[prob.id]) }.join}
   </table>
 </body>
 </html>
@@ -190,6 +202,10 @@ Dir.glob("#{__dir__}/../solutions/*").each do |dir|
   end
 end
 
+dislikes = File.open("#{__dir__}/../problems/minimal_dislikes.txt") { |f|
+  JSON.load(f).map { |e| [e['problem_id'], e['minimal_dislikes']] }.to_h
+}
+
 solutions.each do |solution_name, solution_list|
   output_dir = "#{__dir__}/../web/images/#{solution_name}"
   FileUtils.makedirs(output_dir)
@@ -203,12 +219,12 @@ solutions.each do |solution_name, solution_list|
 
   # Generate solution overview
   File.open("#{__dir__}/../web/#{solution_name}.html", 'w') do |f|
-    write_index(f, problems.select{|prob| solutions[solution_name].has_key?(prob.id) }, solutions[solution_name], solution_name, solutions.keys)
+    write_index(f, problems.select{|prob| solutions[solution_name].has_key?(prob.id) }, solutions[solution_name], solution_name, solutions.keys.sort, dislikes)
   end
 end
 
 File.open("#{__dir__}/../web/index.html", 'w') do |f|
-  write_index(f, problems, {}, nil, solutions.keys)
+  write_index(f, problems, {}, nil, solutions.keys.sort, dislikes)
 end
 
 # Top solutions
@@ -224,5 +240,5 @@ solutions.each do |name, list|
 end
 
 File.open("#{__dir__}/../web/best.html", 'w') do |f|
-  write_index(f, problems, best_solutions, 'Best', solutions.keys)
+  write_index(f, problems, best_solutions, 'Best', solutions.keys.sort, dislikes)
 end
