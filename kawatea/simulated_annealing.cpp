@@ -3,14 +3,19 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include "json.hpp"
 
 using namespace std;
+using json = nlohmann::json;
 
 #define X first
 #define Y second
 
 using number = long long;
 using P = pair<number, number>;
+using E = pair<int, int>;
 
 const int MAX_C = 1000;
 const int MAX_M = 1000;
@@ -22,6 +27,38 @@ double dist[MAX_C][MAX_C];
 number min_len[MAX_M];
 number max_len[MAX_M];
 P outer;
+
+struct figure_t {
+   vector<E> edges;
+   vector<P> vertices;
+};
+
+struct problem {
+    vector<P> hole;
+    figure_t figure;
+    number epsilon;
+};
+
+void from_json(const json& j, P& p) {
+    j.at(0).get_to(p.first);
+    j.at(1).get_to(p.second);
+}
+
+void from_json(const json& j, E& e) {
+    j.at(0).get_to(e.first);
+    j.at(1).get_to(e.second);
+}
+
+void from_json(const json& j, figure_t& f) {
+    j.at("edges").get_to(f.edges);
+    j.at("vertices").get_to(f.vertices);
+}
+
+void from_json(const json& j, problem& p) {
+    j.at("hole").get_to(p.hole);
+    j.at("figure").get_to(p.figure);
+    j.at("epsilon").get_to(p.epsilon);
+}
 
 class random {
     public:
@@ -378,10 +415,15 @@ void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, 
 }
 
 int main(int argc, char* argv[]) {
-    vector<P> hole = read_hole();
-    vector<pair<int, int>> edge = read_edge();
-    vector<P> figure = read_figure();
-    number epsilon = read_number();
+    json j;
+    std::cin >> j;
+    problem prob = j.get<problem>();
+
+    vector<P> hole = prob.hole;
+    vector<pair<int, int>> edge = prob.figure.edges;
+    vector<P> figure = prob.figure.vertices;
+    number epsilon = prob.epsilon;
+
     int n = figure.size();
     
     vector<vector<int>> graph(n);
