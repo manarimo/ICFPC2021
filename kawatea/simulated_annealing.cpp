@@ -431,7 +431,7 @@ int main(int argc, char* argv[]) {
     vector<P> new_figure(n);
     vector<P> best_figure(n);
     while (!sa.end()) {
-        int select = random::get(100);
+        int select = random::get(105);
         double time = sa.get_time() * 1000;
         double new_penalty_vertex = 0;
         double new_penalty_edge = 0;
@@ -509,6 +509,11 @@ int main(int argc, char* argv[]) {
             int w1 = graph[v][0];
             int w2 = graph[v][1];
             new_figure[v] = reflection(figure[w1], figure[w2], figure[v]);
+        } else if (select < 105) {
+            int vf = random::get(n);
+            int vh = random::get(hole.size());
+            
+            new_figure[vf] = hole[vh];
         }
         
         if (outside(new_figure)) continue;
