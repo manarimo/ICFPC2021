@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 
-const WIDTH = 100;
-const HEIGHT = 100;
-const EDGE_MAX = 10;
+const WIDTH = 10_000_000_000;
+const HEIGHT = Math.floor(WIDTH / 20) + 1;
+const EDGE_MAX = Math.floor(WIDTH / 20);
 const EDGE_MIN = 1;
 type JudgeInput = {
     hole: number[][],
