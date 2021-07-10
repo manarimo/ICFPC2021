@@ -545,6 +545,14 @@ int main(int argc, char* argv[]) {
         graph[edge[i].first].emplace_back(edge[i].second, i);
         graph[edge[i].second].emplace_back(edge[i].first, i);
     }
+    vector<int> d1, d2;
+    for (int i = 0; i < n; i++) {
+        if (graph[i].size() == 1) {
+            d1.push_back(i);
+        } else if (graph[i].size() == 2) {
+            d2.push_back(i);
+        }
+    }
     
     number mx = 0, my = 0;
     for (const P& p : hole) {
@@ -645,8 +653,8 @@ int main(int argc, char* argv[]) {
             if (outside(new_figure)) continue;
         } else if (select < 90) {
             // 次数1の頂点を選び、点対称な位置に移す
-            int v = random::get(n);
-            if (graph[v].size() != 1) continue;
+            if (d1.size() == 0) continue;
+            int v = d1[random::get(d1.size())];
             
             int w = graph[v][0].first;
             new_figure[v].X = figure[w].X * 2 - figure[v].X;
@@ -655,8 +663,8 @@ int main(int argc, char* argv[]) {
             update.push_back(v);
         } else if (select < 95) {
             // 次数2の頂点を選び、三角形の対辺に対して鏡像移動する
-            int v = random::get(n);
-            if (graph[v].size() != 2) continue;
+            if (d2.size() == 0) continue;
+            int v = d2[random::get(d2.size())];
             
             int w1 = graph[v][0].first;
             int w2 = graph[v][1].first;
@@ -706,6 +714,7 @@ int main(int argc, char* argv[]) {
             if (penalty_vertex + penalty_edge + penalty_length == 0 && dislike < best_dislike) {
                 best_dislike = dislike;
                 for (int i = 0; i < n; i++) best_figure[i] = figure[i];
+                if (best_dislike == 0) break;
             }
         }
     }
