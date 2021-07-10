@@ -103,11 +103,11 @@ class simulated_annealing {
     long long rejected = 0;
     double time = 0;
     double temp = START_TEMP;
-    timer timer;
+    timer timer1;
 };
 
 simulated_annealing::simulated_annealing() {
-    timer.start();
+    timer1.start();
     for (int i = 0; i <= LOG_SIZE; i++) log_probability[i] = log(random::probability());
 }
 
@@ -118,7 +118,7 @@ inline double simulated_annealing::get_time() {
 inline bool simulated_annealing::end() {
     iteration++;
     if ((iteration & UPDATE_INTERVAL) == 0) {
-        time = timer.get_time();
+        time = timer1.get_time();
         temp = START_TEMP + TEMP_RATIO * time;
         return time >= TIME_LIMIT;
     } else {
