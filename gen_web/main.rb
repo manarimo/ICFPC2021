@@ -98,7 +98,7 @@ def index_tr(problem, solution, global_dislike)
       score = (score_base * Math.sqrt((global_dislike+1.0) / (dislike+1.0))).ceil
       if score > max_score
         style = "background-color: hotpink"
-      if score == max_score
+      elsif score == max_score
         style = "background-color: lightgreen"
       end
     end
