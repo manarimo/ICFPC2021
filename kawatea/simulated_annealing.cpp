@@ -3,25 +3,60 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include "json.hpp"
 
 using namespace std;
+using json = nlohmann::json;
 
 #define X first
 #define Y second
 
 using number = long long;
 using P = pair<number, number>;
+using E = pair<int, int>;
 
 const int MAX_C = 1000;
 const int MAX_M = 1000;
-const double COS = cos(0.1);
-const double SIN = sin(0.1);
 bool inside[MAX_C][MAX_C];
 bool inside_double[MAX_C * 2][MAX_C * 2];
 double dist[MAX_C][MAX_C];
 number min_len[MAX_M];
 number max_len[MAX_M];
 P outer;
+
+struct figure_t {
+   vector<E> edges;
+   vector<P> vertices;
+};
+
+struct problem {
+    vector<P> hole;
+    figure_t figure;
+    number epsilon;
+};
+
+void from_json(const json& j, P& p) {
+    j.at(0).get_to(p.first);
+    j.at(1).get_to(p.second);
+}
+
+void from_json(const json& j, E& e) {
+    j.at(0).get_to(e.first);
+    j.at(1).get_to(e.second);
+}
+
+void from_json(const json& j, figure_t& f) {
+    j.at("edges").get_to(f.edges);
+    j.at("vertices").get_to(f.vertices);
+}
+
+void from_json(const json& j, problem& p) {
+    j.at("hole").get_to(p.hole);
+    j.at("figure").get_to(p.figure);
+    j.at("epsilon").get_to(p.epsilon);
+}
 
 class random {
     public:
@@ -103,11 +138,11 @@ class simulated_annealing {
     long long rejected = 0;
     double time = 0;
     double temp = START_TEMP;
-    timer timer;
+    timer timer1;
 };
 
 simulated_annealing::simulated_annealing() {
-    timer.start();
+    timer1.start();
     for (int i = 0; i <= LOG_SIZE; i++) log_probability[i] = log(random::probability());
 }
 
@@ -118,7 +153,7 @@ inline double simulated_annealing::get_time() {
 inline bool simulated_annealing::end() {
     iteration++;
     if ((iteration & UPDATE_INTERVAL) == 0) {
-        time = timer.get_time();
+        time = timer1.get_time();
         temp = START_TEMP + TEMP_RATIO * time;
         return time >= TIME_LIMIT;
     } else {
@@ -378,10 +413,15 @@ void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, 
 }
 
 int main(int argc, char* argv[]) {
-    vector<P> hole = read_hole();
-    vector<pair<int, int>> edge = read_edge();
-    vector<P> figure = read_figure();
-    number epsilon = read_number();
+    json j;
+    std::cin >> j;
+    problem prob = j.get<problem>();
+
+    vector<P> hole = prob.hole;
+    vector<pair<int, int>> edge = prob.figure.edges;
+    vector<P> figure = prob.figure.vertices;
+    number epsilon = prob.epsilon;
+
     int n = figure.size();
     
     vector<vector<int>> graph(n);
@@ -432,7 +472,7 @@ int main(int argc, char* argv[]) {
     vector<P> best_figure(n);
     while (!sa.end()) {
         int select = random::get(100);
-        double time = sa.get_time() * 1000;
+        double time = sa.get_time() * sa.get_time();
         double new_penalty_vertex = 0;
         double new_penalty_edge = 0;
         double new_penalty_length = 0;
@@ -475,40 +515,24 @@ int main(int argc, char* argv[]) {
                 new_figure[i].Y += dy;
             }
         } else if (select < 90) {
-            double sum_x = 0, sum_y = 0;
-            for (const P& p : figure) {
-                sum_x += p.X;
-                sum_y += p.Y;
-            }
-            sum_x /= n;
-            sum_y /= n;
-            
-            int r = random::get(2);
-            for (int i = 0; i < n; i++) {
-                double x = figure[i].X - sum_x;
-                double y = figure[i].Y - sum_y;
-                if (r == 0) {
-                    new_figure[i].X = round(sum_x + x * COS - y * SIN);
-                    new_figure[i].Y = round(sum_y + y * COS + x * SIN);
-                } else {
-                    new_figure[i].X = round(sum_x + x * COS + y * SIN);
-                    new_figure[i].Y = round(sum_y + y * COS - x * SIN);
-                }
-            }
-        } else if (select < 95) {
             int v = random::get(n);
             if (graph[v].size() != 1) continue;
             
             int w = graph[v][0];
             new_figure[v].X = figure[w].X * 2 - figure[v].X;
             new_figure[v].Y = figure[w].Y * 2 - figure[v].Y;
-        } else if (select < 100) {
+        } else if (select < 95) {
             int v = random::get(n);
             if (graph[v].size() != 2) continue;
             
             int w1 = graph[v][0];
             int w2 = graph[v][1];
             new_figure[v] = reflection(figure[w1], figure[w2], figure[v]);
+        } else if (select < 100) {
+            int vf = random::get(n);
+            int vh = random::get(hole.size());
+            
+            new_figure[vf] = hole[vh];
         }
         
         if (outside(new_figure)) continue;

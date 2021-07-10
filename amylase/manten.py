@@ -30,6 +30,10 @@ def solve(spec, report_result):
         graph[fr].append(to)
         graph[to].append(fr)
 
+    # def fact(n): return 1 if n <= 1 else fact(n - 1) * n
+    # perms = fact(len(nodes)) // fact(len(nodes) - len(nodes))
+    # if perms >= 10 ** 11:
+    #     return
     for assigned in itertools.permutations(range(len(nodes)), len(hole)):
         assignments = {assigned_node: [hole[hole_node]] for hole_node, assigned_node in enumerate(assigned)}
         valid = True
@@ -48,12 +52,16 @@ def solve(spec, report_result):
             for p in candidate_positions:
                 valid = True
                 for j in graph[i]:
-                    if j >= i:
+                    if j >= i and j not in assignments:
                         continue
-                    if not is_valid_edge(nodes[i], nodes[j], p, positions[j], spec["epsilon"]):
+                    if j in assignments:
+                        j_position = assignments[j][0]
+                    else:
+                        j_position = positions[j]
+                    if not is_valid_edge(nodes[i], nodes[j], p, j_position, spec["epsilon"]):
                         valid = False
                         break
-                    if not is_edge_inside(hole, [p, positions[j]]):
+                    if not is_edge_inside(hole, [p, j_position]):
                         valid = False
                         break
                 if not valid:
@@ -93,7 +101,8 @@ if __name__ == '__main__':
     pool = Pool(processes=7)
 
     args = []
-    for problem_id in [4, 38, 41, 43, 52, 53]:
+    # for problem_id in range(11, 20):
+    for problem_id in [4, 38, 55, 59, 63, 65, 67, 70, 72, 77]:
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))
