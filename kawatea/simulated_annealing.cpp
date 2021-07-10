@@ -222,12 +222,16 @@ bool is_point_inside(const vector<P>& hole, const P& point) {
 bool is_edge_inside(const vector<P>& hole, const P& p1, const P& p2) {
     if (!inside[p1.X][p1.Y]) return false;
     if (!inside[p2.X][p2.Y]) return false;
+
+    int prev_ccw = ccw(p1, p2, hole[0]);
     for (int i = 0; i < hole.size(); ++i) {
         int j = i + 1;
         if (__builtin_expect(j >= hole.size(), 0)) {
             j = 0;
         }
-        if (ccw(p1, p2, hole[i]) * ccw(p1, p2, hole[j]) < 0 && ccw(hole[i], hole[j], p1) * ccw(hole[i], hole[j], p2) < 0) return false;
+        const int next_ccw = ccw(p1, p2, hole[j]);
+        if (prev_ccw * next_ccw < 0 && ccw(hole[i], hole[j], p1) * ccw(hole[i], hole[j], p2) < 0) return false;
+        prev_ccw = next_ccw;
     }
     
     static vector<P> splitting_points;
@@ -257,9 +261,9 @@ number calc_dislike(const vector<P>& hole, const vector<P>& positions) {
     for (const P& h: hole) {
         number min_p = 1e18;
 
-        #pragma omp parallel
         for (const P& p: positions) {
             min_p = min(min_p, d(h, p));
+            if (min_p == 0) break;
         }
         ds += min_p;
     }
