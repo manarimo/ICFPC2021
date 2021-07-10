@@ -213,7 +213,10 @@ bool is_on_segment(const P& p1, const P& p2, const P& p) {
 bool is_point_inside(const vector<P>& hole, const P& point) {
     int crossings = 0;
     for (int i = 0; i < hole.size(); ++i) {
-        int j = (i + 1) % hole.size();
+        int j = i + 1;
+        if (__builtin_expect(j >= hole.size(), 0)) {
+            j = 0;
+        }
         if (is_on_segment(hole[i], hole[j], point)) return true;
         if (ccw(point, outer, hole[i]) * ccw(point, outer, hole[j]) < 0 && ccw(hole[i], hole[j], point) * ccw(hole[i], hole[j], outer) < 0) {
             ++crossings;
@@ -226,7 +229,10 @@ bool is_edge_inside(const vector<P>& hole, const P& p1, const P& p2) {
     if (!inside[p1.X][p1.Y]) return false;
     if (!inside[p2.X][p2.Y]) return false;
     for (int i = 0; i < hole.size(); ++i) {
-        int j = (i + 1) % hole.size();
+        int j = i + 1;
+        if (__builtin_expect(j >= hole.size(), 0)) {
+            j = 0;
+        }
         if (ccw(p1, p2, hole[i]) * ccw(p1, p2, hole[j]) < 0 && ccw(hole[i], hole[j], p1) * ccw(hole[i], hole[j], p2) < 0) return false;
     }
     
@@ -235,7 +241,7 @@ bool is_edge_inside(const vector<P>& hole, const P& p1, const P& p2) {
         if (is_on_segment(p1, p2, p)) splitting_points.push_back(p);
     }
     sort(splitting_points.begin(), splitting_points.end());
-    
+
     for (int i = 0; i + 1 < splitting_points.size(); i++) {
         P p = make_pair(splitting_points[i].X + splitting_points[i + 1].X, splitting_points[i].Y + splitting_points[i + 1].Y);
         if (!inside_double[p.X][p.Y]) return false;
