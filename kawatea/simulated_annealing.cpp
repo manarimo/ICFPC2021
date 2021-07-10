@@ -596,8 +596,16 @@ int main(int argc, char* argv[]) {
     
     for (int i = 0; i < n; i++) {
         if (outside(figure[i])) {
-            figure[i].X = clamp(figure[i].X, min_x, max_x);
-            figure[i].Y = clamp(figure[i].Y, min_y, max_y);
+            if (figure[i].X < min_x) {
+                figure[i].X = min_x;
+            } else if (figure[i].X > max_x) {
+                figure[i].X = max_x;
+            }
+            if (figure[i].Y < min_y) {
+                figure[i].Y = min_y;
+            } else if (figure[i].Y > max_y) {
+                figure[i].Y = max_y;
+            }
         }
     }
     
