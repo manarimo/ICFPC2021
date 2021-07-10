@@ -30,52 +30,65 @@ def solve(spec, report_result):
         graph[fr].append(to)
         graph[to].append(fr)
 
-    # def fact(n): return 1 if n <= 1 else fact(n - 1) * n
-    # perms = fact(len(nodes)) // fact(len(nodes) - len(nodes))
-    # if perms >= 10 ** 11:
-    #     return
-    for assigned in itertools.permutations(range(len(nodes)), len(hole)):
-        assignments = {assigned_node: [hole[hole_node]] for hole_node, assigned_node in enumerate(assigned)}
-        valid = True
-        for i, j in itertools.combinations(assignments.keys(), 2):
-            if j not in graph[i]:
-                continue
-            valid &= is_valid_edge(nodes[i], nodes[j], assignments[i][0], assignments[j][0], spec["epsilon"])
-        if not valid:
-            continue
-        positions = []
-        def dfs(i):
-            if i >= len(nodes):
-                score = dislike(hole, positions)
-                return score, positions[:]
-            candidate_positions = assignments.get(i, valid_positions)
-            for p in candidate_positions:
-                valid = True
-                for j in graph[i]:
-                    if j >= i and j not in assignments:
-                        continue
-                    if j in assignments:
-                        j_position = assignments[j][0]
-                    else:
-                        j_position = positions[j]
-                    if not is_valid_edge(nodes[i], nodes[j], p, j_position, spec["epsilon"]):
-                        valid = False
-                        break
-                    if not is_edge_inside(hole, [p, j_position]):
-                        valid = False
-                        break
-                if not valid:
+    positions = []
+    def dfs(i, hints, best):
+        if i >= len(nodes):
+            score = dislike(hole, positions)
+            if score < best:
+                report_result(score, positions)
+            return min(score, best)
+        candidate_positions = [hints[i]] if i in hints else valid_positions
+        for p in candidate_positions:
+            valid = True
+            for j in graph[i]:
+                if j >= i and j not in hints:
                     continue
-                positions.append(p)
-                result = dfs(i + 1)
-                if result is not None:
-                    return result
-                positions.pop()
-            return None
-        result = dfs(0)
-        if result is not None:
-            report_result(*result)
-            return
+                if j in hints:
+                    j_position = hints[j]
+                else:
+                    j_position = positions[j]
+                if not is_valid_edge(nodes[i], nodes[j], p, j_position, spec["epsilon"]):
+                    valid = False
+                    break
+                if not is_edge_inside(hole, [p, j_position]):
+                    valid = False
+                    break
+            if not valid:
+                continue
+            positions.append(p)
+            best = min(dfs(i + 1, hints, best), best)
+            if best == 0: return best
+            positions.pop()
+        return best
+
+    assignments = []
+    def hint_dfs(i, best):
+        hints = {i: hole[assignment] for i, assignment in enumerate(assignments) if assignment != -1}
+        if i >= len(nodes):
+            return dfs(0, hints, best)
+        candidate = [assign for assign in range(len(hole)) if assign not in hints] + [-1]
+        for assignment in candidate:
+            valid = True
+            if assignment != -1:
+                for j in graph[i]:
+                    if j >= i:
+                        continue
+                    if j not in hints:
+                        continue
+                    if not is_valid_edge(nodes[i], nodes[j], hole[assignment], hints[j], spec["epsilon"]):
+                        valid = False
+                        break
+                    if not is_edge_inside(hole, [hole[assignment], hints[j]]):
+                        valid = False
+                        break
+            if not valid:
+                continue
+            assignments.append(assignment)
+            best = hint_dfs(i + 1, best)
+            if best == 0: return best
+            assignments.pop()
+        return best
+    hint_dfs(0, 10 ** 18)
 
 
 def main(input_path, output_path):
@@ -101,8 +114,7 @@ if __name__ == '__main__':
     pool = Pool(processes=7)
 
     args = []
-    # for problem_id in range(11, 20):
-    for problem_id in [4, 38, 55, 59, 63, 65, 67, 70, 72, 77]:
+    for problem_id in [55, 59, 63, 65, 67, 70, 72, 77]:
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))
