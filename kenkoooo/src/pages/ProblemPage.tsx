@@ -15,7 +15,7 @@ import { EditorState } from "./EditorState";
 import { PoseInfoPanel } from "./PoseInfoPanel";
 import { SinglePointSolverPanel } from "./SinglePointSolverPanel";
 import { useProblemData, useSolutionData } from "../API";
-import ToggleButton from "react-bootstrap/ToggleButton";
+import ToggleButton from 'react-bootstrap/ToggleButton'
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 
 interface SvgEditorProps {
@@ -28,7 +28,7 @@ const SvgEditor = (props: SvgEditorProps) => {
   const params = new URLSearchParams(location.search);
   const solution = useSolutionData(params.get("solution"));
 
-  const [design, setDesign] = useState<"single" | "triple">("triple");
+  const [design, setDesign] = useState<'single' | 'triple'>('triple');
   const [editorState, setEditState] = useState<EditorState | null>(null);
   const [userPose, setUserPose] = useState([...problem.figure.vertices]);
   const [text, setText] = useState<string>("");
@@ -110,14 +110,6 @@ const SvgEditor = (props: SvgEditorProps) => {
     );
   };
 
-  const executeBreakALeg = (str: number, dst: number) => {
-    const [sx, sy] = userPose[str];
-    const [tx, ty] = userPose[dst];
-    const midx = Math.floor((sx + tx) / 2);
-    const midy = Math.floor((sy + ty) / 2);
-    // TODO set up user edges
-  };
-
   const updateBreakALeg = (value: boolean) => {
     if (breakALeg && !value) {
       setBreakALeg(false);
@@ -144,32 +136,30 @@ const SvgEditor = (props: SvgEditorProps) => {
 
   return (
     <Container>
-      <Row style={{ marginBottom: "8px" }}>
+      <Row style={{marginBottom: '8px'}}>
         <Col>
           <ButtonGroup toggle>
             <ToggleButton
-              type="checkbox"
-              variant="secondary"
-              value="single"
-              checked={design === "single"}
-              onChange={(e) => setDesign("single")}
-            >
+                type="checkbox"
+                variant="secondary"
+                value="single"
+                checked={design === 'single'}
+                onChange={(e) => setDesign('single')}>
               1カラム
             </ToggleButton>
             <ToggleButton
-              type="checkbox"
-              variant="secondary"
-              value="triple"
-              checked={design === "triple"}
-              onChange={(e) => setDesign("triple")}
-            >
+                type="checkbox"
+                variant="secondary"
+                value="triple"
+                checked={design === 'triple'}
+                onChange={(e) => setDesign('triple')}>
               3カラム
             </ToggleButton>
           </ButtonGroup>
         </Col>
       </Row>
       <Row>
-        <Col sm={design === "single" ? 12 : undefined}>
+        <Col sm={design === 'single' ? 12 : undefined}>
           <SvgViewer
             userPose={userPose}
             problem={problem}
