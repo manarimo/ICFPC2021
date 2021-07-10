@@ -488,6 +488,7 @@ int main(int argc, char* argv[]) {
     double penalty_edge = calc_penalty_edge(hole, edge, figure);
     double penalty_length = calc_penalty_length(edge, figure);
     number dislike = calc_dislike(hole, figure);
+    double weight = sqrt(dislike);
     fprintf(stderr, "initial_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
     fflush(stderr);
     
@@ -497,7 +498,7 @@ int main(int argc, char* argv[]) {
     vector<P> best_figure(n);
     while (!sa.end()) {
         int select = random::get(100);
-        double time = (sa.get_time() + 1) * (sa.get_time() + 1) * (sa.get_time() + 1);
+        double penalty_weight = weight * (sa.get_time() + 1) * (sa.get_time() + 1);
         double new_penalty_vertex = 0;
         double new_penalty_edge = 0;
         double new_penalty_length = 0;
@@ -572,7 +573,7 @@ int main(int argc, char* argv[]) {
         new_penalty_edge = calc_penalty_edge(hole, edge, new_figure);
         new_penalty_length = calc_penalty_length(edge, new_figure);
         new_dislike = calc_dislike(hole, new_figure);
-        if (sa.accept((penalty_vertex + penalty_edge + penalty_length) * time + dislike, (new_penalty_vertex + new_penalty_edge + new_penalty_length) * time + new_dislike)) {
+        if (sa.accept((penalty_vertex + penalty_edge + penalty_length) * penalty_weight + dislike, (new_penalty_vertex + new_penalty_edge + new_penalty_length) * penalty_weight + new_dislike)) {
             penalty_vertex = new_penalty_vertex;
             penalty_edge = new_penalty_edge;
             penalty_length = new_penalty_length;
