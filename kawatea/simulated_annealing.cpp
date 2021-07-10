@@ -186,10 +186,6 @@ void simulated_annealing::print() const {
     fprintf(stderr, "rejected: %lld\n", rejected);
 }
 
-P sub(const P& p, const P& q) {
-    return make_pair(p.X - q.X, p.Y - q.Y);
-}
-
 number dot(const P& p, const P& q) {
     return p.X * q.X + p.Y * q.Y;
 }
@@ -199,14 +195,12 @@ number cross(const P& p, const P& q) {
 }
 
 number ccw (const P& p, const P& q, const P& r) {
-    return cross(sub(q, p), sub(r, p));
+    return (q.X - p.X) * (r.Y - p.Y) - (q.Y - p.Y) * (r.X - p.X);
 }
 
 bool is_on_segment(const P& p1, const P& p2, const P& p) {
-    P d1 = sub(p1, p);
-    P d2 = sub(p2, p);
-    number area = cross(d1, d2);
-    if (area == 0 && d1.X * d2.X <= 0 && d1.Y * d2.Y <= 0) return true;
+    number area = (p1.X - p.X) * (p2.Y - p.Y) - (p1.Y - p.Y) * (p2.X - p.X);
+    if (area == 0 && (p1.X - p.X) * (p2.X - p.X) <= 0 && (p1.Y - p.Y) * (p2.Y - p.Y) <= 0) return true;
     return false;
 }
 
@@ -236,15 +230,17 @@ bool is_edge_inside(const vector<P>& hole, const P& p1, const P& p2) {
         if (ccw(p1, p2, hole[i]) * ccw(p1, p2, hole[j]) < 0 && ccw(hole[i], hole[j], p1) * ccw(hole[i], hole[j], p2) < 0) return false;
     }
     
-    vector<P> splitting_points = {p1, p2};
+    static vector<P> splitting_points;
+    splitting_points.clear();
+    splitting_points.push_back(p1);
+    splitting_points.push_back(p2);
     for (const P& p : hole) {
         if (is_on_segment(p1, p2, p)) splitting_points.push_back(p);
     }
     sort(splitting_points.begin(), splitting_points.end());
 
     for (int i = 0; i + 1 < splitting_points.size(); i++) {
-        P p = make_pair(splitting_points[i].X + splitting_points[i + 1].X, splitting_points[i].Y + splitting_points[i + 1].Y);
-        if (!inside_double[p.X][p.Y]) return false;
+        if (!inside_double[splitting_points[i].X + splitting_points[i + 1].X][splitting_points[i].Y + splitting_points[i + 1].Y]) return false;
     }
     
     return true;
@@ -266,14 +262,39 @@ number calc_dislike(const vector<P>& hole, const vector<P>& positions) {
     return ds;
 }
 
+number calc_dislike(const vector<P>& hole, const vector<P>& figure, const vector<P>& new_figure, const vector<int>& update) {
+    number ds = 0;
+    int v = -1, w = -1;
+    if (update.size() == 1) {
+        v = update[0];
+    } else if (update.size() == 2) {
+        v = update[0];
+        w = update[1];
+    }
+    for (const P& h: hole) {
+        number min_p = 1e18;
+        for (int i = 0; i < figure.size(); i++) {
+            if (i == v || i == w) {
+                min_p = min(min_p, d(h, new_figure[i]));
+            } else {
+                min_p = min(min_p, d(h, figure[i]));
+            }
+        }
+        ds += min_p;
+    }
+    return ds;
+}
+
 double dist_point(double px1, double py1, double px2, double py2) {
     return (px2 - px1) * (px2 - px1) + (py2 - py1) * (py2 - py1);
 }
 
 double get_ratio(const P& l1, const P& l2, const P& p) {
-    P v = sub(l2, l1);
-    P w = sub(p, l1);
-    return (double)(v.X * w.X + v.Y * w.Y) / (v.X * v.X + v.Y * v.Y);    
+    double vx = l2.X - l1.X;
+    double vy = l2.Y - l1.Y;
+    double wx = p.X - l1.X;
+    double wy = p.Y - l1.Y;
+    return (double)(vx * wx + vy * wy) / (vx * vx + vy * vy);    
 }
 
 double dist_line(const P& l1, const P& l2, const P& p) {
@@ -349,12 +370,44 @@ double calc_penalty_vertex(const vector<P>& figure) {
     return penalty;
 }
 
+double penalty_vertex_diff(const P& orig, const P& dest) {
+    return dist[dest.X][dest.Y] - dist[orig.X][orig.Y];
+}
+
 double calc_penalty_edge(const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
     double penalty = 0;
     for (const pair<int, int>& p : edge) {
         if (!is_edge_inside(hole, figure[p.first], figure[p.second])) penalty += 10;
     }
     return penalty;
+}
+
+double penalty_edge_diff(const vector<P>& hole, const vector<vector<pair<int, int>>>& graph, const vector<P>& figure, int v, const P& orig, const P& dest) {
+    double diff = 0;
+    for (const pair<int, int>& p : graph[v]) {
+        if (!is_edge_inside(hole, orig, figure[p.first])) diff -= 10;
+        if (!is_edge_inside(hole, dest, figure[p.first])) diff += 10;
+    }
+    return diff;
+}
+
+double penalty_edge_diff(const vector<P>& hole, const vector<vector<pair<int, int>>>& graph, const vector<P>& figure, int v1, const P& orig1, const P& dest1, int v2, const P& orig2, const P& dest2) {
+    double diff = 0;
+    for (const pair<int, int>& p : graph[v1]) {
+        if (p.first == v2) {
+            if (!is_edge_inside(hole, orig1, orig2)) diff -= 10;
+            if (!is_edge_inside(hole, dest1, dest2)) diff += 10;
+            continue;
+        }
+        if (!is_edge_inside(hole, orig1, figure[p.first])) diff -= 10;
+        if (!is_edge_inside(hole, dest1, figure[p.first])) diff += 10;
+    }
+    for (const pair<int, int>& p : graph[v2]) {
+        if (p.first == v1) continue;
+        if (!is_edge_inside(hole, orig2, figure[p.first])) diff -= 10;
+        if (!is_edge_inside(hole, dest2, figure[p.first])) diff += 10;
+    }
+    return diff;
 }
 
 number len_diff(number len, number min_len, number max_len) {
@@ -371,9 +424,41 @@ double calc_penalty_length(const vector<pair<int, int>>& edge, const vector<P>& 
     return penalty;
 }
 
+double penalty_length_diff(const vector<vector<pair<int, int>>>& graph, const vector<P>& figure, int v, const P& orig, const P& dest) {
+    double diff = 0;
+    for (const pair<int, int>& p : graph[v]) {
+        diff -= len_diff(d(orig, figure[p.first]), min_len[p.second], max_len[p.second]);
+        diff += len_diff(d(dest, figure[p.first]), min_len[p.second], max_len[p.second]);
+    }
+    return diff;
+}
+
+double penalty_length_diff(const vector<vector<pair<int, int>>>& graph, const vector<P>& figure, int v1, const P& orig1, const P& dest1, int v2, const P& orig2, const P& dest2) {
+    double diff = 0;
+    for (const pair<int, int>& p : graph[v1]) {
+        if (p.first == v2) {
+            diff -= len_diff(d(orig1, orig2), min_len[p.second], max_len[p.second]);
+            diff += len_diff(d(dest1, dest2), min_len[p.second], max_len[p.second]);
+            continue;
+        }
+        diff -= len_diff(d(orig1, figure[p.first]), min_len[p.second], max_len[p.second]);
+        diff += len_diff(d(dest1, figure[p.first]), min_len[p.second], max_len[p.second]);
+    }
+    for (const pair<int, int>& p : graph[v2]) {
+        if (p.first == v1) continue;
+        diff -= len_diff(d(orig2, figure[p.first]), min_len[p.second], max_len[p.second]);
+        diff += len_diff(d(dest2, figure[p.first]), min_len[p.second], max_len[p.second]);
+    }
+    return diff;
+}
+
+bool outside(const P& p) {
+    return p.X < 0 || p.X >= MAX_C || p.Y < 0 || p.Y >= MAX_C;
+}
+
 bool outside(const vector<P>& figure) {
     for (const P& p : figure) {
-        if (p.X < 0 || p.X >= MAX_C || p.Y < 0 || p.Y >= MAX_C) return true;
+        if (outside(p)) return true;
     }
     return false;
 }
@@ -447,10 +532,10 @@ int main(int argc, char* argv[]) {
 
     int n = figure.size();
     
-    vector<vector<int>> graph(n);
-    for (const pair<int, int>& p : edge) {
-        graph[p.first].push_back(p.second);
-        graph[p.second].push_back(p.first);
+    vector<vector<pair<int, int>>> graph(n);
+    for (int i = 0; i < edge.size(); i++) {
+        graph[edge[i].first].emplace_back(edge[i].second, i);
+        graph[edge[i].second].emplace_back(edge[i].first, i);
     }
     
     number mx = 0, my = 0;
@@ -499,11 +584,12 @@ int main(int argc, char* argv[]) {
     while (!sa.end()) {
         int select = random::get(100);
         double penalty_weight = weight * (sa.get_time() + 1) * (sa.get_time() + 1);
-        double new_penalty_vertex = 0;
-        double new_penalty_edge = 0;
-        double new_penalty_length = 0;
+        double new_penalty_vertex = penalty_vertex;
+        double new_penalty_edge = penalty_edge;
+        double new_penalty_length = penalty_length;
         number new_dislike = 0;
-        for (int i = 0; i < n; i++) new_figure[i] = figure[i];
+        static vector<int> update;
+        update.clear();
         
         if (select < 40) {
             // ランダムな点を動かす
@@ -514,8 +600,10 @@ int main(int argc, char* argv[]) {
             if (dx == 0 && dy == 0) continue;
             
             int v = random::get(n);
-            new_figure[v].X += dx;
-            new_figure[v].Y += dy;
+            new_figure[v].X = figure[v].X + dx;
+            new_figure[v].Y = figure[v].Y + dy;
+            if (outside(new_figure[v])) continue;
+            update.push_back(v);
         } else if (select < 80) {
             // ランダムな辺を動かす
             int dx = random::get(3);
@@ -527,10 +615,13 @@ int main(int argc, char* argv[]) {
             int r = random::get(edge.size());
             int v = edge[r].first;
             int w = edge[r].second;
-            new_figure[v].X += dx;
-            new_figure[v].Y += dy;
-            new_figure[w].X += dx;
-            new_figure[w].Y += dy;
+            new_figure[v].X = figure[v].X + dx;
+            new_figure[v].Y = figure[v].Y + dy;
+            new_figure[w].X = figure[w].X + dx;
+            new_figure[w].Y = figure[w].Y + dy;
+            if (outside(new_figure[v]) || outside(new_figure[w])) continue;
+            update.push_back(v);
+            update.push_back(w);
         } else if (select < 85) {
             // 全体を平行移動する
             int dx = random::get(3);
@@ -540,45 +631,70 @@ int main(int argc, char* argv[]) {
             if (dx == 0 && dy == 0) continue;
             
             for (int i = 0; i < n; i++) {
-                new_figure[i].X += dx;
-                new_figure[i].Y += dy;
+                new_figure[i].X = figure[i].X + dx;
+                new_figure[i].Y = figure[i].Y + dx;
             }
+            if (outside(new_figure)) continue;
         } else if (select < 90) {
             // 次数1の頂点を選び、点対称な位置に移す
             int v = random::get(n);
             if (graph[v].size() != 1) continue;
             
-            int w = graph[v][0];
+            int w = graph[v][0].first;
             new_figure[v].X = figure[w].X * 2 - figure[v].X;
             new_figure[v].Y = figure[w].Y * 2 - figure[v].Y;
+            if (outside(new_figure[v])) continue;
+            update.push_back(v);
         } else if (select < 95) {
             // 次数2の頂点を選び、三角形の対辺に対して鏡像移動する
             int v = random::get(n);
             if (graph[v].size() != 2) continue;
             
-            int w1 = graph[v][0];
-            int w2 = graph[v][1];
+            int w1 = graph[v][0].first;
+            int w2 = graph[v][1].first;
             new_figure[v] = reflection(figure[w1], figure[w2], figure[v]);
+            if (outside(new_figure[v])) continue;
+            update.push_back(v);
         } else if (select < 100) {
             // ランダムな点をランダムなholeの頂点に移す
             int vf = random::get(n);
             int vh = random::get(hole.size());
             
             new_figure[vf] = hole[vh];
+            if (outside(new_figure[vf])) continue;
+            update.push_back(vf);
         }
         
-        if (outside(new_figure)) continue;
-        
-        new_penalty_vertex = calc_penalty_vertex(new_figure);
-        new_penalty_edge = calc_penalty_edge(hole, edge, new_figure);
-        new_penalty_length = calc_penalty_length(edge, new_figure);
-        new_dislike = calc_dislike(hole, new_figure);
+        if (update.empty()) {
+            new_penalty_vertex = calc_penalty_vertex(new_figure);
+            new_penalty_edge = calc_penalty_edge(hole, edge, new_figure);
+            new_penalty_length = calc_penalty_length(edge, new_figure);
+            new_dislike = calc_dislike(hole, new_figure, figure, update);
+        } else if (update.size() == 1) {
+            int v = update[0];
+            new_penalty_vertex += penalty_vertex_diff(figure[v], new_figure[v]);
+            new_penalty_edge += penalty_edge_diff(hole, graph, figure, v, figure[v], new_figure[v]);
+            new_penalty_length += penalty_length_diff(graph, figure, v, figure[v], new_figure[v]);
+            new_dislike = calc_dislike(hole, figure, new_figure, update);
+        } else {
+            int v = update[0];
+            int w = update[1];
+            new_penalty_vertex += penalty_vertex_diff(figure[v], new_figure[v]);
+            new_penalty_vertex += penalty_vertex_diff(figure[w], new_figure[w]);
+            new_penalty_edge += penalty_edge_diff(hole, graph, figure, v, figure[v], new_figure[v], w, figure[w], new_figure[w]);
+            new_penalty_length += penalty_length_diff(graph, figure, v, figure[v], new_figure[v], w, figure[w], new_figure[w]);
+            new_dislike = calc_dislike(hole, figure, new_figure, update);
+        }
         if (sa.accept((penalty_vertex + penalty_edge + penalty_length) * penalty_weight + dislike, (new_penalty_vertex + new_penalty_edge + new_penalty_length) * penalty_weight + new_dislike)) {
             penalty_vertex = new_penalty_vertex;
             penalty_edge = new_penalty_edge;
             penalty_length = new_penalty_length;
             dislike = new_dislike;
-            figure.swap(new_figure);
+            if (update.size() == 0) {
+                figure.swap(new_figure);
+            } else {
+                for (int v : update) figure[v] = new_figure[v];
+            }
             if (penalty_vertex + penalty_edge + penalty_length == 0 && dislike < best_dislike) {
                 best_dislike = dislike;
                 for (int i = 0; i < n; i++) best_figure[i] = figure[i];
