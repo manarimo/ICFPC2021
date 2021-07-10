@@ -5,17 +5,11 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include "json.hpp"
+#include "problem.h"
+#include "geo.h"
 
 using namespace std;
-using json = nlohmann::json;
-
-#define X first
-#define Y second
-
-using number = long long;
-using P = pair<number, number>;
-using E = pair<int, int>;
+using namespace manarimo;
 
 const int MAX_C = 1000;
 const int MAX_M = 1000;
@@ -27,46 +21,6 @@ number max_len[MAX_M];
 number min_x = 1e18, min_y = 1e18, max_x = 0, max_y = 0;
 double penalty_weight;
 P outer;
-
-struct figure_t {
-   vector<E> edges;
-   vector<P> vertices;
-};
-
-struct problem {
-    vector<P> hole;
-    figure_t figure;
-    number epsilon;
-};
-
-struct hint {
-    vector<P> vertices;
-};
-
-void from_json(const json& j, P& p) {
-    j.at(0).get_to(p.first);
-    j.at(1).get_to(p.second);
-}
-
-void from_json(const json& j, E& e) {
-    j.at(0).get_to(e.first);
-    j.at(1).get_to(e.second);
-}
-
-void from_json(const json& j, figure_t& f) {
-    j.at("edges").get_to(f.edges);
-    j.at("vertices").get_to(f.vertices);
-}
-
-void from_json(const json& j, problem& p) {
-    j.at("hole").get_to(p.hole);
-    j.at("figure").get_to(p.figure);
-    j.at("epsilon").get_to(p.epsilon);
-}
-
-void from_json(const json& j, hint& h) {
-    j.at("vertices").get_to(h.vertices);
-}
 
 class random {
     public:
@@ -194,24 +148,6 @@ void simulated_annealing::print() const {
     fprintf(stderr, "rejected: %lld\n", rejected);
 }
 
-number dot(const P& p, const P& q) {
-    return p.X * q.X + p.Y * q.Y;
-}
-
-number cross(const P& p, const P& q) {
-    return p.X * q.Y - p.Y * q.X;
-}
-
-number ccw (const P& p, const P& q, const P& r) {
-    return (q.X - p.X) * (r.Y - p.Y) - (q.Y - p.Y) * (r.X - p.X);
-}
-
-bool is_on_segment(const P& p1, const P& p2, const P& p) {
-    number area = (p1.X - p.X) * (p2.Y - p.Y) - (p1.Y - p.Y) * (p2.X - p.X);
-    if (area == 0 && (p1.X - p.X) * (p2.X - p.X) <= 0 && (p1.Y - p.Y) * (p2.Y - p.Y) <= 0) return true;
-    return false;
-}
-
 bool is_point_inside(const vector<P>& hole, const P& point) {
     int crossings = 0;
     for (int i = 0; i < hole.size(); ++i) {
@@ -258,10 +194,6 @@ bool is_edge_inside(const vector<P>& hole, const P& p1, const P& p2) {
     return true;
 }
 
-number d(const P& p, const P& q) {
-    return (p.X - q.X) * (p.X - q.X) + (p.Y - q.Y) * (p.Y - q.Y);
-}
-
 number calc_dislike(const vector<P>& hole, const vector<P>& positions) {
     number ds = 0;
 
@@ -301,83 +233,12 @@ number calc_dislike(const vector<P>& hole, const vector<P>& figure, const vector
     return ds;
 }
 
-double dist_point(double px1, double py1, double px2, double py2) {
-    return (px2 - px1) * (px2 - px1) + (py2 - py1) * (py2 - py1);
-}
-
-double get_ratio(const P& l1, const P& l2, const P& p) {
-    double vx = l2.X - l1.X;
-    double vy = l2.Y - l1.Y;
-    double wx = p.X - l1.X;
-    double wy = p.Y - l1.Y;
-    return (double)(vx * wx + vy * wy) / (vx * vx + vy * vy);    
-}
-
-double dist_line(const P& l1, const P& l2, const P& p) {
-    double t = get_ratio(l1, l2, p);
-    if (t < 0) t = 0;
-    if (t > 1) t = 1;
-    return dist_point(l1.X + (l2.X - l1.X) * t, l1.Y + (l2.Y - l1.Y) * t, p.X, p.Y);
-}
-
 double dist_hole_point(const vector<P>& hole, const P& p) {
     double dist = 1e18;
     for (int i = 0; i < hole.size(); i++) {
         dist = min(dist, dist_line(hole[i], hole[(i + 1) % hole.size()], p));
     }
     return dist;
-}
-
-P reflection(const P& p1, const P& p2, const P& p) {
-    double t = get_ratio(p1, p2, p);
-    double x = p1.X + t * (p2.X - p1.X) * 2 - p.X;
-    double y = p1.Y + t * (p2.Y - p1.Y) * 2 - p.Y;
-    return make_pair(round(x), round(y));
-}
-
-number read_number() {
-    number x;
-    scanf("%lld", &x);
-    return x;
-}
-
-vector<P> read_hole() {
-    int n = read_number();
-    
-    vector<P> hole(n);
-    for (int i = 0; i < n; i++) {
-        number x = read_number();
-        number y = read_number();
-        hole[i] = make_pair(x, y);
-    }
-    
-    return hole;
-}
-
-vector<pair<int, int>> read_edge() {
-    int m = read_number();
-    
-    vector<pair<int, int>> edge(m);
-    for (int i = 0; i < m; i++) {
-        int x = read_number();
-        int y = read_number();
-        edge[i] = make_pair(x, y);
-    }
-    
-    return edge;
-}
-
-vector<P> read_figure() {
-    int n = read_number();
-    
-    vector<P> figure(n);
-    for (int i = 0; i < n; i++) {
-        number x = read_number();
-        number y = read_number();
-        figure[i] = make_pair(x, y);
-    }
-    
-    return figure;
 }
 
 double calc_penalty_vertex(const vector<P>& figure) {
@@ -528,9 +389,7 @@ void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, 
 }
 
 int main(int argc, char* argv[]) {
-    json j;
-    std::cin >> j;
-    problem prob = j.get<problem>();
+    problem prob = load_problem(std::cin);
 
     vector<P> hole = prob.hole;
     vector<pair<int, int>> edge = prob.figure.edges;
