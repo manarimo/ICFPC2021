@@ -472,7 +472,7 @@ int main(int argc, char* argv[]) {
     vector<P> best_figure(n);
     while (!sa.end()) {
         int select = random::get(100);
-        double time = sa.get_time() * sa.get_time();
+        double time = sa.get_time() * sa.get_time() * sa.get_time();
         double new_penalty_vertex = 0;
         double new_penalty_edge = 0;
         double new_penalty_length = 0;
