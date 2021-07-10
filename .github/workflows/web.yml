@@ -25,6 +25,7 @@ jobs:
           path: |
             kenkoooo/target
             ~/.cargo
+            /usr/share/rust/.cargo
           key: ${{ hashFiles('kenkoooo/wasm-rust/Cargo.toml') }}
       - name: run checker
         working-directory: checker
