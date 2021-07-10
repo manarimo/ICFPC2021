@@ -64,9 +64,13 @@ def solve(spec, report_result):
     assignments = []
     def hint_dfs(i, best):
         hints = {i: hole[assignment] for i, assignment in enumerate(assignments) if assignment != -1}
+        if len(hole) - len(hints) > len(nodes) - i:
+            return best
         if i >= len(nodes):
+            positions.clear()
             return dfs(0, hints, best)
-        candidate = [assign for assign in range(len(hole)) if assign not in hints] + [-1]
+        used = set(assignments) - {-1}
+        candidate = [assign for assign in range(len(hole)) if assign not in used] + [-1]
         for assignment in candidate:
             valid = True
             if assignment != -1:
