@@ -215,7 +215,7 @@ end
 best_solutions = {}
 solutions.each do |name, list|
   list.each do |id, solution|
-    next if solution.verdict == nil
+    next if solution.verdict == nil || !solution.verdict['isValid']
     current_verdict = best_solutions[id]&.verdict
     if current_verdict == nil || (current_verdict['isValid'] && current_verdict['score'] > solution.verdict['score'])
       best_solutions[id] = solution
