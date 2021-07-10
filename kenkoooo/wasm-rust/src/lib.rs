@@ -1,6 +1,6 @@
-pub mod geometry;
+pub use manarimo_lib::geometry;
+pub use manarimo_lib::types;
 pub mod solver;
-pub mod types;
 
 use crate::solver::solve;
 use crate::types::{Pose, Problem};

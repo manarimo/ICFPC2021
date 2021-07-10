@@ -58,6 +58,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "manarimo-lib"
+version = "0.1.0"
+
+[[package]]
 name = "memory_units"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -140,6 +144,7 @@ name = "wasm"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
+ "manarimo-lib",
  "serde",
  "serde_json",
  "wasm-bindgen",
