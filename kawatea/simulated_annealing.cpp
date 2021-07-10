@@ -24,6 +24,7 @@ bool inside_double[MAX_C * 2][MAX_C * 2];
 double dist[MAX_C][MAX_C];
 number min_len[MAX_M];
 number max_len[MAX_M];
+double penalty_weight;
 P outer;
 
 struct figure_t {
@@ -124,6 +125,14 @@ class timer {
     }
 };
 
+#ifndef START_TEMP
+#define START_TEMP 100
+#endif
+
+#ifndef TIME_LIMIT
+#define TIME_LIMIT 10
+#endif
+
 class simulated_annealing {
     public:
     simulated_annealing();
@@ -136,8 +145,6 @@ class simulated_annealing {
     constexpr static bool MAXIMIZE = false;
     constexpr static int LOG_SIZE = 0xFFFF;
     constexpr static int UPDATE_INTERVAL = 0xFF;
-    constexpr static double TIME_LIMIT = 10;
-    constexpr static double START_TEMP = 100;
     constexpr static double END_TEMP = 1e-9;
     constexpr static double TEMP_RATIO = (END_TEMP - START_TEMP) / TIME_LIMIT;
     double log_probability[LOG_SIZE + 1];
@@ -385,7 +392,7 @@ double penalty_vertex_diff(const P& orig, const P& dest) {
 double calc_penalty_edge(const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
     double penalty = 0;
     for (const pair<int, int>& p : edge) {
-        if (!is_edge_inside(hole, figure[p.first], figure[p.second])) penalty += 10;
+        if (!is_edge_inside(hole, figure[p.first], figure[p.second])) penalty += penalty_weight;
     }
     return penalty;
 }
@@ -393,8 +400,8 @@ double calc_penalty_edge(const vector<P>& hole, const vector<pair<int, int>>& ed
 double penalty_edge_diff(const vector<P>& hole, const vector<vector<pair<int, int>>>& graph, const vector<P>& figure, int v, const P& orig, const P& dest) {
     double diff = 0;
     for (const pair<int, int>& p : graph[v]) {
-        if (!is_edge_inside(hole, orig, figure[p.first])) diff -= 10;
-        if (!is_edge_inside(hole, dest, figure[p.first])) diff += 10;
+        if (!is_edge_inside(hole, orig, figure[p.first])) diff -= penalty_weight;
+        if (!is_edge_inside(hole, dest, figure[p.first])) diff += penalty_weight;
     }
     return diff;
 }
@@ -403,17 +410,17 @@ double penalty_edge_diff(const vector<P>& hole, const vector<vector<pair<int, in
     double diff = 0;
     for (const pair<int, int>& p : graph[v1]) {
         if (p.first == v2) {
-            if (!is_edge_inside(hole, orig1, orig2)) diff -= 10;
-            if (!is_edge_inside(hole, dest1, dest2)) diff += 10;
+            if (!is_edge_inside(hole, orig1, orig2)) diff -= penalty_weight;
+            if (!is_edge_inside(hole, dest1, dest2)) diff += penalty_weight;
             continue;
         }
-        if (!is_edge_inside(hole, orig1, figure[p.first])) diff -= 10;
-        if (!is_edge_inside(hole, dest1, figure[p.first])) diff += 10;
+        if (!is_edge_inside(hole, orig1, figure[p.first])) diff -= penalty_weight;
+        if (!is_edge_inside(hole, dest1, figure[p.first])) diff += penalty_weight;
     }
     for (const pair<int, int>& p : graph[v2]) {
         if (p.first == v1) continue;
-        if (!is_edge_inside(hole, orig2, figure[p.first])) diff -= 10;
-        if (!is_edge_inside(hole, dest2, figure[p.first])) diff += 10;
+        if (!is_edge_inside(hole, orig2, figure[p.first])) diff -= penalty_weight;
+        if (!is_edge_inside(hole, dest2, figure[p.first])) diff += penalty_weight;
     }
     return diff;
 }
@@ -585,11 +592,13 @@ int main(int argc, char* argv[]) {
     
     if (!figure_hint.empty()) figure = figure_hint;
     
+    number dislike = calc_dislike(hole, figure);
+    double weight = sqrt(dislike);
+    penalty_weight = weight;
+    
     double penalty_vertex = calc_penalty_vertex(figure);
     double penalty_edge = calc_penalty_edge(hole, edge, figure);
     double penalty_length = calc_penalty_length(edge, figure);
-    number dislike = calc_dislike(hole, figure);
-    double weight = sqrt(dislike);
     fprintf(stderr, "initial_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
     fflush(stderr);
     
