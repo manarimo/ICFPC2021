@@ -37,6 +37,10 @@ struct problem {
     number epsilon;
 };
 
+struct hint {
+    vector<P> vertices;
+};
+
 void from_json(const json& j, P& p) {
     j.at(0).get_to(p.first);
     j.at(1).get_to(p.second);
@@ -56,6 +60,10 @@ void from_json(const json& j, problem& p) {
     j.at("hole").get_to(p.hole);
     j.at("figure").get_to(p.figure);
     j.at("epsilon").get_to(p.epsilon);
+}
+
+void from_json(const json& j, hint& h) {
+    j.at("vertices").get_to(h.vertices);
 }
 
 class random {
@@ -421,6 +429,15 @@ int main(int argc, char* argv[]) {
     vector<pair<int, int>> edge = prob.figure.edges;
     vector<P> figure = prob.figure.vertices;
     number epsilon = prob.epsilon;
+    
+    vector<P> figure_hint;
+    if (argc >= 3) {
+        ifstream i(argv[2]);
+        json j;
+        i >> j;
+        hint h = j.get<hint>();
+        figure_hint = h.vertices;
+    }
 
     int n = figure.size();
     
@@ -459,9 +476,11 @@ int main(int argc, char* argv[]) {
         max_len[i] = orig + diff;
     }
     
+    if (!figure_hint.empty()) figure = figure_hint;
+    
     double penalty_vertex = calc_penalty_vertex(figure);
     double penalty_edge = calc_penalty_edge(hole, edge, figure);
-    double penalty_length = 0;
+    double penalty_length = calc_penalty_length(edge, figure);
     number dislike = calc_dislike(hole, figure);
     fprintf(stderr, "initial_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
     fflush(stderr);
@@ -472,7 +491,7 @@ int main(int argc, char* argv[]) {
     vector<P> best_figure(n);
     while (!sa.end()) {
         int select = random::get(100);
-        double time = sa.get_time() * sa.get_time() * sa.get_time();
+        double time = (sa.get_time() + 1) * (sa.get_time() + 1) * (sa.get_time() + 1);
         double new_penalty_vertex = 0;
         double new_penalty_edge = 0;
         double new_penalty_length = 0;
@@ -562,6 +581,7 @@ int main(int argc, char* argv[]) {
         if (argc >= 2) output_svg(argv[1], hole, edge, best_figure);
     } else {
         fprintf(stderr, "final_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
+        output(figure);
         if (argc >= 2) output_svg(argv[1], hole, edge, figure);
     }
     
