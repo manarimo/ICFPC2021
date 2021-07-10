@@ -15,6 +15,8 @@ import { EditorState } from "./EditorState";
 import { PoseInfoPanel } from "./PoseInfoPanel";
 import { SinglePointSolverPanel } from "./SinglePointSolverPanel";
 import { useProblemData, useSolutionData } from "../API";
+import ToggleButton from 'react-bootstrap/ToggleButton'
+import ButtonGroup from "react-bootstrap/ButtonGroup";
 
 interface SvgEditorProps {
   problem: Problem;
@@ -26,6 +28,7 @@ const SvgEditor = (props: SvgEditorProps) => {
   const params = new URLSearchParams(location.search);
   const solution = useSolutionData(params.get("solution"));
 
+  const [design, setDesign] = useState<'single' | 'triple'>('triple');
   const [editorState, setEditState] = useState<EditorState | null>(null);
   const [userPose, setUserPose] = useState([...problem.figure.vertices]);
   const [text, setText] = useState<string>("");
@@ -133,8 +136,30 @@ const SvgEditor = (props: SvgEditorProps) => {
 
   return (
     <Container>
-      <Row>
+      <Row style={{marginBottom: '8px'}}>
         <Col>
+          <ButtonGroup toggle>
+            <ToggleButton
+                type="checkbox"
+                variant="secondary"
+                value="single"
+                checked={design == 'single'}
+                onChange={(e) => setDesign('single')}>
+              1カラム
+            </ToggleButton>
+            <ToggleButton
+                type="checkbox"
+                variant="secondary"
+                value="triple"
+                checked={design == 'triple'}
+                onChange={(e) => setDesign('triple')}>
+              3カラム
+            </ToggleButton>
+          </ButtonGroup>
+        </Col>
+      </Row>
+      <Row>
+        <Col sm={design == 'single' ? 12 : undefined}>
           <SvgViewer
             userPose={userPose}
             problem={problem}
