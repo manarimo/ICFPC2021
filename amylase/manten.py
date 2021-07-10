@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     args = []
     # for problem_id in range(11, 20):
-    for problem_id in [4, 53, 55, 59, 63, 65, 67, 70, 72, 77]:
+    for problem_id in [4, 38, 55, 59, 63, 65, 67, 70, 72, 77]:
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))
