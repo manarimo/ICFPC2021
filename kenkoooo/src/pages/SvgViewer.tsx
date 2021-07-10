@@ -36,6 +36,9 @@ const UserPoseLayer = (props: {
 }) => {
   const epsilon = BigInt(props.problem.epsilon);
   const originalVertices = props.problem.figure.vertices;
+  const isOnHole = ([x, y]: [number, number]) => {
+    return !!props.problem.hole.find(([ox, oy]) => ox === x && oy === y);
+  };
   return (
     <>
       {props.problem.figure.edges.map(([i, j]) => {
@@ -77,6 +80,7 @@ const UserPoseLayer = (props: {
             style={{
               userSelect: "none",
             }}
+            fill={isOnHole([x, y]) ? "green" : "black"}
           >
             {pointId}
           </text>
