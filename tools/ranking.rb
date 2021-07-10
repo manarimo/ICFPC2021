@@ -10,7 +10,7 @@ response = http.request(req)
 
 res = []
 
-response.body.scan(/<tr><td><a href="\/problems\/\d+">(\d+)<\/a><\/td><td><\/td><td>(\d+)<\/td><\/tr>/).each do |v|
+response.body.scan(/<tr><td><a href="\/problems\/\d+">(\d+)<\/a><\/td><td>[^<]*<\/td><td>(\d+)<\/td><\/tr>/).each do |v|
    res.push({
       problem_id: v[0].to_i,
       minimal_dislikes: v[1].to_i
