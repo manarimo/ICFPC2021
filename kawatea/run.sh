@@ -5,5 +5,5 @@
 for prog in `ls *.out`; do
   id=$(basename $1 | sed -e s/.json//)
   echo $id
-  ./${prog} < $1 > $id_$prog.json 2> $id_$prog.log &
+  ./${prog} < $1 > ${id}_$prog.json 2> ${id}_$prog.log &
 done
