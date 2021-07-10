@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Col, Container, Row, Table } from "react-bootstrap";
+import { Container, Row, Table } from "react-bootstrap";
 import { dislike, isEdgeInside } from "../tslib/amyfunc";
 import { Problem } from "../utils";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
