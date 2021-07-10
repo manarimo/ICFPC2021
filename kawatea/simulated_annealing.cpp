@@ -252,8 +252,12 @@ number d(const P& p, const P& q) {
 
 number calc_dislike(const vector<P>& hole, const vector<P>& positions) {
     number ds = 0;
+
+    #pragma omp parallel
     for (const P& h: hole) {
         number min_p = 1e18;
+
+        #pragma omp parallel
         for (const P& p: positions) {
             min_p = min(min_p, d(h, p));
         }
