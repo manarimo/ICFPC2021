@@ -124,6 +124,14 @@ class timer {
     }
 };
 
+#ifndef START_TEMP
+#define START_TEMP 100
+#endif
+
+#ifndef TIME_LIMIT
+#define TIME_LIMIT 10
+#endif
+
 class simulated_annealing {
     public:
     simulated_annealing();
@@ -136,8 +144,6 @@ class simulated_annealing {
     constexpr static bool MAXIMIZE = false;
     constexpr static int LOG_SIZE = 0xFFFF;
     constexpr static int UPDATE_INTERVAL = 0xFF;
-    constexpr static double TIME_LIMIT = 10;
-    constexpr static double START_TEMP = 100;
     constexpr static double END_TEMP = 1e-9;
     constexpr static double TEMP_RATIO = (END_TEMP - START_TEMP) / TIME_LIMIT;
     double log_probability[LOG_SIZE + 1];
