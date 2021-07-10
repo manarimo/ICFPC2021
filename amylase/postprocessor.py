@@ -53,8 +53,6 @@ def optimize(spec, pose):
         def dfs(i):
             if i >= len(orig_positions):
                 score = dislike(spec["hole"], positions)
-                if score < global_best[0]:
-                    print(score, global_best[0])
                 return score, positions[:]
 
             candidates = valid_positions if i in subgraph else [orig_positions[i]]
