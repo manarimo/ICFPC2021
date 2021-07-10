@@ -12,8 +12,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
+      - uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
         with:
-          cache: yarn
+          path: kenkoooo/node_modules
+          key: ${{ hashFiles('kenkoooo/package.json') }}-${{ hashFiles('kenkoooo/yarn.lock') }}
+     - uses: actions/cache@v2
+       env:
+         cache-name: cache-cargo-modules
+       with:
+         path: kenkoooo/target
+         key: ${{ hashFiles('kenkoooo/wasm-rust/Cargo.toml') }}
       - name: run checker
         working-directory: checker
         run: |

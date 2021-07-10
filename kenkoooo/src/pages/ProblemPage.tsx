@@ -143,7 +143,7 @@ const SvgEditor = (props: SvgEditorProps) => {
                 type="checkbox"
                 variant="secondary"
                 value="single"
-                checked={design == 'single'}
+                checked={design === 'single'}
                 onChange={(e) => setDesign('single')}>
               1カラム
             </ToggleButton>
@@ -151,7 +151,7 @@ const SvgEditor = (props: SvgEditorProps) => {
                 type="checkbox"
                 variant="secondary"
                 value="triple"
-                checked={design == 'triple'}
+                checked={design === 'triple'}
                 onChange={(e) => setDesign('triple')}>
               3カラム
             </ToggleButton>
@@ -159,7 +159,7 @@ const SvgEditor = (props: SvgEditorProps) => {
         </Col>
       </Row>
       <Row>
-        <Col sm={design == 'single' ? 12 : undefined}>
+        <Col sm={design === 'single' ? 12 : undefined}>
           <SvgViewer
             userPose={userPose}
             problem={problem}
