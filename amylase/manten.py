@@ -23,8 +23,9 @@ def solve(spec, report_result):
     min_y = min(ys)
     max_y = max(ys)
     valid_positions = []
-    for x in range(min_x, max_x + 1):
-        for y in range(min_y, max_y + 1):
+    skip = 2
+    for x in range(min_x, max_x + 1, step=skip):
+        for y in range(min_y, max_y + 1, step=skip):
             if is_point_inside(hole, [x, y]):
                 valid_positions.append([x, y])
     graph = defaultdict(list)
@@ -141,7 +142,7 @@ if __name__ == '__main__':
     pool = Pool(processes=7)
 
     args = []
-    for problem_id in [55, 63, 65, 70, 72, 77]:
+    for problem_id in [64, 70, 72, 73, 77]:
         input_path = f"../problems/{problem_id}.json"
         output_path = str(output_dir / f"{problem_id}.json")
         args.append((input_path, output_path))

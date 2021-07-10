@@ -55,10 +55,13 @@ def is_edge_inside(hole, edge):
     for point in edge:
         if not is_point_inside(hole, point):
             return False
+    prev_ccw = ccw(edge[0], edge[1], hole[0])
     for i in range(len(hole)):
         j = (i + 1) % len(hole)
-        if ccw(edge[0], edge[1], hole[i]) * ccw(edge[0], edge[1], hole[j]) < 0 and ccw(hole[i], hole[j], edge[0]) * ccw(hole[i], hole[j], edge[1]) < 0:
+        next_ccw = ccw(edge[0], edge[1], hole[j])
+        if prev_ccw * next_ccw < 0 and ccw(hole[i], hole[j], edge[0]) * ccw(hole[i], hole[j], edge[1]) < 0:
             return False
+        prev_ccw = next_ccw
 
     splitting_points = edge[:]
     for point in hole:
