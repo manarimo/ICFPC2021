@@ -1,9 +1,11 @@
 import * as fs from 'fs';
 
 const WIDTH = 10_000_000_000;
-const HEIGHT = Math.floor(WIDTH / 20) + 1;
 const EDGE_MAX = Math.floor(WIDTH / 20);
+// const WIDTH = 30;
+// const EDGE_MAX = 10;
 const EDGE_MIN = 1;
+
 type JudgeInput = {
     hole: number[][],
     figure: {
@@ -30,11 +32,10 @@ const generateEdges = (edgeLength: number) => {
     return edges;
 }
 
-const generateSticks = (width: number, height: number) => {
+const generateSticks = (width: number) => {
     const top = generateEdges(width);
-    const right = generateEdges(height);
     return {
-        top, right
+        top
     };
 }
 
@@ -51,29 +52,6 @@ const generatePosSequencesWeakRestrictions = (oneSideSticks: number[]) => {
     }
     return res;
 }
-
-// we have 2 restrictions
-// 1. pos must be more than or equals to 0
-// 2. pos last element must be the largest number
-const generatePosSequencesStrongRestrictions = (oneSideSticks: number[]) => {
-    let pos = 0;
-    const res: number[] = [];
-    for (let i = 0; i < oneSideSticks.length; i++) {
-        if (Math.random() < 0.5 || pos - oneSideSticks[i] < 0) {
-            pos += oneSideSticks[i];
-        } else {
-            pos -= oneSideSticks[i];
-        }
-        res.push(pos);
-    }
-    const max = res.reduce((acc, val) => Math.max(acc, val), 0);
-    const lastPos = max + EDGE_MIN;
-    const lastLen = lastPos - res[res.length - 1];
-    res.push(lastPos);
-    oneSideSticks.push(lastLen);
-    return res;
-}
-
 
 const createFigure = (top: number[], right: number[]) => {
     const vertices: number[][] = [];
@@ -104,9 +82,9 @@ const createFigure = (top: number[], right: number[]) => {
     }
 }
 
-const createAnswer = (top: number[], right: number[]): JudgeOutput => {
+const createAnswer = (top: number[]): JudgeOutput => {
     const X = generatePosSequencesWeakRestrictions(top);
-    const Y = generatePosSequencesStrongRestrictions(right);
+    const Y = [1];
     const vertices: number[][] = [];
     for (let i = 0; i < X.length; i++) {
         vertices.push([X[i], 0]);
@@ -144,18 +122,18 @@ const createHole = (vertices: number[][]) => {
 }
 
 const generate = () => {
-    const {top, right} = generateSticks(WIDTH, HEIGHT);
+    const {top} = generateSticks(WIDTH);
     // WARNING! right can be modified by createAnswer
-    const answer = createAnswer(top, right);
-    const figure = createFigure(top, right);
+    const answer = createAnswer(top);
+    const figure = createFigure(top, [1]);
     const hole = createHole(answer.vertices);
     const input: JudgeInput = {
         hole, figure, epsilon: 0,
     }
     const vs = figure.vertices.length;
     console.log(vs);
-    fs.writeFile(`./problems/${WIDTH}_${HEIGHT}_${vs}.json`, JSON.stringify(input), () => {});
-    fs.writeFile(`./solutions/${WIDTH}_${HEIGHT}_${vs}.json`, JSON.stringify(answer), () => {});
+    fs.writeFile(`./problems/${WIDTH}_${1}_${vs}.json`, JSON.stringify(input), () => {});
+    fs.writeFile(`./solutions/${WIDTH}_${1}_${vs}.json`, JSON.stringify(answer), () => {});
 }
 
 generate();
