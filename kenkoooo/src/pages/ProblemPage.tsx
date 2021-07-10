@@ -213,9 +213,6 @@ const SvgEditor = (props: SvgEditorProps) => {
             </Col>
           </Row>
           <Row>
-            <PoseInfoPanel userPose={userPose} problem={problem} />
-          </Row>
-          <Row>
             <Col>
               <Row>
                 <Button onClick={() => slideSelectedVertices("L")}>L</Button>
@@ -281,6 +278,11 @@ const SvgEditor = (props: SvgEditorProps) => {
                 setUserPose([...newPose]);
               }}
             />
+          </Row>
+        </Col>
+        <Col className="ml-3">
+          <Row>
+            <PoseInfoPanel userPose={userPose} problem={problem} />
           </Row>
         </Col>
       </Row>
