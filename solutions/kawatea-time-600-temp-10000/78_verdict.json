@@ -1,6 +1,7 @@
 {
     "isValid": false,
     "score": 0,
+    "bonusObtained": [],
     "error": {
         "srcEdge": {
             "src": {

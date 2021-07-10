@@ -2,6 +2,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {dislike, Edge, isEdgeInside, isValidEdge, Point, Polygon} from "../ts-lib/amyfunc";
 
+enum BonusType {
+    GLOBALIST = "GLOBALIST",
+    BREAK_A_LEG = "BREAK_A_LEG"
+}
+
+interface Bonus {
+    bonus: BonusType,
+    problem: number,
+    position: number[]
+}
+
 interface Problem {
     hole: Polygon;
     figure: {
@@ -9,6 +20,7 @@ interface Problem {
         vertices: Point[];
     };
     epsilon: number;
+    bonuses: Bonus[];
 }
 
 interface Solution {
@@ -18,6 +30,7 @@ interface Solution {
 interface Verdict {
     isValid: boolean;
     score: number;
+    bonusObtained: Bonus[];
     error?: any;
 }
 
@@ -34,7 +47,8 @@ function loadProblems(): {[key: string]: Problem} {
                 edges: json['figure']['edges'],
                 vertices: json['figure']['vertices'].map((a: number[]) => ({x: a[0], y: a[1]}))
             },
-            epsilon: json['epsilon']
+            epsilon: json['epsilon'],
+            bonuses: json['bonuses']
         };
     });
     return problems;
@@ -57,6 +71,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
             return {
                 isValid: false,
                 score: 0,
+                bonusObtained: [],
                 error: {
                     srcEdge,
                     dstEdge,
@@ -68,6 +83,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
             return {
                 isValid: false,
                 score: 0,
+                bonusObtained: [],
                 error: {
                     dstEdge,
                     message: `Edge ${i} is not in the hole`,
@@ -75,8 +91,15 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
             };
         }
     }
+    const bonusObtained = [];
+    for (const bonus of problem.bonuses) {
+        if (solution.vertices.some(point => point.x === bonus.position[0] && point.y === bonus.position[1])) {
+            bonusObtained.push(bonus);
+        }
+    }
     return {
         isValid: true,
+        bonusObtained: bonusObtained,
         score: dislike(problem.hole, solution.vertices)
     };
 }
