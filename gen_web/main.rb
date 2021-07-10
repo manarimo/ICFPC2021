@@ -160,7 +160,7 @@ def write_index(f, problems, solutions = {}, solution_title = nil, solution_name
     solution_links = <<-LINKS
 <div style="margin-bottom: 32px">
   <div><a href="best.html"><h3>Best</h3></a></div>
-  <div style="display: flex">
+  <div style="display: flex; flex-wrap: wrap; line-height: 1.5em">
     #{solution_names.map { |sn| %Q(<div style="margin-right: 10px"><a href="#{sn}.html">#{sn}</a></div>) }.join}
   </div>
 </div>
