@@ -31,7 +31,7 @@ impl<T> Shuffle for Vec<T> {
 
 pub fn solve<F, G>(problem: Problem, fixed: &[usize], solution: Pose, report: F, progress_report: G)
 where
-    F: Fn(Pose, i64),
+    F: FnMut(Pose, i64),
     G: Fn(usize) + Copy,
 {
     let mut rng = Xorshift(101);
@@ -90,15 +90,15 @@ where
         graph,
         vid_to_order,
         eps: problem.epsilon,
-        report,
         template_solution: solution,
         is_fixed,
         progress_report,
     };
-    dfs.dfs(&mut vec![], 1 << 60, &mut 0);
+    let mut report = report;
+    dfs.dfs(&mut vec![], 1 << 60, &mut 0, &mut report);
 }
 
-struct DfsSolver<F, G> {
+struct DfsSolver<G> {
     valid_positions: Vec<Point>,
     original_pose: Vec<Point>,
     hole: Vec<Point>,
@@ -108,12 +108,17 @@ struct DfsSolver<F, G> {
     eps: i64,
     template_solution: Pose,
     is_fixed: Vec<bool>,
-    report: F,
     progress_report: G,
 }
 
-impl<F: Fn(Pose, i64), G: Fn(usize) + Copy> DfsSolver<F, G> {
-    fn dfs(&self, positions: &mut Vec<Point>, best: i64, step: &mut usize) -> i64 {
+impl<G: Fn(usize) + Copy> DfsSolver<G> {
+    fn dfs<F: FnMut(Pose, i64)>(
+        &self,
+        positions: &mut Vec<Point>,
+        best: i64,
+        step: &mut usize,
+        report: &mut F,
+    ) -> i64 {
         *step += 1;
         (self.progress_report)(*step);
 
@@ -126,7 +131,7 @@ impl<F: Fn(Pose, i64), G: Fn(usize) + Copy> DfsSolver<F, G> {
                     .map(|p| [p.x, p.y])
                     .collect::<Vec<_>>();
                 let pose = Pose { vertices };
-                (self.report)(pose, result);
+                (report)(pose, result);
                 result
             } else {
                 best
@@ -167,7 +172,7 @@ impl<F: Fn(Pose, i64), G: Fn(usize) + Copy> DfsSolver<F, G> {
             }
 
             positions.push(p);
-            best = self.dfs(positions, best, step);
+            best = self.dfs(positions, best, step, report);
             positions.pop();
         }
         best

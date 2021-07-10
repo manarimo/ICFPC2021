@@ -5,13 +5,18 @@ require 'pp'
 require 'fileutils'
 
 Point = Struct.new(:x, :y)
-Problem = Struct.new(:id, :hole, :figure, :epsilon, :width, :height)
+Problem = Struct.new(:id, :hole, :figure, :epsilon, :width, :height, :bonuses)
 Edge = Struct.new(:from, :to)
 Figure = Struct.new(:edges, :vertices)
+Bonus = Struct.new(:position, :bonus, :problem)
 Solution = Struct.new(:name, :verdict, :vertices)
 
+def new_point(json)
+  Point.new(json[0], json[1])
+end
+
 def new_hole(json)
-  json.map { |a| Point.new(a[0], a[1]) }
+  json.map { |a| new_point(a) }
 end
 
 def new_edges(json)
@@ -19,11 +24,16 @@ def new_edges(json)
 end
 
 def new_vertices(json)
-  json.map { |a| Point.new(a[0], a[1]) }
+  json.map { |a| new_point(a) }
 end
 
 def new_figure(json)
   Figure.new(new_edges(json['edges']), new_vertices(json['vertices']))
+end
+
+def new_bonuses(json)
+  return nil if json == nil
+  json.map { |b| Bonus.new(new_point(b['position']), b['bonus'], b['problem'].to_i) }
 end
 
 def new_problem(id, json)
@@ -34,7 +44,7 @@ def new_problem(id, json)
   min_y = hole.map(&:y).min
   max_x = hole.map(&:x).max
   max_y = hole.map(&:y).max
-  Problem.new(id, hole, figure, eps, max_x - min_x, max_y - min_y)
+  Problem.new(id, hole, figure, eps, max_x - min_x, max_y - min_y, new_bonuses(json['bonuses']))
 end
 
 def load_problems
@@ -63,6 +73,17 @@ def write_svg(f, problem, solution = nil)
     %Q(<path d="#{d}" />)
   }
   figure = %Q(<g style="fill:none;stroke:#ff0000;stroke-linecap:round">#{figure_paths.join}</g>)
+  bonuses = problem.bonuses.map { |b|
+    case b.bonus
+    when 'GLOBALIST'
+      color = '#d0d00080'
+    when 'BREAK_A_LEG'
+      color = '#0000ff80'
+    else
+      color = 'gray'
+    end
+    %Q(<circle cx="#{b.position.x}" cy="#{b.position.y}" r="5px" style="fill:#{color}" />)
+  }.join
 
   points = problem.hole + problem.figure.vertices
   min_x = points.map(&:x).min - 10
@@ -75,6 +96,7 @@ def write_svg(f, problem, solution = nil)
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="#{min_x} #{min_y} #{max_x-min_x} #{max_y-min_y}" style="background-color: #00000066">
   #{hole}
   #{figure}
+  #{bonuses}
 </svg>
 SVG
 end
@@ -138,7 +160,7 @@ def write_index(f, problems, solutions = {}, solution_title = nil, solution_name
     solution_links = <<-LINKS
 <div style="margin-bottom: 32px">
   <div><a href="best.html"><h3>Best</h3></a></div>
-  <div style="display: flex">
+  <div style="display: flex; flex-wrap: wrap; line-height: 1.5em">
     #{solution_names.map { |sn| %Q(<div style="margin-right: 10px"><a href="#{sn}.html">#{sn}</a></div>) }.join}
   </div>
 </div>

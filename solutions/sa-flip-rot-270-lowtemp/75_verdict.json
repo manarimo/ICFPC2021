@@ -1,0 +1,17 @@
+{
+    "isValid": false,
+    "score": 0,
+    "error": {
+        "dstEdge": {
+            "src": {
+                "x": 94,
+                "y": 54
+            },
+            "dst": {
+                "x": 98,
+                "y": 14
+            }
+        },
+        "message": "Edge 4 is not in the hole"
+    }
+}
