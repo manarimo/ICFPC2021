@@ -115,6 +115,19 @@ def solve(spec, hint, report_result, best=10**18, skip=1):
     for fr, to in figure["edges"]:
         graph[fr].append(to)
         graph[to].append(fr)
+    nodes = figure["vertices"]
+    distance_inf = (max_x - min_x) + (max_y - min_y)
+    distance_upperbounds = [[distance_inf for _ in nodes] for _ in nodes]
+    for i in range(len(nodes)):
+        distance_upperbounds[i][i] = 0
+    for fr, tos in graph.items():
+        for to in tos:
+            distance_upperbounds[fr][to] = ((1 + spec["epsilon"] / 1_000_000) * d(nodes[fr], nodes[to])) ** 0.5
+    for k in range(len(nodes)):
+        for i in range(len(nodes)):
+            for j in range(len(nodes)):
+                distance_upperbounds[i][j] = min(distance_upperbounds[i][j], distance_upperbounds[i][k] + distance_upperbounds[k][j])
+
     vertex_ids = list(range(len(graph)))
     vertex_ids.sort(key=lambda vid: len(graph[vid]), reverse=True)
     vid2order = {}
@@ -135,12 +148,17 @@ def solve(spec, hint, report_result, best=10**18, skip=1):
         candidate_positions = hint.get(vid, valid_positions)
         for p in candidate_positions:
             valid = True
-            for j in graph[vid]:
+            for j in range(len(nodes)):
                 if vid2order[j] >= i:
                     continue
-                if not is_valid_edge(orig_positions[vid], orig_positions[j], p, positions[vid2order[j]], spec["epsilon"]):
-                    valid = False
-                    break
+                if j in graph[vid]:
+                    if not is_valid_edge(orig_positions[vid], orig_positions[j], p, positions[vid2order[j]], spec["epsilon"]):
+                        valid = False
+                        break
+                else:
+                    if d(p, positions[vid2order[j]]) > math.ceil(distance_upperbounds[vid][j] ** 2):
+                        valid = False
+                        break
                 if not is_edge_inside(spec["hole"], [p, positions[vid2order[j]]]):
                     valid = False
                     break
@@ -178,8 +196,8 @@ def main_bonus(input_path, output_path):
         hint = {vid: [bonus["position"]] for vid, bonus in zip(assignment, bonuses)}
         def report_result(score, pose):
             print(f"{input_path} dislike: {score}")
-            with open(output_path, "w") as f:
-                json.dump({"vertices": pose}, f)
+            # with open(output_path, "w") as f:
+            #     json.dump({"vertices": pose}, f)
         best = solve(spec, hint, report_result, best, skip=1)
     print(f"end: {input_path} -> {output_path}")
 
@@ -192,8 +210,7 @@ def _main_bonus(args):
     main_bonus(*args)
 
 
-if __name__ == '__main__':
-    bonus = True
+def run_all(bonus):
     if bonus:
         output_dir = Path("../solutions/amylase-bruteforce-bonus/")
         func = _main_bonus
@@ -209,4 +226,9 @@ if __name__ == '__main__':
             input_path = f"../problems/{problem_id}.json"
             output_path = str(output_dir / f"{problem_id}.json")
             args.append((input_path, output_path))
-        future = pool.map(_main_bonus, args, chunksize=1, timeout=300)
+        pool.map(func, args, chunksize=1, timeout=300)
+
+
+if __name__ == '__main__':
+    run_all(True)
+    run_all(False)
