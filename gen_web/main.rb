@@ -9,9 +9,10 @@ Problem = Struct.new(:id, :hole, :figure, :epsilon, :width, :height, :bonuses)
 Edge = Struct.new(:from, :to)
 Figure = Struct.new(:edges, :vertices)
 Bonus = Struct.new(:position, :bonus, :problem)
-Solution = Struct.new(:name, :verdict, :vertices)
+Solution = Struct.new(:name, :verdict, :vertices, :bonuses)
 
 def new_point(json)
+  return nil if json == nil
   Point.new(json[0], json[1])
 end
 
@@ -126,7 +127,13 @@ def index_tr(problem, solution, global_dislike)
     end
     solution_td = solution && %Q(
         <td>
-          <img src="images/#{solution.name}/#{problem.id}.svg" height="200"><br>
+          <div style="display: flex">
+            <img src="images/#{solution.name}/#{problem.id}.svg" height="200">
+            <div>
+              使用: #{solution.bonuses&.map{|b| "#{b.bonus}@#{b.problem}" }&.join(', ')} <br>
+              取得: #{solution.verdict && solution.verdict['bonusObtained']&.map{ |b| b['bonus'] }.join(', ')}
+            </div>
+          </div>
           <a href="kenkoooo/#/problem/#{problem.id}?solution=#{solution.name}/#{problem.id}.json">つづきからはじめる</a>
         </td>
         <td>#{solution.name}</td>
@@ -188,7 +195,7 @@ LINKS
       <th>Solution</th>
       <th>Solver</ht>
       <th>Dislikes</th>
-      <th>Score</ht>
+      <th>Score</th>
     </tr>
     #{problems.map {|prob| index_tr(prob, solutions[prob.id], dislikes[prob.id]) }.join}
   </table>
@@ -222,7 +229,7 @@ Dir.glob("#{__dir__}/../solutions/*").each do |dir|
     verdict = JSON.load(File.read(file.sub(/\.json$/, '_verdict.json'))) rescue nil
 
     solutions[solution_name] ||= {}
-    solutions[solution_name][id] = Solution.new(solution_name, verdict, vertices)
+    solutions[solution_name][id] = Solution.new(solution_name, verdict, vertices, new_bonuses(json['bonuses']))
   end
 end
 
