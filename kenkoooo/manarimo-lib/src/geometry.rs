@@ -73,7 +73,6 @@ impl Point {
         }
         crossings % 2 == 1
     }
-    pub fn dist_to_hole(&self, hole: &[Point]) {}
 }
 
 impl Edge {
