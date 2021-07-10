@@ -1,4 +1,7 @@
-export const wasmTest = async (x: number) => {
+import { Problem } from "./utils";
+
+export const solveAnnealing = async (problem: Problem) => {
   const module = await import("./wasm-rust/build");
-  return module.test_fun(x);
+  const ans = module.solve_annealing(JSON.stringify(problem));
+  return JSON.parse(ans) as { vertices: [number, number][] };
 };

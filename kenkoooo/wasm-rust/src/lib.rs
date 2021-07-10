@@ -1,4 +1,11 @@
+pub mod geometry;
+pub mod solver;
+pub mod types;
+
+use crate::solver::solve;
+use crate::types::{Pose, Problem};
 use wasm_bindgen::prelude::*;
+
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
 #[cfg(feature = "wee_alloc")]
@@ -13,6 +20,11 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn test_fun(x: i32) -> i32 {
-    x * 2
+pub fn solve_annealing(problem_json: &str) -> String {
+    let problem: Problem = serde_json::from_str(problem_json).unwrap();
+    let vertices = problem.figure.vertices.clone();
+    let (ans, score) = solve(problem, Pose { vertices });
+    log(&format!("score={}", score));
+    let ans = serde_json::to_string(&ans).unwrap();
+    ans
 }
