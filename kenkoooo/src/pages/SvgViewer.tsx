@@ -2,6 +2,7 @@ import { BONUSTYPE, Figure, Problem } from "../utils";
 import React from "react";
 import { EditorState } from "./EditorState";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
+import { solveSinglePoint } from "../Solver";
 
 export const getBonusColor = (bonusType: BONUSTYPE) => {
   switch (bonusType) {
@@ -24,10 +25,12 @@ interface PointProps {
   isEditing: boolean;
   isSelected: boolean;
   isBrokenCenter: boolean;
+  onClick: () => void;
   onMouseDown: () => void;
 }
 const Point = (props: PointProps) => {
-  const { x, y, pointId, isEditing, isSelected, isBrokenCenter } = props;
+  const { x, y, pointId, isEditing, isSelected, isBrokenCenter, onClick } =
+    props;
   const color = isEditing
     ? "blue"
     : isSelected
@@ -42,6 +45,11 @@ const Point = (props: PointProps) => {
       cy={y}
       r="0.7"
       fill={color}
+      onClick={(e) => {
+        if (e.shiftKey) {
+          onClick();
+        }
+      }}
       onMouseDown={props.onMouseDown}
       style={{ cursor: "pointer" }}
     />
@@ -54,6 +62,7 @@ const UserPoseLayer = (props: {
   onEdit: (pointId: number) => void;
   editorState: EditorState | null;
   selectedVertices: number[];
+  updateVertices: (vertices: [number, number][]) => void;
 }) => {
   const epsilon = BigInt(props.problem.epsilon);
   const originalVertices = props.problem.figure.vertices;
@@ -182,6 +191,21 @@ const UserPoseLayer = (props: {
             y={y}
             pointId={pointId}
             onMouseDown={() => props.onEdit(pointId)}
+            onClick={() => {
+              if (isLegBroken) {
+                return;
+              }
+              const target = solveSinglePoint(
+                props.userFigure.vertices,
+                props.problem,
+                pointId
+              );
+              if (target) {
+                const nextVertices = [...props.userFigure.vertices];
+                nextVertices[pointId] = [target.x, target.y];
+                props.updateVertices(nextVertices);
+              }
+            }}
             isBrokenCenter={isLegBroken && brokenPointId === pointId}
             isEditing={props.editorState?.pointId === pointId}
             isSelected={props.selectedVertices.includes(pointId)}
@@ -201,6 +225,7 @@ interface Props {
   onEdit: (pointId: number) => void;
   selectedVertices: number[];
   forcedWidth?: number;
+  updateVertices: (vertices: [number, number][]) => void;
 }
 
 export const SvgViewer = (props: Props) => {
@@ -256,6 +281,7 @@ export const SvgViewer = (props: Props) => {
       <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
       <UserPoseLayer
         problem={problem}
+        updateVertices={props.updateVertices}
         userFigure={props.userFigure}
         editorState={props.editorState}
         onEdit={props.onEdit}

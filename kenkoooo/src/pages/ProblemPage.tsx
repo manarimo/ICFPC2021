@@ -159,6 +159,13 @@ const SvgEditor = (props: SvgEditorProps) => {
     });
   };
 
+  const updateVertices = (vertices: [number, number][]) => {
+    setUserSubmission({
+      ...userSubmission,
+      vertices,
+    });
+  };
+
   const updateBreakALeg = (value: boolean) => {
     if (breakALeg && !value) {
       cancelBreakALeg();
@@ -281,6 +288,7 @@ const SvgEditor = (props: SvgEditorProps) => {
             editorState={editorState}
             selectedVertices={selectedVertices}
             forcedWidth={zoom ? zoomSize : undefined}
+            updateVertices={updateVertices}
           />
         </Col>
         <Col>
