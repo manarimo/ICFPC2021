@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         solution = Pose {
             vertices: problem.figure.vertices.clone(),
-            bonuses: None,
+            bonuses: Some(vec![]),
         };
     }
 

@@ -27,7 +27,7 @@ pub fn solve_annealing(problem_json: &str) -> String {
         problem,
         Pose {
             vertices,
-            bonuses: None,
+            bonuses: Some(vec![]),
         },
     );
     log(&format!("score={}", score));

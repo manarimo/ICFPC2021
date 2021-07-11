@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {dislike, Edge, isEdgeInside, isPointInside, isValidEdge, Point, Polygon, d, sub} from "../ts-lib/amyfunc";
+import { dislike, Edge, isEdgeInside, isPointInside, isValidEdge, Point, Polygon, d, sub } from "../ts-lib/amyfunc";
 
 const INVALID_SCORE = 1e8;
 
@@ -46,8 +46,8 @@ interface Verdict {
     error?: any;
 }
 
-function loadProblems(): {[key: string]: Problem} {
-    const problems: {[key: string]: Problem} = {};
+function loadProblems(): { [key: string]: Problem } {
+    const problems: { [key: string]: Problem } = {};
     const files = fs.readdirSync(path.join(__dirname, '..', 'problems'));
     files.filter((f) => f.endsWith('.json')).forEach((file) => {
         const id = path.basename(file, '.json');
@@ -56,10 +56,10 @@ function loadProblems(): {[key: string]: Problem} {
         try {
             const json = JSON.parse(buffer);
             problems[id] = {
-                hole: json['hole'].map((a: number[]) => ({x: a[0], y: a[1]})),
+                hole: json['hole'].map((a: number[]) => ({ x: a[0], y: a[1] })),
                 figure: {
                     edges: json['figure']['edges'],
-                    vertices: json['figure']['vertices'].map((a: number[]) => ({x: a[0], y: a[1]}))
+                    vertices: json['figure']['vertices'].map((a: number[]) => ({ x: a[0], y: a[1] }))
                 },
                 epsilon: json['epsilon'],
                 bonuses: json['bonuses']
@@ -77,7 +77,7 @@ function loadSolution(file: string): Solution | null {
         const solution = JSON.parse(buffer);
         return {
             ...solution,
-            vertices: solution['vertices'].map((a: number[]) => ({x: a[0], y: a[1]}))
+            vertices: solution['vertices'].map((a: number[]) => ({ x: a[0], y: a[1] }))
         };
     } catch (e) {
         console.error(`Failed to load ${file}`, e);
@@ -104,7 +104,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
             }
         }
     }
-    const bonus: SolutionBonus = solution.bonuses !== undefined ? solution.bonuses[0] : {bonus: BonusType.NO_BONUS, problem: -1};
+    const bonus: SolutionBonus = solution.bonuses && solution.bonuses.length > 0 ? solution.bonuses[0] : { bonus: BonusType.NO_BONUS, problem: -1 };
     let globalLengthCost = 0.;
 
     const edgeInsideViolations = [];
@@ -161,7 +161,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
 
     const allowedEdgeLengthViolations = bonus.bonus === BonusType.SUPERFLEX ? 1 : 0;
     if (edgeLengthViolations.length > allowedEdgeLengthViolations) {
-        const {i, srcEdge, dstEdge} = edgeLengthViolations[0]
+        const { i, srcEdge, dstEdge } = edgeLengthViolations[0]
         return {
             isValid: false,
             score: INVALID_SCORE,
