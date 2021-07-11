@@ -1,3 +1,5 @@
+import { isPointInside, Point } from "./tslib/amyfunc";
+
 const BonusTypes = ["GLOBALIST", "BREAK_A_LEG", "WALLHACK"] as const;
 export type BONUSTYPE = typeof BonusTypes[number];
 
@@ -171,4 +173,11 @@ export const submissionToFigure = (
       edges: [...problem.figure.edges],
     };
   }
+};
+
+export const getOutsidePointIds = (vertices: Pair[], hole: Point[]) => {
+  return vertices
+    .map(([x, y], id) => [x, y, id])
+    .filter(([x, y, id]) => !isPointInside(hole, { x, y }))
+    .map(([x, y, id]) => id);
 };

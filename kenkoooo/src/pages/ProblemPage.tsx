@@ -60,6 +60,7 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [breakALegDst, setBreakALegDst] = useState<number>(0);
   const [zoom, setZoom] = useState(false);
   const [zoomSize, setZoomSize] = useState(2000);
+  const [wallHack, setWallHack] = useState(false);
 
   useEffect(() => {
     if (solution.data) {
@@ -69,14 +70,14 @@ const SvgEditor = (props: SvgEditorProps) => {
 
   useEffect(() => {
     setText(JSON.stringify(userSubmission));
-    if (
-      userSubmission.bonuses &&
-      userSubmission.bonuses.length > 0 &&
-      userSubmission.bonuses[0].bonus === "BREAK_A_LEG"
-    ) {
-      setBreakALeg(true);
-      setBreakALegSrc(userSubmission.bonuses[0].edge[0]);
-      setBreakALegDst(userSubmission.bonuses[0].edge[1]);
+    if (userSubmission.bonuses && userSubmission.bonuses.length > 0) {
+      if (userSubmission.bonuses[0].bonus === "BREAK_A_LEG") {
+        setBreakALeg(true);
+        setBreakALegSrc(userSubmission.bonuses[0].edge[0]);
+        setBreakALegDst(userSubmission.bonuses[0].edge[1]);
+      } else if (userSubmission.bonuses[0].bonus === "WALLHACK") {
+        setWallHack(true);
+      }
     }
   }, [userSubmission]);
 
@@ -208,6 +209,25 @@ const SvgEditor = (props: SvgEditorProps) => {
     setBreakALegDst(val);
   };
 
+  const cancelWallHack = () => {
+    setUserSubmission({
+      ...userSubmission,
+      bonuses: [],
+    });
+  };
+
+  const executeWallHack = () => {
+    setUserSubmission({
+      ...userSubmission,
+      bonuses: [
+        {
+          bonus: "WALLHACK",
+          problem: getPossibleBonusSourceProblemId(props.problemId, "WALLHACK"),
+        },
+      ],
+    });
+  };
+
   const userFigure = submissionToFigure(userSubmission, problem);
   return (
     <Container>
@@ -312,6 +332,7 @@ const SvgEditor = (props: SvgEditorProps) => {
             selectedVertices={selectedVertices}
             forcedWidth={zoom ? zoomSize : undefined}
             updateVertices={updateVertices}
+            isWallHacking={wallHack}
           />
         </Col>
         <Col>
@@ -366,6 +387,24 @@ const SvgEditor = (props: SvgEditorProps) => {
                 />
               </Col>
             </Row>
+          )}
+          {bonusMode === "WALLHACK" && (
+            <Col>
+              <Form.Check
+                type="checkbox"
+                label="WallHack"
+                checked={wallHack}
+                onChange={() => {
+                  if (wallHack) {
+                    cancelWallHack();
+                    setWallHack(false);
+                  } else {
+                    executeWallHack();
+                    setWallHack(true);
+                  }
+                }}
+              />
+            </Col>
           )}
           <Row>
             <Col>
@@ -441,6 +480,7 @@ const SvgEditor = (props: SvgEditorProps) => {
         <Col className="ml-3">
           <Row>
             <PoseInfoPanel
+              isWallHacking={wallHack}
               userFigure={userFigure}
               problem={problem}
               usingGlobalist={bonusMode === "GLOBALIST"}

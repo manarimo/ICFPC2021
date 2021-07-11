@@ -1,4 +1,10 @@
-import { BONUSTYPE, Figure, Problem } from "../utils";
+import {
+  BONUSTYPE,
+  Figure,
+  getOutsidePointIds,
+  pairToPoint,
+  Problem,
+} from "../utils";
 import React from "react";
 import { EditorState } from "./EditorState";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
@@ -63,6 +69,7 @@ const UserPoseLayer = (props: {
   editorState: EditorState | null;
   selectedVertices: number[];
   updateVertices: (vertices: [number, number][]) => void;
+  isWallHacking: boolean;
 }) => {
   const epsilon = BigInt(props.problem.epsilon);
   const originalVertices = props.problem.figure.vertices;
@@ -88,6 +95,14 @@ const UserPoseLayer = (props: {
     const j = brokenLegs[1][0] + brokenLegs[1][1] - brokenPointId;
     return [i, j];
   };
+
+  const outsidePointIds = props.isWallHacking
+    ? getOutsidePointIds(
+        props.userFigure.vertices,
+        props.problem.hole.map(pairToPoint)
+      )
+    : [];
+
   return (
     <>
       {props.problem.hole.map(([x, y], idx) => {
@@ -116,10 +131,14 @@ const UserPoseLayer = (props: {
           const color = ok ? "green" : originalDist < userDist ? "red" : "blue";
           const strokeWidth = ok ? "0.3" : "0.5";
 
+          const strike =
+            props.isWallHacking &&
+            (outsidePointIds.includes(i) || outsidePointIds.includes(j));
           const key = `${i}-${j}`;
           return (
             <line
               key={key}
+              stroke-dasharray={strike ? 2 : undefined}
               x1={pi[0]}
               y1={pi[1]}
               x2={pj[0]}
@@ -227,6 +246,7 @@ interface Props {
   selectedVertices: number[];
   forcedWidth?: number;
   updateVertices: (vertices: [number, number][]) => void;
+  isWallHacking: boolean;
 }
 
 export const SvgViewer = (props: Props) => {
@@ -282,6 +302,7 @@ export const SvgViewer = (props: Props) => {
       <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
       <UserPoseLayer
         problem={problem}
+        isWallHacking={props.isWallHacking}
         updateVertices={props.updateVertices}
         userFigure={props.userFigure}
         editorState={props.editorState}

@@ -2,7 +2,7 @@ import React from "react";
 
 import { Container, Row, Table } from "react-bootstrap";
 import { dislike, isEdgeInside } from "../tslib/amyfunc";
-import { Figure, Problem } from "../utils";
+import { Figure, getOutsidePointIds, Pair, Problem } from "../utils";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
 import { GlobalistTable } from "./GlobalistTable";
 
@@ -10,10 +10,11 @@ interface Props {
   userFigure: Figure;
   problem: Problem;
   usingGlobalist: boolean;
+  isWallHacking: boolean;
 }
 
 export const PoseInfoPanel = (props: Props) => {
-  const { problem, usingGlobalist } = props;
+  const { problem, usingGlobalist, isWallHacking } = props;
   const hole = problem.hole.map(([x, y]) => ({ x, y }));
   const ps = props.userFigure.vertices.map(([x, y]) => ({ x, y }));
   const dislikeScore = dislike(hole, ps);
@@ -101,6 +102,16 @@ export const PoseInfoPanel = (props: Props) => {
     handleRestrictions(j, k);
   }
 
+  if (isWallHacking) {
+    const outsidePointIds = getOutsidePointIds(props.userFigure.vertices, hole);
+    const isBothInsideEdges = ([i, j]: Pair) =>
+      !outsidePointIds.includes(i) && !outsidePointIds.includes(j);
+
+    tooShortEdges = tooShortEdges.filter(isBothInsideEdges);
+    tooLongEdges = tooLongEdges.filter(isBothInsideEdges);
+    outsideEdges = outsideEdges.filter(isBothInsideEdges);
+  }
+
   return (
     <Container>
       <Row>
@@ -114,6 +125,16 @@ export const PoseInfoPanel = (props: Props) => {
               <th>eps</th>
               <td>{eps}</td>
             </tr>
+            {isWallHacking && (
+              <tr>
+                <th>枠の外にある点</th>
+                <td>
+                  {JSON.stringify(
+                    getOutsidePointIds(props.userFigure.vertices, hole)
+                  )}
+                </td>
+              </tr>
+            )}
             {!usingGlobalist && (
               <>
                 <tr>
