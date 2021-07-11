@@ -62,6 +62,8 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [zoomSize, setZoomSize] = useState(2000);
   const [wallHack, setWallHack] = useState(false);
 
+  const [globalistEnabled, setGlobalistEnabled] = useState(false);
+
   useEffect(() => {
     if (solution.data) {
       setUserSubmission(solution.data);
@@ -77,6 +79,8 @@ const SvgEditor = (props: SvgEditorProps) => {
         setBreakALegDst(userSubmission.bonuses[0].edge[1]);
       } else if (userSubmission.bonuses[0].bonus === "WALLHACK") {
         setWallHack(true);
+      } else if (userSubmission.bonuses[0].bonus === "GLOBALIST") {
+        setGlobalistEnabled(true);
       }
     }
   }, [userSubmission]);
@@ -228,6 +232,29 @@ const SvgEditor = (props: SvgEditorProps) => {
     });
   };
 
+  const executeGlobalist = () => {
+    setUserSubmission({
+      ...userSubmission,
+      bonuses: [
+        {
+          bonus: "GLOBALIST",
+          problem: getPossibleBonusSourceProblemId(
+            props.problemId,
+            "GLOBALIST"
+          ),
+        },
+      ],
+    });
+    setGlobalistEnabled(true);
+  };
+  const cancelGlobalist = () => {
+    setUserSubmission({
+      ...userSubmission,
+      bonuses: [],
+    });
+    setGlobalistEnabled(false);
+  };
+
   const userFigure = submissionToFigure(userSubmission, problem);
   return (
     <Container>
@@ -261,7 +288,7 @@ const SvgEditor = (props: SvgEditorProps) => {
                 type="checkbox"
                 label="Zoom"
                 checked={zoom}
-                onChange={(e) => {
+                onChange={() => {
                   setZoom(!zoom);
                 }}
               />
@@ -282,15 +309,12 @@ const SvgEditor = (props: SvgEditorProps) => {
               <ToggleButton
                 key={mode}
                 type="checkbox"
-                variant="secondary"
-                value="single"
-                style={
+                variant={
                   mode !== "NONE" && availableBonusSet.has(mode)
-                    ? {
-                        backgroundColor: "green",
-                      }
-                    : {}
+                    ? "success"
+                    : "secondary"
                 }
+                value="single"
                 checked={bonusMode === mode}
                 onChange={() => setBonusMode(mode)}
               >
@@ -364,7 +388,7 @@ const SvgEditor = (props: SvgEditorProps) => {
                   label="Break A Leg"
                   checked={breakALeg}
                   disabled={!canBreakALeg()}
-                  onChange={(e) => {
+                  onChange={() => {
                     updateBreakALeg(!breakALeg);
                   }}
                 />
@@ -402,6 +426,22 @@ const SvgEditor = (props: SvgEditorProps) => {
                   } else {
                     executeWallHack();
                     setWallHack(true);
+                  }
+                }}
+              />
+            </Col>
+          )}
+          {bonusMode === "GLOBALIST" && (
+            <Col>
+              <Form.Check
+                type="checkbox"
+                label="Globalist"
+                checked={globalistEnabled}
+                onChange={() => {
+                  if (globalistEnabled) {
+                    cancelGlobalist();
+                  } else {
+                    executeGlobalist();
                   }
                 }}
               />
