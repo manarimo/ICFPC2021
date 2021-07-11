@@ -49,6 +49,18 @@ def load_problems
   problems.sort_by(&:id)
 end
 
+def load_hints(dir)
+  hints = {}
+  Dir.glob("#{dir}/*.json") do |hint_file|
+    m = hint_file.match(/(\d+).json/)
+    id = m[1].to_i
+    File.open(hint_file) do |f|
+      hints[id] = new_vertices(JSON.load(f)['vertices'])
+    end
+  end
+  hints
+end
+
 def rotate(point, center, angle)
   x = point.x - center.x
   y = point.y - center.y
@@ -62,22 +74,28 @@ def flip(point, center)
   Point.new((center.x * 2 - point.x).to_i, point.y)
 end
 
-problems = load_problems
+if ARGV.size > 0
+  vertices_list = load_hints(ARGV[0])
+  base_name = File.basename(ARGV[0])
+else
+  vertices_list = load_problems.map { |p| [p.id, p.figure.vertices] }.to_h
+  base_name = 'raw'
+end
 
 [0, 90, 180, 270].each do |degree|
   [true, false].each do |flip|
-    problems.each do |prob|
+    vertices_list.each do |id, vertices|
       center_x, center_y = 0, 0
-      prob.figure.vertices.each do |p|
+      vertices.each do |p|
         center_x += p.x
         center_y += p.y
       end
 
-      center_x /= prob.figure.vertices.size.to_f
-      center_y /= prob.figure.vertices.size.to_f
+      center_x /= vertices.size.to_f
+      center_y /= vertices.size.to_f
       center = Point.new(center_x, center_y)
 
-      rot = prob.figure.vertices.map { |p| rotate(p, center, degree * Math::PI / 180 ) }
+      rot = vertices.map { |p| rotate(p, center, degree * Math::PI / 180 ) }
       if flip
         rot = rot.map {|p| flip(p, center) }
       end
@@ -93,12 +111,12 @@ problems = load_problems
       end
 
       if flip
-        dirname = "#{__dir__}/../hints/flip-rot-#{degree}"
+        dirname = "#{__dir__}/../hints/#{base_name}-flip-rot-#{degree}"
       else
-        dirname = "#{__dir__}/../hints/rot-#{degree}"
+        dirname = "#{__dir__}/../hints/#{base_name}-rot-#{degree}"
       end
       FileUtils.makedirs(dirname)
-      File.open("#{dirname}/#{prob.id}.json", 'w') do |f|
+      File.open("#{dirname}/#{id}.json", 'w') do |f|
         JSON.dump({'vertices': rot.map{|p| [p[0], p[1]]}}, f)
       end
     end
