@@ -7,7 +7,7 @@ import pulp
 from pathlib import Path
 
 
-MAX_PROBLEM_ID = 106
+MAX_PROBLEM_ID = 132
 
 
 def load_solutions():
@@ -38,10 +38,10 @@ def load_solutions():
     return solutions
 
 
-def is_qualified(solution, minimal_dislikes):
+def is_qualified(solution, minimal_dislikes, hide_betters):
     if not solution["verdict"]["isValid"]:
         return False
-    if solution["verdict"]["score"] < minimal_dislikes[solution["problem_id"]]:
+    if hide_betters and solution["verdict"]["score"] < minimal_dislikes[solution["problem_id"]]:
         print(f"excluding {solution['solver_name']}/{solution['problem_id']} because it is too good to share with rivals.")
         return False
     return True
@@ -65,12 +65,12 @@ def evaluate_score(solution, minimal_dislikes):
         return max_score + (max_score - rival_score)
 
 
-def main():
+def main(hide_betters: bool = False):
     solutions = load_solutions()
     print(f"loaded {len(solutions)} solutions")
     with open("../problems/minimal_dislikes.txt") as f:
         minimal_dislikes = {obj["problem_id"]: obj["minimal_dislikes"] for obj in json.load(f)}
-    solutions = [solution for solution in solutions if is_qualified(solution, minimal_dislikes)]
+    solutions = [solution for solution in solutions if is_qualified(solution, minimal_dislikes, hide_betters)]
     print(f"{len(solutions)} qualified solutions")
 
     model = pulp.LpProblem(sense=pulp.LpMaximize)
@@ -86,13 +86,15 @@ def main():
     model += objective
     # one solution per one problem
     for solution_ids in solution_ids_by_problem.values():
-        for sol_id1, sol_id2 in itertools.combinations(solution_ids, 2):
-            model += variables[sol_id1] + variables[sol_id2] <= 1
+        constraint = 0
+        for solution_id in solution_ids:
+            constraint += variables[solution_id]
+        model += constraint <= 1
     # bonus constraints
     bonus_providers = defaultdict(list)
     for solution_id, solution in enumerate(solutions):
         for bonus in solution["verdict"]["bonusObtained"]:
-            bonus_providers[(solution["problem_id"], bonus["bonus"])].append(solution_id)
+            bonus_providers[(bonus["problem"], bonus["bonus"])].append(solution_id)
     for solution_id, solution in enumerate(solutions):
         for bonus in solution["solution"].get("bonuses", []):
             bonus_type = bonus["bonus"]
@@ -108,8 +110,6 @@ def main():
         if round(pulp.value(variable)):
             solution = solutions[solution_id]
             selected_solutions[solution["problem_id"]] = solution
-            with open(f"submission_dump/{solution['problem_id']}.json", "w") as f:
-                json.dump(solution["solution"], f)
 
     # bonus verification/postprocessing
     for problem_id, solution in selected_solutions.items():
@@ -137,6 +137,19 @@ def main():
             else:
                 print(f"using problem_id: {found_id} as a bonus provider for problem_id: {problem_id} (solver: {solution['solver_name']})")
                 using_bonus["problem"] = found_id
+
+    for problem_id in range(1, MAX_PROBLEM_ID + 1):
+        solution = selected_solutions.get(problem_id)
+        if solution is None:
+            solution_name = "None"
+            score = "None"
+        else:
+            solution_name = solution["solver_name"]
+            score = solution['verdict']['score']
+            with open(f"submission_dump/{solution['problem_id']}.json", "w") as f:
+                json.dump(solution["solution"], f)
+        print(f"{problem_id:03}: {solution_name} (dislike: {score})")
+
     return selected_solutions
 
 
