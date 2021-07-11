@@ -50,7 +50,7 @@ SVG
 end
 
 def index_tr(problem, solution, global_dislike, bonus_graph)
-  score_base = 1000 * Math.log(problem.figure.vertices.size * problem.figure.edges.size * problem.hole.size / 6)
+  score_base = 1000 * Math.log(problem.figure.vertices.size * problem.figure.edges.size * problem.hole.size / 6, 2)
   max_score = score_base.ceil
 
   style = nil
@@ -114,10 +114,8 @@ def index_tr(problem, solution, global_dislike, bonus_graph)
 TR
 end
 
-def write_index(f, problems, solutions = {}, solution_title = nil, solution_names = [], dislikes, bonus_graph)
-  solution_header = solution_title && %Q(<h2>Name: #{solution_title}</h2>)
-  if solution_names.size > 0
-    solution_links = <<-LINKS
+def page_header(solution_names)
+  <<-LINKS
 <div style="margin-bottom: 32px">
   <div style="display: flex">
     使用：
@@ -139,9 +137,11 @@ def write_index(f, problems, solutions = {}, solution_title = nil, solution_name
   </div>
 </div>
 LINKS
-  else
-    solution_links = nil
-  end
+end
+
+Row = Struct.new(:problem, :solution, :dislike)
+def write_index(f, rows, solution_title = nil, solution_names = [], bonus_graph)
+  solution_header = solution_title && %Q(<h2>Name: #{solution_title}</h2>)
 
   f.puts <<-EOF
 <!doctype html>
@@ -152,8 +152,8 @@ LINKS
 </head>
 <body style="margin: 0 100px">
   <h1><a href="index.html">Manarimo Portal</a></h1>
+  #{page_header(solution_names)}
   #{solution_header}
-  #{solution_links}
   <table border>
     <tr>
       <th>Problem ID</th>
@@ -164,7 +164,7 @@ LINKS
       <th>Dislikes</th>
       <th>Score</th>
     </tr>
-    #{problems.map {|prob| index_tr(prob, solutions[prob.id], dislikes[prob.id], bonus_graph) }.join}
+    #{rows.map {|row| index_tr(row.problem, row.solution, row.dislike, bonus_graph) }.join}
   </table>
 </body>
 </html>
@@ -191,7 +191,10 @@ def write_top_solutions(file, title, problems, solutions, dislikes, bonus_graph,
   end
 
   File.open(file, 'w') do |f|
-    write_index(f, problems, top_solutions, title, solutions.keys.sort, dislikes, bonus_graph)
+    rows = problems.map { |p|
+      Row.new(p, top_solutions[p.id], dislikes[p.id])
+    }
+    write_index(f, rows, title, solutions.keys.sort, bonus_graph)
   end
 end
 
@@ -244,12 +247,18 @@ solutions.each do |solution_name, solution_list|
 
   # Generate solution overview
   File.open("#{__dir__}/../web/#{solution_name}.html", 'w') do |f|
-    write_index(f, problems.select{|prob| solutions[solution_name].has_key?(prob.id) }, solutions[solution_name], solution_name, solutions.keys.sort, dislikes, bonus_graph)
+    rows = problems.select{|p| solutions[solution_name].has_key?(p.id)}.map{|p|
+      Row.new(p, solutions[solution_name][p.id], dislikes[p.id])
+    }
+    write_index(f, rows, solution_name, solutions.keys.sort, bonus_graph)
   end
 end
 
 File.open("#{__dir__}/../web/index.html", 'w') do |f|
-  write_index(f, problems, {}, nil, solutions.keys.sort, dislikes, bonus_graph)
+  rows = problems.map { |p|
+    Row.new(p, nil, nil)
+  }
+  write_index(f, rows, nil, solutions.keys.sort, bonus_graph)
 end
 
 write_top_solutions("#{__dir__}/../web/best.html", "Best", problems, solutions, dislikes, bonus_graph)
