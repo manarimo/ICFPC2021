@@ -51,14 +51,16 @@ const SvgEditor = (props: SvgEditorProps) => {
       vertices: userFigure.vertices,
     });
   };
+
   useEffect(() => {
     if (solution.data) {
       setUserFigure({
-        edges: [...userFigure.edges],
+        edges: [...problem.figure.edges],
         vertices: [...solution.data.vertices],
       });
     }
-  }, [solution, userFigure]);
+  }, [solution, problem]);
+
   useEffect(() => {
     setText(
       JSON.stringify({
@@ -72,12 +74,12 @@ const SvgEditor = (props: SvgEditorProps) => {
     await navigator.clipboard.writeText(getOutput());
   };
   const onLoadInput = () => {
-    const parseResult = parseUserInput(text, userFigure.vertices.length);
+    const parseResult = parseUserInput(text);
     if (parseResult.result === "failed") {
       setErrorMessage(parseResult.errorMessage);
     } else {
       setUserFigure({
-        edges: [...userFigure.edges],
+        ...problem.figure,
         vertices: parseResult.polygon,
       });
       setErrorMessage(null);
