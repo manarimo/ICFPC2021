@@ -18,6 +18,7 @@ pub struct Figure {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Pose {
     pub vertices: Vec<Pair>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bonuses: Option<Vec<Bonus>>,
 }
 

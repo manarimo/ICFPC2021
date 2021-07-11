@@ -132,7 +132,7 @@ impl<G: Fn(usize) + Copy> DfsSolver<G> {
                     .collect::<Vec<_>>();
                 let pose = Pose {
                     vertices,
-                    bonuses: Some(vec![]),
+                    bonuses: None,
                 };
                 (report)(pose, result);
                 result
