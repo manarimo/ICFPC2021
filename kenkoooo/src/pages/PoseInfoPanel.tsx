@@ -21,9 +21,9 @@ export const PoseInfoPanel = (props: Props) => {
   const originalVertices = problem.figure.vertices;
   const eps = problem.epsilon;
 
-  const tooShortEdges = [] as [number, number][];
-  const tooLongEdges = [] as [number, number][];
-  const outsideEdges = [] as [number, number][];
+  let tooShortEdges = [] as [number, number][];
+  let tooLongEdges = [] as [number, number][];
+  let outsideEdges = [] as [number, number][];
   problem.figure.edges.forEach(([from, to]) => {
     const piOriginal = originalVertices[from];
     const pjOriginal = originalVertices[to];
@@ -63,6 +63,13 @@ export const PoseInfoPanel = (props: Props) => {
     );
     const i = iLeg[0] + iLeg[1] - k;
     const j = jLeg[0] + jLeg[1] - k;
+
+    const isNotBrokenOriginalEdge = ([a, b]: [number, number]) =>
+      !(Math.min(a, b) === Math.min(i, j) && Math.max(a, b) === Math.max(i, j));
+
+    tooShortEdges = tooShortEdges.filter(isNotBrokenOriginalEdge);
+    tooLongEdges = tooLongEdges.filter(isNotBrokenOriginalEdge);
+    outsideEdges = outsideEdges.filter(isNotBrokenOriginalEdge);
 
     const piOriginal = originalVertices[i];
     const pjOriginal = originalVertices[j];
