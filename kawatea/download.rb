@@ -9,5 +9,7 @@ name = ARGV[0]
 
 Dir.chdir("#{__dir__}/../solutions")
 hints.each do |hint|
-  `rsync -a --progress -e 'ssh -i ~/.ssh/icfpc2021.pem' ubuntu@18.181.163.36:ICFPC2021/kawatea/#{name}-#{hint} .`
+  command = "rsync -a --progress -e 'ssh -i ~/.ssh/icfpc2021.pem' ubuntu@18.181.163.36:ICFPC2021/kawatea/#{name}-#{hint} ."
+  puts command
+  system(command)
 end

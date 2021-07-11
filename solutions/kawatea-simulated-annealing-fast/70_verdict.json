@@ -1,5 +1,14 @@
 {
     "isValid": true,
-    "bonusObtained": [],
+    "bonusObtained": [
+        {
+            "bonus": "WALLHACK",
+            "problem": 54,
+            "position": [
+                42,
+                30
+            ]
+        }
+    ],
     "score": 635
 }

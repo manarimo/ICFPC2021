@@ -39,27 +39,37 @@ function loadProblems(): {[key: string]: Problem} {
     const files = fs.readdirSync(path.join(__dirname, '..', 'problems'));
     files.filter((f) => f.endsWith('.json')).forEach((file) => {
         const id = path.basename(file, '.json');
-        const buffer = fs.readFileSync(`${__dirname}/../problems/${file}`, 'utf-8');
-        const json = JSON.parse(buffer);
-        problems[id] = {
-            hole: json['hole'].map((a: number[]) => ({x: a[0], y: a[1]})),
-            figure: {
-                edges: json['figure']['edges'],
-                vertices: json['figure']['vertices'].map((a: number[]) => ({x: a[0], y: a[1]}))
-            },
-            epsilon: json['epsilon'],
-            bonuses: json['bonuses']
-        };
+        const pathName = `${__dirname}/../problems/${file}`;
+        const buffer = fs.readFileSync(pathName, 'utf-8');
+        try {
+            const json = JSON.parse(buffer);
+            problems[id] = {
+                hole: json['hole'].map((a: number[]) => ({x: a[0], y: a[1]})),
+                figure: {
+                    edges: json['figure']['edges'],
+                    vertices: json['figure']['vertices'].map((a: number[]) => ({x: a[0], y: a[1]}))
+                },
+                epsilon: json['epsilon'],
+                bonuses: json['bonuses']
+            };
+        } catch (e) {
+            console.error(`Failed to load ${pathName}`, e);
+        }
     });
     return problems;
 }
 
-function loadSolution(file: string): Solution {
+function loadSolution(file: string): Solution | null {
     const buffer = fs.readFileSync(file, 'utf-8');
-    const solution = JSON.parse(buffer);
-    return {
-        vertices: solution['vertices'].map((a: number[]) => ({x: a[0], y: a[1]}))
-    };
+    try {
+        const solution = JSON.parse(buffer);
+        return {
+            vertices: solution['vertices'].map((a: number[]) => ({x: a[0], y: a[1]}))
+        };
+    } catch (e) {
+        console.error(`Failed to load ${file}`, e);
+        return null;
+    }
 }
 
 function isValidSolution(problem: Problem, solution: Solution): Verdict {
@@ -112,7 +122,9 @@ solutionNames.forEach((name) => {
         console.log(`Checking ${baseDir}/${file}...`);
         const id = path.basename(file, '.json');
         const solution = loadSolution(path.join(baseDir, file));
-        const verdict = isValidSolution(problems[id], solution);
-        fs.writeFileSync(path.join(baseDir, `${id}_verdict.json`), JSON.stringify(verdict, undefined, 4));
+        if (solution !== null) {
+            const verdict = isValidSolution(problems[id], solution);
+            fs.writeFileSync(path.join(baseDir, `${id}_verdict.json`), JSON.stringify(verdict, undefined, 4));
+        }
     });
 });
