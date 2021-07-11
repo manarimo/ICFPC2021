@@ -5,7 +5,7 @@ module Problem
   Problem = Struct.new(:id, :hole, :figure, :epsilon, :width, :height, :bonuses)
   Edge = Struct.new(:from, :to)
   Figure = Struct.new(:edges, :vertices)
-  Bonus = Struct.new(:position, :bonus, :problem)
+  Bonus = Struct.new(:position, :bonus, :problem, :source)
   Solution = Struct.new(:id, :name, :verdict, :vertices, :bonuses)
 
   BonusGraph = Struct.new(:to_obtain, :to_use, :obtainable, :usable)
@@ -32,9 +32,9 @@ module Problem
       Figure.new(new_edges(json['edges']), new_vertices(json['vertices']))
     end
 
-    def new_bonuses(json)
+    def new_bonuses(json, problem_id)
       return nil if json == nil
-      json.map { |b| Bonus.new(new_point(b['position']), b['bonus'], b['problem'].to_i) }
+      json.map { |b| Bonus.new(new_point(b['position']), b['bonus'], b['problem'].to_i, problem_id) }
     end
 
     def new_problem(id, json)
@@ -45,7 +45,7 @@ module Problem
       min_y = hole.map(&:y).min
       max_x = hole.map(&:x).max
       max_y = hole.map(&:y).max
-      Problem.new(id, hole, figure, eps, max_x - min_x, max_y - min_y, new_bonuses(json['bonuses']))
+      Problem.new(id, hole, figure, eps, max_x - min_x, max_y - min_y, new_bonuses(json['bonuses'], id))
     end
 
     def load_problems
@@ -80,7 +80,7 @@ module Problem
           verdict = JSON.load(File.read(file.sub(/\.json$/, '_verdict.json'))) rescue nil
 
           solutions[solution_name] ||= {}
-          solutions[solution_name][id] = Solution.new(id, solution_name, verdict, vertices, new_bonuses(json['bonuses']))
+          solutions[solution_name][id] = Solution.new(id, solution_name, verdict, vertices, new_bonuses(json['bonuses'], id))
         end
       end
 
@@ -102,7 +102,7 @@ module Problem
           to_use[bonus.bonus].push(bonus.problem)
 
           usable[bonus.problem] ||= []
-          usable[bonus.problem].push(Bonus.new(bonus.position, bonus.bonus, problem.id))
+          usable[bonus.problem].push(bonus)
         end
         obtainable[problem.id] = problem.bonuses
       end
