@@ -1,4 +1,4 @@
-import { Figure, pairToPoint, Problem } from "../utils";
+import { pairToPoint, Problem } from "../utils";
 import { d } from "../tslib/amyfunc";
 import { Table } from "react-bootstrap";
 
