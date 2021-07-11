@@ -260,6 +260,8 @@ interface Props {
   forcedWidth?: number;
   updateVertices: (vertices: [number, number][]) => void;
   bonusMode?: "Globalist" | "WallHack";
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 export const SvgViewer = (props: Props) => {
@@ -288,40 +290,51 @@ export const SvgViewer = (props: Props) => {
   const width = Math.max(maxX - minX, maxY - minY) + 2 * offset;
 
   return (
-    <svg
-      style={props.forcedWidth ? { width: props.forcedWidth } : {}}
-      viewBox={`${minX - offset} ${minY - offset} ${width} ${width}`}
-      xmlns="http://www.w3.org/2000/svg"
-      onMouseUp={props.onMouseUp}
-      onMouseLeave={props.onMouseUp}
-      onMouseMove={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const absoluteX = e.clientX - rect.left;
-        const absoluteY = e.clientY - rect.top;
-        const x = Math.round((absoluteX * width) / rect.width) - offset;
-        const y = Math.round((absoluteY * width) / rect.height) - offset;
-
-        props.onLatticeTouch([x, y]);
+    <div
+      onKeyDown={(e) => {
+        if (e.ctrlKey && e.shiftKey && e.code === "KeyZ") {
+          props.onRedo();
+        } else if (e.ctrlKey && e.code === "KeyZ") {
+          props.onUndo();
+        }
       }}
+      tabIndex={0}
     >
-      <rect
-        x={minX - offset}
-        y={minY - offset}
-        width={width}
-        height={width}
-        fill="#87857e"
-        stroke="none"
-      />
-      <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
-      <UserPoseLayer
-        problem={problem}
-        bonusMode={props.bonusMode}
-        updateVertices={props.updateVertices}
-        userFigure={props.userFigure}
-        editorState={props.editorState}
-        onEdit={props.onEdit}
-        selectedVertices={props.selectedVertices}
-      />
-    </svg>
+      <svg
+        style={props.forcedWidth ? { width: props.forcedWidth } : {}}
+        viewBox={`${minX - offset} ${minY - offset} ${width} ${width}`}
+        xmlns="http://www.w3.org/2000/svg"
+        onMouseUp={props.onMouseUp}
+        onMouseLeave={props.onMouseUp}
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const absoluteX = e.clientX - rect.left;
+          const absoluteY = e.clientY - rect.top;
+          const x = Math.round((absoluteX * width) / rect.width) - offset;
+          const y = Math.round((absoluteY * width) / rect.height) - offset;
+
+          props.onLatticeTouch([x, y]);
+        }}
+      >
+        <rect
+          x={minX - offset}
+          y={minY - offset}
+          width={width}
+          height={width}
+          fill="#87857e"
+          stroke="none"
+        />
+        <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
+        <UserPoseLayer
+          problem={problem}
+          bonusMode={props.bonusMode}
+          updateVertices={props.updateVertices}
+          userFigure={props.userFigure}
+          editorState={props.editorState}
+          onEdit={props.onEdit}
+          selectedVertices={props.selectedVertices}
+        />
+      </svg>
+    </div>
   );
 };
