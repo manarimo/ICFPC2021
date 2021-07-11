@@ -81,35 +81,43 @@ fn main() -> Result<()> {
             i64,
             (i64, Problem, Pose, String),
         )| {
+            let mut best_dislike = dislike;
             for force in 1..=2 {
-                let output = output_dir.join(format!("{}.json", problem_id));
-                let mut best_dislike = dislike;
-                let fixed_lists = get_fixed_lists(problem.figure.vertices.len(), force);
-                println!(
-                    "Solving {} force={} start={} {}",
-                    problem_id, force, best_dislike, solver_name
-                );
-                for fixed in fixed_lists {
-                    amylase_bruteforce::solve(
-                        problem.clone(),
-                        &fixed,
-                        solution.clone(),
-                        |pose, dislike| {
-                            if dislike < best_dislike {
-                                let file = File::create(&output).expect("file creation error");
-                                let writer = BufWriter::new(file);
-                                serde_json::to_writer(writer, &pose).expect("write error");
-                                println!("{:?} dislike:{}", output, dislike);
-                                best_dislike = dislike;
-                                solution = pose;
-                            }
-                        },
-                        |_| {
-                            // do nothing
-                        },
+                loop {
+                    let before_dislike = best_dislike;
+
+                    let output = output_dir.join(format!("{}.json", problem_id));
+                    let fixed_lists = get_fixed_lists(problem.figure.vertices.len(), force);
+                    println!(
+                        "Solving {} force={} start={} {}",
+                        problem_id, force, best_dislike, solver_name
                     );
+                    for fixed in fixed_lists {
+                        amylase_bruteforce::solve(
+                            problem.clone(),
+                            &fixed,
+                            solution.clone(),
+                            |pose, dislike| {
+                                if dislike < best_dislike {
+                                    let file = File::create(&output).expect("file creation error");
+                                    let writer = BufWriter::new(file);
+                                    serde_json::to_writer(writer, &pose).expect("write error");
+                                    println!("{:?} dislike:{}", output, dislike);
+                                    best_dislike = dislike;
+                                    solution = pose;
+                                }
+                            },
+                            |_| {
+                                // do nothing
+                            },
+                        );
+                    }
+                    println!("Solved {}", problem_id);
+
+                    if best_dislike == before_dislike {
+                        break;
+                    }
                 }
-                println!("Solved {}", problem_id);
             }
         },
     );
