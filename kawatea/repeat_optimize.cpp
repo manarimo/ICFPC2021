@@ -11,9 +11,12 @@
 using namespace std;
 using namespace manarimo;
 
+const int MAX_N = 1000;
 const int MAX_M = 10000;
+const int MAX_H = 1000;
 number min_len[MAX_M];
 number max_len[MAX_M];
+number current_dist[MAX_H][MAX_N];
 double penalty_weight;
 problem_t problem;
 
@@ -152,14 +155,14 @@ number calc_dislike(const vector<P>& hole, const vector<P>& figure, const vector
         v = update[0];
         w = update[1];
     }
-    
-    for (const P& h: hole) {
+
+    for (int i = 0; i < hole.size(); i++) {
         number min_p = 1e18;
-        for (int i = 0; i < figure.size(); i++) {
-            if (i == v || i == w) {
-                min_p = min(min_p, d(h, new_figure[i]));
+        for (int j = 0; j < figure.size(); j++) {
+            if (j == v || j == w) {
+                min_p = min(min_p, d(hole[i], new_figure[j]));
             } else {
-                min_p = min(min_p, d(h, figure[i]));
+                min_p = min(min_p, current_dist[i][j]);
             }
         }
         ds += min_p;
@@ -266,6 +269,10 @@ bool outside(const vector<P>& figure) {
     return false;
 }
 
+void update_dist(const vector<P>& hole, int v, const P& p) {
+    for (int i = 0; i < hole.size(); i++) current_dist[i][v] = d(hole[i], p);
+}
+
 void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
     FILE* fp = fopen(file, "w");
     
@@ -307,7 +314,7 @@ void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, 
 
 int main(int argc, char* argv[]) {
     load_problem(std::cin, problem);
-
+    
     vector<P> hole = problem.hole;
     vector<pair<int, int>> edge = problem.figure.edges;
     vector<P> figure = problem.figure.vertices;
@@ -367,6 +374,9 @@ int main(int argc, char* argv[]) {
     
     while (unchanged < 5) {
         figure = origin;
+        
+        for (int i = 0; i < n; i++) update_dist(hole, i, figure[i]);
+        
         number dislike = problem.calc_dislike(figure);
         number start_dislike = dislike;
         double weight = sqrt(dislike);
@@ -467,7 +477,7 @@ int main(int argc, char* argv[]) {
                 static vector<int> candidate;
                 candidate.clear();
                 for (int i = 0; i < edge.size(); i++) {
-                if (!problem.is_edge_inside(figure[edge[i].first], figure[edge[i].second])) candidate.push_back(i);
+                    if (!problem.is_edge_inside(figure[edge[i].first], figure[edge[i].second])) candidate.push_back(i);
                 }
                 if (candidate.size() == 0) continue;
                 
@@ -475,14 +485,9 @@ int main(int argc, char* argv[]) {
                 int vf = edge[r].first;
                 int wf = edge[r].second;
                 if (random::toss()) swap(vf, wf);
-                int vh = -1;
-                number md = 1e18;
+                int vh = 0;
                 for (int i = 0; i < hole.size(); i++) {
-                    number cd = d(figure[wf], hole[i]);
-                    if (cd < md) {
-                        vh = i;
-                        md = cd;
-                    }
+                    if (current_dist[i][wf] < current_dist[vh][wf]) vh = i;
                 }
                 new_figure[vf] = hole[vh];
                 if (outside(new_figure[vf])) continue;
@@ -493,7 +498,7 @@ int main(int argc, char* argv[]) {
                 new_penalty_vertex = calc_penalty_vertex(new_figure);
                 new_penalty_edge = calc_penalty_edge(hole, edge, new_figure);
                 new_penalty_length = calc_penalty_length(edge, new_figure);
-                new_dislike = calc_dislike(hole, new_figure, figure, update);
+                new_dislike = problem.calc_dislike(new_figure);
             } else if (update.size() == 1) {
                 int v = update[0];
                 new_penalty_vertex += penalty_vertex_diff(figure[v], new_figure[v]);
@@ -516,8 +521,12 @@ int main(int argc, char* argv[]) {
                 dislike = new_dislike;
                 if (update.size() == 0) {
                     figure.swap(new_figure);
+                    for (int i = 0; i < n; i++) update_dist(hole, i, figure[i]);
                 } else {
-                    for (int v : update) figure[v] = new_figure[v];
+                    for (int v : update) {
+                        figure[v] = new_figure[v];
+                        update_dist(hole, v, figure[v]);
+                    }
                 }
                 if (penalty_vertex + penalty_edge + penalty_length <= 1e-9 && dislike < best_dislike) {
                     best_dislike = dislike;
