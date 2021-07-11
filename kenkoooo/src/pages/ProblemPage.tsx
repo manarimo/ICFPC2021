@@ -112,7 +112,7 @@ const SvgEditor = (props: SvgEditorProps) => {
     if (solution.data) {
       setUserSubmission(solution.data);
     }
-  }, [solution]);
+  }, [solution, problem, setUserSubmission]);
 
   useEffect(() => {
     setText(JSON.stringify(userSubmission));
