@@ -2,6 +2,7 @@ import React from "react";
 import { Figure, Problem } from "../utils";
 import { Button, Container } from "react-bootstrap";
 import { solvePartialBruteForce } from "../RustSolver";
+import {solveSinglePoint} from "../Solver";
 
 interface Props {
   problem: Problem;
@@ -16,13 +17,17 @@ export const SinglePointSolverPanel = (props: Props) => {
     <Container>
       <Button
         disabled={isLegBroken}
-        onClick={async () => {
-          await solvePartialBruteForce(
+        onClick={() => {
+          const solution = solveSinglePoint(
+            props.userFigure.vertices,
             props.problem,
-            { vertices: props.userFigure.vertices },
-            props.selectedVertices,
-            props.onSolve
+            props.selectedVertices[0]
           );
+          if (solution !== undefined) {
+            const newPose = props.userFigure.vertices.map((x) => x)
+            newPose[props.selectedVertices[0]] = [solution.x, solution.y];
+            props.onSolve(newPose);
+          }
         }}
       >
         選択した点を固定してbrute-force
