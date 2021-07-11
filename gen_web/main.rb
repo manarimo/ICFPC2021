@@ -25,6 +25,8 @@ def write_svg(f, problem, solution = nil)
       color = '#0000ff80'
     when 'WALLHACK'
       color = '#ffa50080'
+    when 'SUPERFLEX'
+      color = '#00ffff80'
     else
       color = 'gray'
     end
@@ -118,10 +120,19 @@ def write_index(f, problems, solutions = {}, solution_title = nil, solution_name
     solution_links = <<-LINKS
 <div style="margin-bottom: 32px">
   <div style="display: flex">
+    使用：
     <a href="best.html" style="margin-right: 10px"><h3>Best</h3></a>
     <a href="globalist.html" style="margin-right: 10px"><h3>Globalist</h3></a>
     <a href="break_a_leg.html" style="margin-right: 10px"><h3>Break a Leg</h3></a>
     <a href="wallhack.html" style="margin-right: 10px"><h3>Wallhack</h3></a>
+    <a href="superflex.html" style="margin-right: 10px"><h3>Superflex</h3></a>
+  </div>
+  <div style="display: flex">
+    取得：
+    <a href="globalist_get.html" style="margin-right: 10px"><h3>Globalist</h3></a>
+    <a href="break_a_leg_get.html" style="margin-right: 10px"><h3>Break a Leg</h3></a>
+    <a href="wallhack_get.html" style="margin-right: 10px"><h3>Wallhack</h3></a>
+    <a href="superflex_get.html" style="margin-right: 10px"><h3>Superflex</h3></a>
   </div>
   <div style="display: flex; flex-wrap: wrap; line-height: 1.5em">
     #{solution_names.map { |sn| %Q(<div style="margin-right: 10px"><a href="#{sn}.html">#{sn}</a></div>) }.join}
@@ -242,12 +253,28 @@ File.open("#{__dir__}/../web/index.html", 'w') do |f|
 end
 
 write_top_solutions("#{__dir__}/../web/best.html", "Best", problems, solutions, dislikes, bonus_graph)
-write_top_solutions("#{__dir__}/../web/globalist.html", "Globalist", problems, solutions, dislikes, bonus_graph) do |sol|
+write_top_solutions("#{__dir__}/../web/globalist.html", "Globalist使用", problems, solutions, dislikes, bonus_graph) do |sol|
   sol.bonuses&.any? { |b| b.bonus == 'GLOBALIST' }
 end
-write_top_solutions("#{__dir__}/../web/break_a_leg.html", "Break a Leg", problems, solutions, dislikes, bonus_graph) do |sol|
+write_top_solutions("#{__dir__}/../web/break_a_leg.html", "Break a Leg使用", problems, solutions, dislikes, bonus_graph) do |sol|
   sol.bonuses&.any? { |b| b.bonus == 'BREAK_A_LEG' }
 end
-write_top_solutions("#{__dir__}/../web/wallhack.html", "Wallhack", problems, solutions, dislikes, bonus_graph) do |sol|
+write_top_solutions("#{__dir__}/../web/wallhack.html", "Wallhack使用", problems, solutions, dislikes, bonus_graph) do |sol|
   sol.bonuses&.any? { |b| b.bonus == 'WALLHACK' }
+end
+write_top_solutions("#{__dir__}/../web/superflex.html", "Superflex使用", problems, solutions, dislikes, bonus_graph) do |sol|
+  sol.bonuses&.any? { |b| b.bonus == 'SUPERFLEX' }
+end
+
+write_top_solutions("#{__dir__}/../web/globalist_get.html", "Globalist取得", problems, solutions, dislikes, bonus_graph) do |sol|
+  sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == 'GLOBALIST' }
+end
+write_top_solutions("#{__dir__}/../web/break_a_leg_get.html", "Break a Leg取得", problems, solutions, dislikes, bonus_graph) do |sol|
+  sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == 'BREAK_A_LEG' }
+end
+write_top_solutions("#{__dir__}/../web/wallhack_get.html", "Wallhack取得", problems, solutions, dislikes, bonus_graph) do |sol|
+  sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == 'WALLHACK' }
+end
+write_top_solutions("#{__dir__}/../web/superflex_get.html", "Superflex取得", problems, solutions, dislikes, bonus_graph) do |sol|
+  sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == 'SUPERFLEX' }
 end
