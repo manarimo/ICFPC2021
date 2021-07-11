@@ -169,12 +169,12 @@ number calc_dislike(const vector<P>& hole, const vector<P>& figure, const vector
 
 double calc_penalty_vertex(const vector<P>& figure) {
     double penalty = 0;
-    for (const P& p : figure) penalty += problem.dist[p.X][p.Y];
+    for (const P& p : figure) penalty += problem.dist[p.X - problem.min_x][p.Y - problem.min_y];
     return penalty;
 }
 
 double penalty_vertex_diff(const P& orig, const P& dest) {
-    return problem.dist[dest.X][dest.Y] - problem.dist[orig.X][orig.Y];
+    return problem.dist[dest.X - problem.min_x][dest.Y - problem.min_y] - problem.dist[orig.X - problem.min_x][orig.Y - problem.min_y];
 }
 
 double calc_penalty_edge(const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {

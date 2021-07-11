@@ -96,11 +96,10 @@ void manarimo::problem_t::init() {
     }
 
     outer = make_pair(max_x * 2 + 1, max_y * 2 + 1);
-
     for (int x = min_x; x <= max_x; x++) {
         for (int y = min_y; y <= max_y; y++) {
-            inside[x][y] = is_point_inside(make_pair(x, y));
-            if (!inside[x][y]) dist[x][y] = dist_hole_point(hole, make_pair(x, y));
+            inside[x - min_x][y - min_y] = is_point_inside(make_pair(x, y));
+            if (!inside[x - min_x][y - min_y]) dist[x - min_x][y - min_y] = dist_hole_point(hole, make_pair(x, y));
         }
     }
 
@@ -108,7 +107,7 @@ void manarimo::problem_t::init() {
     for (int i = 0; i < hole.size(); i++) double_hole[i] = make_pair(hole[i].X * 2, hole[i].Y * 2);
     for (int x = min_x * 2; x <= max_x * 2; x++) {
         for (int y = min_y * 2; y <= max_y * 2; y++) {
-            inside_double[x][y] = is_point_inside(double_hole, make_pair(x, y));
+            inside_double[x - min_x * 2][y - min_y * 2] = is_point_inside(double_hole, make_pair(x, y));
         }
     }
 }
@@ -133,8 +132,8 @@ inline bool manarimo::problem_t::is_point_inside(const vector<P> &hole, const P 
 }
 
 bool manarimo::problem_t::is_edge_inside(const P &p1, const P &p2) {
-    if (!inside[p1.X][p1.Y]) return false;
-    if (!inside[p2.X][p2.Y]) return false;
+    if (!inside[p1.X - min_x][p1.Y - min_y]) return false;
+    if (!inside[p2.X - min_x][p2.Y - min_y]) return false;
 
     int prev_ccw = ccw(p1, p2, hole[0]);
     for (int i = 0; i < hole.size(); ++i) {
@@ -157,7 +156,7 @@ bool manarimo::problem_t::is_edge_inside(const P &p1, const P &p2) {
     sort(splitting_points.begin(), splitting_points.end());
 
     for (int i = 0; i + 1 < splitting_points.size(); i++) {
-        if (!inside_double[splitting_points[i].X + splitting_points[i + 1].X][splitting_points[i].Y + splitting_points[i + 1].Y]) return false;
+        if (!inside_double[splitting_points[i].X + splitting_points[i + 1].X - min_x * 2][splitting_points[i].Y + splitting_points[i + 1].Y - min_y * 2]) return false;
     }
 
     return true;
