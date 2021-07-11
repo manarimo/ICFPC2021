@@ -13,7 +13,7 @@ def main():
         else:
             solution_name = solution["solver_name"]
             score = solution['verdict']['score']
-        print(f"{problem_id:03}: {solution_name} ({score})")
+        print(f"{problem_id:03}: {solution_name} (dislike: {score})")
 
     return  # for dry run.
     for problem_id, solution in selected_solutions.items():
