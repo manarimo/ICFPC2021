@@ -1,5 +1,14 @@
 {
     "isValid": true,
-    "bonusObtained": [],
+    "bonusObtained": [
+        {
+            "bonus": "GLOBALIST",
+            "problem": 79,
+            "position": [
+                75,
+                78
+            ]
+        }
+    ],
     "score": 2439
 }
