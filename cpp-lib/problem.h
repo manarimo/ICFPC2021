@@ -137,13 +137,13 @@ bool manarimo::problem_t::is_edge_inside(const P &p1, const P &p2) {
     if (!inside[p1.X - min_x][p1.Y - min_y]) return false;
     if (!inside[p2.X - min_x][p2.Y - min_y]) return false;
 
-    int prev_ccw = ccw(p1, p2, hole[0]);
+    number prev_ccw = ccw(p1, p2, hole[0]);
     for (int i = 0; i < hole.size(); ++i) {
         int j = i + 1;
         if (__builtin_expect(j >= hole.size(), 0)) {
             j = 0;
         }
-        const int next_ccw = ccw(p1, p2, hole[j]);
+        const number next_ccw = ccw(p1, p2, hole[j]);
         if (prev_ccw * next_ccw < 0 && ccw(hole[i], hole[j], p1) * ccw(hole[i], hole[j], p2) < 0) return false;
         prev_ccw = next_ccw;
     }
