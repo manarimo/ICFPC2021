@@ -73,6 +73,7 @@ function loadSolution(file: string): Solution | null {
     try {
         const solution = JSON.parse(buffer);
         return {
+            ...solution,
             vertices: solution['vertices'].map((a: number[]) => ({x: a[0], y: a[1]}))
         };
     } catch (e) {
@@ -109,15 +110,15 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
         const srcEdge = { src: problem.figure.vertices[e[0]], dst: problem.figure.vertices[e[1]] };
         const dstEdge = { src: solution.vertices[e[0]], dst: solution.vertices[e[1]] };
 
-        if (bonus.bonus === BonusType.BREAK_A_LEG && (e[0] == bonus.edge[0] && e[1] == bonus.edge[1] || e[0] == bonus.edge[1] && e[1] == bonus.edge[0])) {
+        if (bonus.bonus === BonusType.BREAK_A_LEG && ((e[0] === bonus.edge[0] && e[1] === bonus.edge[1]) || (e[0] === bonus.edge[1] && e[1] === bonus.edge[0]))) {
             // this edge is broken. validating broken edges.
             const doubledAddedEdge1 = {
-                src: doublePoint(problem.figure.vertices[e[0]]),
-                dst: doublePoint(problem.figure.vertices[problem.figure.vertices.length - 1])
+                src: doublePoint(solution.vertices[e[0]]),
+                dst: doublePoint(solution.vertices[solution.vertices.length - 1])
             }
             const doubledAddedEdge2 = {
-                src: doublePoint(problem.figure.vertices[e[1]]),
-                dst: doublePoint(problem.figure.vertices[problem.figure.vertices.length - 1])
+                src: doublePoint(solution.vertices[e[1]]),
+                dst: doublePoint(solution.vertices[solution.vertices.length - 1])
             }
             if (!isValidEdge(srcEdge, doubledAddedEdge1, problem['epsilon']) || !isValidEdge(srcEdge, doubledAddedEdge2, problem['epsilon'])) {
                 return {
@@ -131,29 +132,30 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
                     }
                 };
             }
-        }
-        if (bonus.bonus === BonusType.GLOBALIST) {
-            globalLengthCost += Math.abs(d(dstEdge[0], dstEdge[1]) / d(srcEdge[0], srcEdge[1]) - 1);
         } else {
-            if (!isValidEdge(srcEdge, dstEdge, problem['epsilon'])) {
-                return {
-                    isValid: false,
-                    score: 0,
-                    bonusObtained: [],
-                    error: {
-                        srcEdge,
-                        dstEdge,
-                        message: `Edge ${i} violates length constraint`,
-                    }
-                };
+            if (bonus.bonus === BonusType.GLOBALIST) {
+                globalLengthCost += Math.abs(d(dstEdge[0], dstEdge[1]) / d(srcEdge[0], srcEdge[1]) - 1);
+            } else {
+                if (!isValidEdge(srcEdge, dstEdge, problem['epsilon'])) {
+                    return {
+                        isValid: false,
+                        score: 0,
+                        bonusObtained: [],
+                        error: {
+                            srcEdge,
+                            dstEdge,
+                            message: `Edge ${i} violates length constraint`,
+                        }
+                    };
+                }
             }
-        }
-        if (!isEdgeInside(problem.hole, dstEdge)) {
-            edgeViolations.push({
-                e,
-                dstEdge,
-                i
-            });
+            if (!isEdgeInside(problem.hole, dstEdge)) {
+                edgeViolations.push({
+                    e,
+                    dstEdge,
+                    i
+                });
+            }
         }
     }
 
