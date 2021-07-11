@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .for_each(|(input, output): (Problem, _)| {
             let solution = Pose {
                 vertices: input.figure.vertices.clone(),
-                bonuses: None,
+                bonuses: Some(vec![]),
             };
             amylase_bruteforce::solve(
                 input,

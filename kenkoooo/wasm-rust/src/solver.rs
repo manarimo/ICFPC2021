@@ -74,7 +74,7 @@ pub fn solve(problem: Problem, pose: Pose) -> (Pose, i64) {
     (
         Pose {
             vertices,
-            bonuses: None,
+            bonuses: Some(vec![]),
         },
         best_score,
     )
