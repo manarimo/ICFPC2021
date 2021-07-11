@@ -12,11 +12,11 @@ use std::path::{Path, PathBuf};
 fn main() -> Result<()> {
     let args = env::args().collect::<Vec<_>>();
 
-    let problem_dir = &args[1];
+    let problem_dir_or_file = &args[1];
     let solution_dir = &args[2];
     let output_dir = PathBuf::from(&args[3]);
 
-    let problems = fetch_all_problems(problem_dir)?;
+    let problems = fetch_problems(problem_dir_or_file)?;
     let mut solutions = fetch_all_submission_files(solution_dir)?;
 
     let mut best_solutions = HashMap::new();
@@ -49,31 +49,36 @@ fn main() -> Result<()> {
 
     best_solutions.into_par_iter().for_each(
         |(problem_id, (dislike, problem, mut solution)): (i64, (i64, Problem, Pose))| {
-            println!("Solving {}", problem_id);
-            let output = output_dir.join(format!("{}.json", problem_id));
-            let mut best_dislike = dislike;
-            let fixed_lists = get_fixed_lists(problem.figure.vertices.len(), 2);
-            for fixed in fixed_lists {
-                amylase_bruteforce::solve(
-                    problem.clone(),
-                    &fixed,
-                    solution.clone(),
-                    |pose, dislike| {
-                        if dislike < best_dislike {
-                            let file = File::create(&output).expect("file creation error");
-                            let writer = BufWriter::new(file);
-                            serde_json::to_writer(writer, &pose).expect("write error");
-                            println!("{:?} dislike:{}", output, dislike);
-                            best_dislike = dislike;
-                            solution = pose;
-                        }
-                    },
-                    |_| {
-                        // do nothing
-                    },
+            for force in 1..=2 {
+                let output = output_dir.join(format!("{}.json", problem_id));
+                let mut best_dislike = dislike;
+                let fixed_lists = get_fixed_lists(problem.figure.vertices.len(), force);
+                println!(
+                    "Solving {} force={} start={}",
+                    problem_id, force, best_dislike
                 );
+                for fixed in fixed_lists {
+                    amylase_bruteforce::solve(
+                        problem.clone(),
+                        &fixed,
+                        solution.clone(),
+                        |pose, dislike| {
+                            if dislike < best_dislike {
+                                let file = File::create(&output).expect("file creation error");
+                                let writer = BufWriter::new(file);
+                                serde_json::to_writer(writer, &pose).expect("write error");
+                                println!("{:?} dislike:{}", output, dislike);
+                                best_dislike = dislike;
+                                solution = pose;
+                            }
+                        },
+                        |_| {
+                            // do nothing
+                        },
+                    );
+                }
+                println!("Solved {}", problem_id);
             }
-            println!("Solved {}", problem_id);
         },
     );
 
@@ -81,23 +86,28 @@ fn main() -> Result<()> {
 }
 
 fn get_fixed_lists(n: usize, force: usize) -> Vec<Vec<usize>> {
-    if force == 2 {
-        (0..n)
-            .flat_map(|i| (0..i).map(move |j| (i, j)))
-            .map(|(i, j)| (0..n).filter(|&x| x != i && x != j).collect::<Vec<_>>())
-            .collect()
-    } else if force == 3 {
-        (0..n)
-            .flat_map(|i| (0..i).map(move |j| (i, j)))
-            .flat_map(|(i, j)| (0..j).map(move |k| (i, j, k)))
-            .map(|(i, j, k)| {
-                (0..n)
-                    .filter(|&x| x != i && x != j && x != k)
-                    .collect::<Vec<_>>()
-            })
-            .collect()
+    let mut frees = vec![];
+    dfs_fixed_list(n, force, &mut vec![], &mut frees);
+    frees
+        .into_iter()
+        .map(|free| (0..n).filter(|&x| !free.contains(&x)).collect::<Vec<_>>())
+        .collect()
+}
+
+fn dfs_fixed_list(n: usize, force: usize, seg: &mut Vec<usize>, ans: &mut Vec<Vec<usize>>) {
+    if force == seg.len() {
+        ans.push(seg.clone());
+        return;
+    }
+    let last = if seg.is_empty() {
+        n
     } else {
-        unimplemented!();
+        seg[seg.len() - 1]
+    };
+    for i in 0..last {
+        seg.push(i);
+        dfs_fixed_list(n, force, seg, ans);
+        assert_eq!(seg.pop(), Some(i));
     }
 }
 
@@ -135,17 +145,26 @@ fn fetch_all_submission_files<P: AsRef<Path>>(dir: P) -> Result<HashMap<i64, Vec
     Ok(solutions)
 }
 
-fn fetch_all_problems<P: AsRef<Path>>(dir: P) -> Result<HashMap<i64, Problem>> {
-    let mut map = HashMap::new();
-    for path in read_dir(dir)? {
-        let filepath = path?.path();
-        if !filepath.is_json()? {
-            continue;
-        }
-        println!("Loading {:?}", filepath);
+fn fetch_problems<P: AsRef<Path>>(file_or_dir: P) -> Result<HashMap<i64, Problem>> {
+    if file_or_dir.as_ref().is_file() {
+        let filepath = file_or_dir.as_ref().to_path_buf();
         let problem_id = filepath.problem_id()?;
         let problem: Problem = filepath.parse_json()?;
+        let mut map = HashMap::new();
         map.insert(problem_id, problem);
+        Ok(map)
+    } else {
+        let mut map = HashMap::new();
+        for path in read_dir(file_or_dir)? {
+            let filepath = path?.path();
+            if !filepath.is_json()? {
+                continue;
+            }
+            println!("Loading {:?}", filepath);
+            let problem_id = filepath.problem_id()?;
+            let problem: Problem = filepath.parse_json()?;
+            map.insert(problem_id, problem);
+        }
+        Ok(map)
     }
-    Ok(map)
 }
