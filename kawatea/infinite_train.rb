@@ -3,7 +3,7 @@ require 'fileutils'
 solution_base = ARGV[0]
 programs = %w(./time_600_temp_100.out ./time_600_temp_1000.out ./time_600_temp_10000.out)
 
-current_dir = "#{__dir__}/../solutions/#{solution_base}"
+current_dir = "#{__dir__}/../hints/#{solution_base}"
 loop_count = 1
 
 if ARGV.size >= 2

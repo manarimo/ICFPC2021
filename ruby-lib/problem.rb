@@ -62,6 +62,31 @@ module Problem
       problems.sort_by(&:id)
     end
 
+    def load_solutions
+      solutions = {}
+      Dir.glob("#{__dir__}/../solutions/*").each do |dir|
+        solution_name = File.basename(dir)
+
+        Dir.glob("#{dir}/*.json") do |file|
+          next if file.match(/_verdict.json/)
+
+          id = File.basename(file, '.json').to_i
+          json = File.open(file) do |f|
+            JSON.load(f)
+          end
+          next if json == nil
+          vertices = new_vertices(json['vertices'])
+
+          verdict = JSON.load(File.read(file.sub(/\.json$/, '_verdict.json'))) rescue nil
+
+          solutions[solution_name] ||= {}
+          solutions[solution_name][id] = Solution.new(id, solution_name, verdict, vertices, new_bonuses(json['bonuses']))
+        end
+      end
+
+      solutions
+    end
+
     def bonus_graph(problems)
       to_obtain = {}
       to_use = {}

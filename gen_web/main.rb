@@ -221,26 +221,7 @@ end
 
 problems_dict = problems.map { |prob| [prob.id, prob] }.to_h
 
-solutions = {}
-Dir.glob("#{__dir__}/../solutions/*").each do |dir|
-  solution_name = File.basename(dir)
-
-  Dir.glob("#{dir}/*.json") do |file|
-    next if file.match(/_verdict.json/)
-
-    id = File.basename(file, '.json').to_i
-    json = File.open(file) do |f|
-      JSON.load(f)
-    end
-    next if json == nil
-    vertices = Problem::new_vertices(json['vertices'])
-
-    verdict = JSON.load(File.read(file.sub(/\.json$/, '_verdict.json'))) rescue nil
-
-    solutions[solution_name] ||= {}
-    solutions[solution_name][id] = Problem::Solution.new(id, solution_name, verdict, vertices, Problem::new_bonuses(json['bonuses']))
-  end
-end
+solutions = Problem::load_solutions
 
 dislikes = File.open("#{__dir__}/../problems/minimal_dislikes.txt") { |f|
   JSON.load(f).map { |e| [e['problem_id'], e['minimal_dislikes']] }.to_h
@@ -273,7 +254,9 @@ end
 problems.each do |problem|
   rows = []
   solution_names.each do |name|
-    rows << Row.new(problem, solutions[name][problem.id], dislikes[problem.id])
+    if solutions[name][problem.id]
+      rows << Row.new(problem, solutions[name][problem.id], dislikes[problem.id])
+    end
   end
   rows.sort_by! { |row| row.solution&.verdict&.fetch('score') || Float::INFINITY }
   File.open("#{__dir__}/../web/#{problem.id}.html", "w") do |f|
