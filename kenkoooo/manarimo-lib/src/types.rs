@@ -18,4 +18,10 @@ pub struct Figure {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Pose {
     pub vertices: Vec<Pair>,
+    pub bonuses: Option<Vec<Bonus>>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Bonus {
+    bonus: String,
 }

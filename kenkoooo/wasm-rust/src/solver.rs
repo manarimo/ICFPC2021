@@ -71,7 +71,13 @@ pub fn solve(problem: Problem, pose: Pose) -> (Pose, i64) {
         }
     }
     let vertices = best_state.into_iter().map(|p| [p.x, p.y]).collect();
-    (Pose { vertices }, best_score)
+    (
+        Pose {
+            vertices,
+            bonuses: None,
+        },
+        best_score,
+    )
 }
 
 fn score_function(

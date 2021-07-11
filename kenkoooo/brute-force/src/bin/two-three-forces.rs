@@ -1,6 +1,8 @@
 use anyhow::Result;
 use brute_force::{amylase_bruteforce, PathBufExt};
-use manarimo_lib::geometry::{dislike, Point};
+use manarimo_lib::geometry::{
+    count_contained_edges, count_contained_points, count_valid_edges, dislike, Point,
+};
 use manarimo_lib::types::{Pose, Problem};
 use rayon::prelude::*;
 use std::collections::HashMap;
@@ -27,35 +29,65 @@ fn main() -> Result<()> {
             .cloned()
             .map(Point::from)
             .collect::<Vec<_>>();
+        let original_pose = problem
+            .figure
+            .vertices
+            .iter()
+            .cloned()
+            .map(Point::from)
+            .collect::<Vec<_>>();
         if let Some(solutions) = solutions.remove(&problem_id) {
-            for solution in solutions {
+            for (solver, solution) in solutions {
                 let pose = solution
                     .vertices
                     .iter()
                     .cloned()
                     .map(Point::from)
                     .collect::<Vec<_>>();
+                if count_contained_edges(&hole, &pose, &problem.figure.edges)
+                    != problem.figure.edges.len()
+                {
+                    continue;
+                }
+                if count_contained_points(&hole, &pose) != problem.figure.vertices.len() {
+                    continue;
+                }
+                if count_valid_edges(
+                    &pose,
+                    &problem.figure.edges,
+                    &original_pose,
+                    problem.epsilon,
+                ) != problem.figure.edges.len()
+                {
+                    continue;
+                }
+
                 let dislike = dislike(&hole, &pose);
-                let current = best_solutions
-                    .entry(problem_id)
-                    .or_insert_with(|| (dislike, problem.clone(), solution.clone()));
+
+                let current = best_solutions.entry(problem_id).or_insert_with(|| {
+                    (dislike, problem.clone(), solution.clone(), solver.clone())
+                });
                 if current.0 > dislike {
                     current.0 = dislike;
                     current.2 = solution;
+                    current.3 = solver.clone();
                 }
             }
         }
     }
 
     best_solutions.into_par_iter().for_each(
-        |(problem_id, (dislike, problem, mut solution)): (i64, (i64, Problem, Pose))| {
+        |(problem_id, (dislike, problem, mut solution, solver_name)): (
+            i64,
+            (i64, Problem, Pose, String),
+        )| {
             for force in 1..=2 {
                 let output = output_dir.join(format!("{}.json", problem_id));
                 let mut best_dislike = dislike;
                 let fixed_lists = get_fixed_lists(problem.figure.vertices.len(), force);
                 println!(
-                    "Solving {} force={} start={}",
-                    problem_id, force, best_dislike
+                    "Solving {} force={} start={} {}",
+                    problem_id, force, best_dislike, solver_name
                 );
                 for fixed in fixed_lists {
                     amylase_bruteforce::solve(
@@ -111,13 +143,19 @@ fn dfs_fixed_list(n: usize, force: usize, seg: &mut Vec<usize>, ans: &mut Vec<Ve
     }
 }
 
-fn fetch_all_submission_files<P: AsRef<Path>>(dir: P) -> Result<HashMap<i64, Vec<Pose>>> {
+fn fetch_all_submission_files<P: AsRef<Path>>(dir: P) -> Result<HashMap<i64, Vec<(String, Pose)>>> {
     let mut solutions = HashMap::new();
     for path in read_dir(dir)? {
         let dir_path = path?.path();
         if !dir_path.is_dir() {
             continue;
         }
+
+        let solver = match dir_path.file_name().and_then(|s| s.to_str()) {
+            Some(solver) => solver,
+            None => continue,
+        };
+        let solver_name = solver.to_string();
 
         for filepath in read_dir(dir_path)? {
             let filepath = filepath?.path();
@@ -136,10 +174,16 @@ fn fetch_all_submission_files<P: AsRef<Path>>(dir: P) -> Result<HashMap<i64, Vec
                 Err(_) => continue,
             };
 
+            if let Some(bonuses) = solution.bonuses.as_ref() {
+                if !bonuses.is_empty() {
+                    continue;
+                }
+            }
+
             solutions
                 .entry(problem_id)
                 .or_insert_with(Vec::new)
-                .push(solution);
+                .push((solver_name.clone(), solution));
         }
     }
     Ok(solutions)
