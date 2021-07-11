@@ -62,38 +62,45 @@ def flip(point, center)
   Point.new((center.x * 2 - point.x).to_i, point.y)
 end
 
-degree = ARGV[0].to_i
-flip = ARGV[1] == 'true'
-outdir = ARGV[2]
 problems = load_problems
 
-problems.each do |prob|
-  center_x, center_y = 0, 0
-  prob.figure.vertices.each do |p|
-    center_x += p.x
-    center_y += p.y
-  end
+[0, 90, 180, 270].each do |degree|
+  [true, false].each do |flip|
+    problems.each do |prob|
+      center_x, center_y = 0, 0
+      prob.figure.vertices.each do |p|
+        center_x += p.x
+        center_y += p.y
+      end
 
-  center_x /= prob.figure.vertices.size.to_f
-  center_y /= prob.figure.vertices.size.to_f
-  center = Point.new(center_x, center_y)
+      center_x /= prob.figure.vertices.size.to_f
+      center_y /= prob.figure.vertices.size.to_f
+      center = Point.new(center_x, center_y)
 
-  rot = prob.figure.vertices.map { |p| rotate(p, center, degree * Math::PI / 180 ) }
-  if flip
-    rot = rot.map {|p| flip(p, center) }
-  end
-  min_x = rot.map(&:x).min
-  min_y = rot.map(&:y).min
+      rot = prob.figure.vertices.map { |p| rotate(p, center, degree * Math::PI / 180 ) }
+      if flip
+        rot = rot.map {|p| flip(p, center) }
+      end
+      min_x = rot.map(&:x).min
+      min_y = rot.map(&:y).min
 
-  if min_x < 0
-    rot = rot.map { |p| Point.new(p.x - min_x, p.y) }
-  end
+      if min_x < 0
+        rot = rot.map { |p| Point.new(p.x - min_x, p.y) }
+      end
 
-  if min_y < 0
-    rot = rot.map { |p| Point.new(p.x, p.y - min_y) }
-  end
+      if min_y < 0
+        rot = rot.map { |p| Point.new(p.x, p.y - min_y) }
+      end
 
-  File.open("#{outdir}/#{prob.id}.json", 'w') do |f|
-    JSON.dump({'vertices': rot.map{|p| [p[0], p[1]]}}, f)
+      if flip
+        dirname = "#{__dir__}/../hints/flip-rot-#{degree}"
+      else
+        dirname = "#{__dir__}/../hints/rot-#{degree}"
+      end
+      FileUtils.makedirs(dirname)
+      File.open("#{dirname}/#{prob.id}.json", 'w') do |f|
+        JSON.dump({'vertices': rot.map{|p| [p[0], p[1]]}}, f)
+      end
+    end
   end
 end
