@@ -1,5 +1,5 @@
 import {
-  BONUSTYPE,
+  BonusType,
   Figure,
   getOutsidePointIds,
   pairToPoint,
@@ -10,7 +10,7 @@ import { EditorState } from "./EditorState";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
 import { solveSinglePoint } from "../Solver";
 
-export const getBonusColor = (bonusType: BONUSTYPE) => {
+export const getBonusColor = (bonusType: BonusType) => {
   switch (bonusType) {
     case "GLOBALIST":
       return "yellow";

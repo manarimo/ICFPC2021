@@ -1,11 +1,16 @@
 import { isPointInside, Point } from "./tslib/amyfunc";
 
-const BonusTypes = ["GLOBALIST", "BREAK_A_LEG", "WALLHACK"] as const;
-export type BONUSTYPE = typeof BonusTypes[number];
+export const BonusTypes = [
+  "GLOBALIST",
+  "BREAK_A_LEG",
+  "WALLHACK",
+  "SUPERFLEX",
+] as const;
+export type BonusType = typeof BonusTypes[number];
 
 export type Pair = [number, number];
 export interface Bonus {
-  bonus: BONUSTYPE;
+  bonus: BonusType;
   problem: number; //The ID of the problem in which this bonus can be used once it has been unlocked.
   position: Pair;
 }
@@ -39,7 +44,7 @@ interface BreakALegBonusSubmission {
 }
 
 interface OtherBonusSubmission {
-  bonus: "GLOBALIST" | "WALLHACK";
+  bonus: "GLOBALIST" | "WALLHACK" | "SUPERFLEX";
 
   // The ID of the problem in which this bonus has been unlocked
   // 適当にそれっぽい値を突っ込む。バックエンドがなんとかするんだって
