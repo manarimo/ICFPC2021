@@ -26,8 +26,7 @@ export const hasOwnProperty = <X extends {}, Y extends PropertyKey>(
 };
 
 export const parseUserInput = (
-  input: string,
-  polygonSize: number
+  input: string
 ):
   | {
       result: "success";
@@ -56,8 +55,7 @@ export const parseUserInput = (
       hasOwnProperty(result, "vertices") &&
       typeof result.vertices === "object" &&
       Array.isArray(result.vertices) &&
-      isPolygon(result.vertices) &&
-      result.vertices.length === polygonSize
+      isPolygon(result.vertices)
     ) {
       return {
         result: "success",
