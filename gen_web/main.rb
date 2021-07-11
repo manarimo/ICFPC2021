@@ -80,6 +80,8 @@ def write_svg(f, problem, solution = nil)
       color = '#d0d00080'
     when 'BREAK_A_LEG'
       color = '#0000ff80'
+    when 'WALLHACK'
+      color = '#ffa50080'
     else
       color = 'gray'
     end
