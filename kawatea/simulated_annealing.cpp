@@ -266,15 +266,6 @@ bool outside(const vector<P>& figure) {
     return false;
 }
 
-void output(const vector<P>& figure) {
-    printf("{\"vertices\": [");
-    for (int i = 0; i < figure.size(); i++) {
-        if (i > 0) printf(", ");
-        printf("[%lld, %lld]", figure[i].X, figure[i].Y);
-    }
-    printf("]}");
-}
-
 void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
     FILE* fp = fopen(file, "w");
     
@@ -536,11 +527,11 @@ int main(int argc, char* argv[]) {
     
     if (best_dislike < 1e18) {
         fprintf(stderr, "dislike: %lld\n", best_dislike);
-        output(best_figure);
+        problem.output(best_figure);
         if (argc >= 2) output_svg(argv[1], hole, edge, best_figure);
     } else {
         fprintf(stderr, "final_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
-        output(figure);
+        problem.output(figure);
         if (argc >= 2) output_svg(argv[1], hole, edge, figure);
     }
     
