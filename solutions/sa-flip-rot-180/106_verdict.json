@@ -5,24 +5,24 @@
     "error": {
         "srcEdge": {
             "src": {
-                "x": 85,
-                "y": 211
+                "x": 81,
+                "y": 291
             },
             "dst": {
-                "x": 163,
-                "y": 213
+                "x": 85,
+                "y": 211
             }
         },
         "dstEdge": {
             "src": {
-                "x": 84,
-                "y": 402
+                "x": 83,
+                "y": 324
             },
             "dst": {
-                "x": 163,
-                "y": 402
+                "x": 85,
+                "y": 405
             }
         },
-        "message": "Edge 11 violates the length constraint. (181 edges violates in total.)"
+        "message": "Edge 3 violates the length constraint. (178 edges violates in total.)"
     }
 }

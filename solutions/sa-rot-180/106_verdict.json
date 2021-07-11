@@ -15,14 +15,14 @@
         },
         "dstEdge": {
             "src": {
-                "x": 133,
-                "y": 397
+                "x": 135,
+                "y": 398
             },
             "dst": {
-                "x": 69,
-                "y": 348
+                "x": 71,
+                "y": 349
             }
         },
-        "message": "Edge 10 violates the length constraint. (174 edges violates in total.)"
+        "message": "Edge 10 violates the length constraint. (170 edges violates in total.)"
     }
 }
