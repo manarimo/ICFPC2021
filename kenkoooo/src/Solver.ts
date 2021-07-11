@@ -29,10 +29,9 @@ export const solveSinglePoint = (
   const [curX, curY] = pose[targetPointId];
   for (let distance = 0; distance < THRESHOLD; distance++) {
     for (let xDirection of [1, -1]) {
-      let x = curX - distance * xDirection;
-      let y = curY;
-
       for (let [dx, dy] of D) {
+        let x = curX - distance * xDirection;
+        let y = curY;
         for (let i = 0; i < distance; i++) {
           x += dx * xDirection;
           y += dy;
