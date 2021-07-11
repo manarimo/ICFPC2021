@@ -3,64 +3,7 @@
 require 'json'
 require 'pp'
 require 'fileutils'
-
-Point = Struct.new(:x, :y)
-Problem = Struct.new(:id, :hole, :figure, :epsilon, :width, :height, :bonuses)
-Edge = Struct.new(:from, :to)
-Figure = Struct.new(:edges, :vertices)
-Bonus = Struct.new(:position, :bonus, :problem)
-Solution = Struct.new(:name, :verdict, :vertices, :bonuses)
-
-def new_point(json)
-  return nil if json == nil
-  Point.new(json[0], json[1])
-end
-
-def new_hole(json)
-  json.map { |a| new_point(a) }
-end
-
-def new_edges(json)
-  json.map { |a| Edge.new(a[0], a[1]) }
-end
-
-def new_vertices(json)
-  json.map { |a| new_point(a) }
-end
-
-def new_figure(json)
-  Figure.new(new_edges(json['edges']), new_vertices(json['vertices']))
-end
-
-def new_bonuses(json)
-  return nil if json == nil
-  json.map { |b| Bonus.new(new_point(b['position']), b['bonus'], b['problem'].to_i) }
-end
-
-def new_problem(id, json)
-  hole = new_hole(json['hole'])
-  figure = new_figure(json['figure'])
-  eps = json['epsilon'].to_i
-  min_x = hole.map(&:x).min
-  min_y = hole.map(&:y).min
-  max_x = hole.map(&:x).max
-  max_y = hole.map(&:y).max
-  Problem.new(id, hole, figure, eps, max_x - min_x, max_y - min_y, new_bonuses(json['bonuses']))
-end
-
-def load_problems
-  problems = []
-  files = Dir.glob("#{__dir__}/../problems/*.json")
-  files.each do |file|
-    id = File.basename(file, '.json').to_i
-    File.open(file) do |f|
-      json = JSON.load(f)
-      problems.push(new_problem(id, json))
-    end
-  end
-
-  problems.sort_by(&:id)
-end
+require_relative '../ruby-lib/problem'
 
 def write_svg(f, problem, solution = nil)
   hole_d = 'M ' + problem.hole.map { |p| "#{p.x},#{p.y}"}.join(' L ')
@@ -104,7 +47,7 @@ def write_svg(f, problem, solution = nil)
 SVG
 end
 
-def index_tr(problem, solution, global_dislike)
+def index_tr(problem, solution, global_dislike, bonus_graph)
   score_base = 1000 * Math.log(problem.figure.vertices.size * problem.figure.edges.size * problem.hole.size / 6)
   max_score = score_base.ceil
 
@@ -132,7 +75,7 @@ def index_tr(problem, solution, global_dislike)
           <div style="display: flex">
             <img src="images/#{solution.name}/#{problem.id}.svg" height="200">
             <div>
-              使用: #{solution.bonuses&.map{|b| "#{b.bonus}@#{b.problem}" }&.join(', ')} <br>
+              使用: #{solution.bonuses&.map{|b| %Q(#{b.bonus} <a href="##{b.problem}">#{b.problem}</a>)}&.join(', ')} <br>
               取得: #{solution.verdict && solution.verdict['bonusObtained']&.map{ |b| b['bonus'] }.join(', ')}
             </div>
           </div>
@@ -145,10 +88,16 @@ def index_tr(problem, solution, global_dislike)
   end
 
   <<-TR
-<tr style="#{style}">
+<tr style="#{style}" id="#{problem.id}">
   <td>#{problem.id}</td>
   <td>
-    <img src="images/#{problem.id}.svg" height="200"><br>
+    <div style="display: flex">
+      <img src="images/#{problem.id}.svg" height="200">
+      <div>
+        使用可能: <ul>#{bonus_graph.usable[problem.id]&.map{|b| %Q(<li>#{b.bonus} <a href="##{b.problem}">#{b.problem}</a></li>)}&.join} </ul>
+        取得可能: <ul>#{bonus_graph.obtainable[problem.id]&.map{|b| %Q(<li>#{b.bonus} <a href="##{b.problem}">#{b.problem}</a></li>)}&.join} </ul>
+      </div>
+    </div>
     <a href="/kenkoooo/#/problem/#{problem.id}">さいしょからはじめる</a>
   </td>
   <td>
@@ -163,7 +112,7 @@ def index_tr(problem, solution, global_dislike)
 TR
 end
 
-def write_index(f, problems, solutions = {}, solution_title = nil, solution_names = [], dislikes)
+def write_index(f, problems, solutions = {}, solution_title = nil, solution_names = [], dislikes, bonus_graph)
   solution_header = solution_title && %Q(<h2>Name: #{solution_title}</h2>)
   if solution_names.size > 0
     solution_links = <<-LINKS
@@ -197,21 +146,21 @@ LINKS
   <table border>
     <tr>
       <th>Problem ID</th>
-      <th style="text-align:left">Thumbnail</th>
+      <th>Thumbnail</th>
       <th>Spec</th>
       <th>Solution</th>
       <th>Solver</ht>
       <th>Dislikes</th>
       <th>Score</th>
     </tr>
-    #{problems.map {|prob| index_tr(prob, solutions[prob.id], dislikes[prob.id]) }.join}
+    #{problems.map {|prob| index_tr(prob, solutions[prob.id], dislikes[prob.id], bonus_graph) }.join}
   </table>
 </body>
 </html>
 EOF
 end
 
-def write_top_solutions(file, title, problems, solutions, dislikes, &block)
+def write_top_solutions(file, title, problems, solutions, dislikes, bonus_graph, &block)
   top_solutions = {}
   solutions.each do |name, list|
     list.each do |id, solution|
@@ -231,11 +180,11 @@ def write_top_solutions(file, title, problems, solutions, dislikes, &block)
   end
 
   File.open(file, 'w') do |f|
-    write_index(f, problems, top_solutions, title, solutions.keys.sort, dislikes)
+    write_index(f, problems, top_solutions, title, solutions.keys.sort, dislikes, bonus_graph)
   end
 end
 
-problems = load_problems
+problems = Problem::load_problems
 problems.each do |prob|
   File.open("#{__dir__}/../web/images/#{prob.id}.svg", 'w') do |f|
     write_svg(f, prob)
@@ -256,18 +205,20 @@ Dir.glob("#{__dir__}/../solutions/*").each do |dir|
       JSON.load(f)
     end
     next if json == nil
-    vertices = new_vertices(json['vertices'])
+    vertices = Problem::new_vertices(json['vertices'])
 
     verdict = JSON.load(File.read(file.sub(/\.json$/, '_verdict.json'))) rescue nil
 
     solutions[solution_name] ||= {}
-    solutions[solution_name][id] = Solution.new(solution_name, verdict, vertices, new_bonuses(json['bonuses']))
+    solutions[solution_name][id] = Problem::Solution.new(solution_name, verdict, vertices, Problem::new_bonuses(json['bonuses']))
   end
 end
 
 dislikes = File.open("#{__dir__}/../problems/minimal_dislikes.txt") { |f|
   JSON.load(f).map { |e| [e['problem_id'], e['minimal_dislikes']] }.to_h
 }
+
+bonus_graph = Problem::bonus_graph(problems)
 
 solutions.each do |solution_name, solution_list|
   output_dir = "#{__dir__}/../web/images/#{solution_name}"
@@ -282,21 +233,21 @@ solutions.each do |solution_name, solution_list|
 
   # Generate solution overview
   File.open("#{__dir__}/../web/#{solution_name}.html", 'w') do |f|
-    write_index(f, problems.select{|prob| solutions[solution_name].has_key?(prob.id) }, solutions[solution_name], solution_name, solutions.keys.sort, dislikes)
+    write_index(f, problems.select{|prob| solutions[solution_name].has_key?(prob.id) }, solutions[solution_name], solution_name, solutions.keys.sort, dislikes, bonus_graph)
   end
 end
 
 File.open("#{__dir__}/../web/index.html", 'w') do |f|
-  write_index(f, problems, {}, nil, solutions.keys.sort, dislikes)
+  write_index(f, problems, {}, nil, solutions.keys.sort, dislikes, bonus_graph)
 end
 
-write_top_solutions("#{__dir__}/../web/best.html", "Best", problems, solutions, dislikes)
-write_top_solutions("#{__dir__}/../web/globalist.html", "Globalist", problems, solutions, dislikes) do |sol|
+write_top_solutions("#{__dir__}/../web/best.html", "Best", problems, solutions, dislikes, bonus_graph)
+write_top_solutions("#{__dir__}/../web/globalist.html", "Globalist", problems, solutions, dislikes, bonus_graph) do |sol|
   sol.bonuses&.any? { |b| b.bonus == 'GLOBALIST' }
 end
-write_top_solutions("#{__dir__}/../web/break_a_leg.html", "Break a Leg", problems, solutions, dislikes) do |sol|
+write_top_solutions("#{__dir__}/../web/break_a_leg.html", "Break a Leg", problems, solutions, dislikes, bonus_graph) do |sol|
   sol.bonuses&.any? { |b| b.bonus == 'BREAK_A_LEG' }
 end
-write_top_solutions("#{__dir__}/../web/wallhack.html", "Wallhack", problems, solutions, dislikes) do |sol|
+write_top_solutions("#{__dir__}/../web/wallhack.html", "Wallhack", problems, solutions, dislikes, bonus_graph) do |sol|
   sol.bonuses&.any? { |b| b.bonus == 'WALLHACK' }
 end
