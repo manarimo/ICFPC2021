@@ -1,7 +1,21 @@
-import { Problem } from "../utils";
+import { BONUSTYPE, Problem } from "../utils";
 import React from "react";
 import { EditorState } from "./EditorState";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
+
+export const getBonusColor = (bonusType: BONUSTYPE) => {
+  switch (bonusType) {
+    case "GLOBALIST":
+      return "yellow";
+    case "BREAK_A_LEG":
+      return "blue";
+    case "WALLHACK":
+      return "orange";
+    default:
+      // bug
+      return "white";
+  }
+};
 
 interface PointProps {
   x: number;
@@ -13,7 +27,7 @@ interface PointProps {
 }
 const Point = (props: PointProps) => {
   const { x, y, pointId, isEditing, isSelected } = props;
-  const color = isEditing ? "blue" : isSelected ? "yellow" : "black";
+  const color = isEditing ? "blue" : isSelected ? "#0FF" : "black";
   return (
     <circle
       key={pointId}
@@ -41,6 +55,11 @@ const UserPoseLayer = (props: {
   };
   return (
     <>
+      {props.problem.bonuses.map((bonus, idx) => {
+        const [x, y] = bonus.position;
+        const color = getBonusColor(bonus.bonus);
+        return <circle key={idx} cx={x} cy={y} r="0.7" fill={color} />;
+      })}
       {props.problem.hole.map(([x, y], idx) => {
         return <circle key={idx} cx={x} cy={y} r="0.7" fill="#F0F" />;
       })}

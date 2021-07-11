@@ -1,7 +1,16 @@
+export type BONUSTYPE = "GLOBALIST" | "BREAK_A_LEG" | "WALLHACK";
+
+export interface Bonus {
+  bonus: BONUSTYPE;
+  problem: number;
+  position: [number, number];
+}
+
 export interface Problem {
   hole: [number, number][];
   epsilon: number;
   figure: Figure;
+  bonuses: Bonus[];
 }
 
 export interface Figure {
