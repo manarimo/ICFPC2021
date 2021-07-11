@@ -80,7 +80,7 @@ const SvgEditor = (props: SvgEditorProps) => {
     } else {
       setUserFigure({
         ...problem.figure,
-        vertices: parseResult.polygon,
+        vertices: parseResult.submission.vertices,
       });
       setErrorMessage(null);
     }
