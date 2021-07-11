@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { Figure, parseUserInput, Problem } from "../utils";
+import { parseUserInput, Problem } from "../utils";
 import {
   Alert,
   Container,
@@ -34,10 +34,7 @@ const SvgEditor = (props: SvgEditorProps) => {
 
   const [design, setDesign] = useState<"single" | "triple">("triple");
   const [editorState, setEditState] = useState<EditorState | null>(null);
-  const [userFigure, setUserFigure] = useState<Figure>({
-    vertices: [...problem.figure.vertices],
-    edges: [...problem.figure.edges],
-  });
+  const [userPose, setUserPose] = useState([...problem.figure.vertices]);
   const [text, setText] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [slideSize, setSlideSize] = useState<number>(1);
@@ -48,38 +45,32 @@ const SvgEditor = (props: SvgEditorProps) => {
 
   const getOutput = () => {
     return JSON.stringify({
-      vertices: userFigure.vertices,
+      vertices: userPose,
     });
   };
   useEffect(() => {
     if (solution.data) {
-      setUserFigure({
-        edges: [...userFigure.edges],
-        vertices: [...solution.data.vertices],
-      });
+      setUserPose([...solution.data.vertices]);
     }
-  }, [solution, userFigure]);
+  }, [solution]);
   useEffect(() => {
     setText(
       JSON.stringify({
-        vertices: userFigure.vertices,
+        vertices: userPose,
       })
     );
-  }, [userFigure]);
+  }, [userPose]);
 
   const onCopyOutput = async () => {
     setText(getOutput());
     await navigator.clipboard.writeText(getOutput());
   };
   const onLoadInput = () => {
-    const parseResult = parseUserInput(text, userFigure.vertices.length);
+    const parseResult = parseUserInput(text, userPose.length);
     if (parseResult.result === "failed") {
       setErrorMessage(parseResult.errorMessage);
     } else {
-      setUserFigure({
-        edges: [...userFigure.edges],
-        vertices: parseResult.polygon,
-      });
+      setUserPose(parseResult.polygon);
       setErrorMessage(null);
     }
   };
@@ -91,30 +82,28 @@ const SvgEditor = (props: SvgEditorProps) => {
     }
   };
 
-  const isAllSelected = () =>
-    selectedVertices.length === userFigure.vertices.length;
+  const isAllSelected = () => selectedVertices.length === userPose.length;
 
   const toggleAllVertices = () => {
     if (isAllSelected()) {
       setSelectedVertices([]);
     } else {
-      setSelectedVertices(userFigure.vertices.map((_p, idx) => idx));
+      setSelectedVertices(userPose.map((_p, idx) => idx));
     }
   };
 
   const slideSelectedVertices = (dir: string) => {
     const dx = dir === "L" ? -1 : dir === "R" ? 1 : 0;
     const dy = dir === "D" ? 1 : dir === "U" ? -1 : 0;
-    setUserFigure({
-      edges: [...userFigure.edges],
-      vertices: userFigure.vertices.map(([x, y], idx) => {
+    setUserPose(
+      userPose.map(([x, y], idx) => {
         if (selectedVertices.includes(idx)) {
           return [x + dx * slideSize, y + dy * slideSize];
         } else {
           return [x, y];
         }
-      }),
-    });
+      })
+    );
   };
 
   const canBreakALeg = () => {
@@ -224,7 +213,7 @@ const SvgEditor = (props: SvgEditorProps) => {
       <Row>
         <Col sm={design === "single" ? 12 : undefined}>
           <SvgViewer
-            userFigure={userFigure}
+            userPose={userPose}
             problem={problem}
             onEdit={(pointId) => {
               if (!editorState) {
@@ -234,14 +223,11 @@ const SvgEditor = (props: SvgEditorProps) => {
             onLatticeTouch={([x, y]) => {
               if (editorState) {
                 const pointId = editorState.pointId;
-                const [curX, curY] = userFigure.vertices[pointId];
+                const [curX, curY] = userPose[pointId];
                 if (curX !== x || curY !== y) {
-                  const newPose = [...userFigure.vertices];
+                  const newPose = [...userPose];
                   newPose[pointId] = [x, y];
-                  setUserFigure({
-                    edges: [...userFigure.edges],
-                    vertices: newPose,
-                  });
+                  setUserPose(newPose);
                 }
               }
             }}
@@ -317,7 +303,7 @@ const SvgEditor = (props: SvgEditorProps) => {
                 </Form.Check.Label>
               </Form.Check>
               <Form>
-                {userFigure.vertices.map((_p, idx) => (
+                {userPose.map((_p, idx) => (
                   <Form.Check inline key={idx}>
                     <Form.Check.Input
                       type="checkbox"
@@ -335,20 +321,17 @@ const SvgEditor = (props: SvgEditorProps) => {
           <Row>
             <SinglePointSolverPanel
               problem={problem}
-              userFigure={userFigure}
+              userPose={userPose}
               selectedVertices={selectedVertices}
               onSolve={(newPose) => {
-                setUserFigure({
-                  vertices: [...newPose],
-                  edges: [...userFigure.edges],
-                });
+                setUserPose([...newPose]);
               }}
             />
           </Row>
         </Col>
         <Col className="ml-3">
           <Row>
-            <PoseInfoPanel userFigure={userFigure} problem={problem} />
+            <PoseInfoPanel userPose={userPose} problem={problem} />
           </Row>
         </Col>
       </Row>

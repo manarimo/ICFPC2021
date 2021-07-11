@@ -1,11 +1,11 @@
 import React from "react";
-import { Figure, Problem } from "../utils";
+import { Problem } from "../utils";
 import { Button, Container } from "react-bootstrap";
 import { solvePartialBruteForce } from "../RustSolver";
 
 interface Props {
   problem: Problem;
-  userFigure: Figure;
+  userPose: [number, number][];
   selectedVertices: number[];
   onSolve: (pose: [number, number][]) => void;
 }
@@ -16,7 +16,7 @@ export const SinglePointSolverPanel = (props: Props) => {
         onClick={async () => {
           await solvePartialBruteForce(
             props.problem,
-            { vertices: props.userFigure.vertices },
+            { vertices: props.userPose },
             props.selectedVertices,
             props.onSolve
           );
