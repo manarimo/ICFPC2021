@@ -119,20 +119,61 @@ const SvgEditor = (props: SvgEditorProps) => {
     });
   };
 
-  const canBreakALeg = () => {
-    return !!problem.figure.edges.find(
+  const findBreakingLeg = (src: number, dst: number) => {
+    return problem.figure.edges.find(
       ([i, j]) =>
-        Math.min(i, j) === Math.min(breakALegSrc, breakALegDst) &&
-        Math.max(i, j) === Math.max(breakALegSrc, breakALegDst)
+        Math.min(i, j) === Math.min(src, dst) &&
+        Math.max(i, j) === Math.max(src, dst)
     );
+  };
+
+  const canBreakALeg = () => {
+    return !!findBreakingLeg(breakALegSrc, breakALegDst);
+  };
+
+  const cancelBreakALeg = (src: number, dst: number) => {
+    const mid = problem.figure.vertices.length;
+    const nextEdges = userFigure.edges.filter(
+      (leg) => !(leg[0] === mid || leg[1] === mid)
+    );
+    nextEdges.push([src, dst]);
+    setUserFigure({
+      edges: nextEdges,
+      vertices: userFigure.vertices.slice(0, -1),
+    });
+  };
+
+  const executeBreakALeg = (src: number, dst: number) => {
+    const [sx, sy] = userFigure.vertices[src];
+    const [tx, ty] = userFigure.vertices[dst];
+    const mx = Math.floor((sx + tx) / 2);
+    const my = Math.floor((sy + ty) / 2);
+    const mid = problem.figure.vertices.length;
+    const breakingLeg = findBreakingLeg(src, dst);
+    if (!breakingLeg) {
+      return;
+    }
+
+    const nextEdges = problem.figure.edges.filter(
+      (leg) => !(leg[0] === breakingLeg[0] && leg[1] === breakingLeg[1])
+    );
+
+    nextEdges.push([src, mid]);
+    nextEdges.push([mid, dst]);
+    setUserFigure({
+      edges: nextEdges,
+      vertices: [...userFigure.vertices, [mx, my]],
+    });
   };
 
   const updateBreakALeg = (value: boolean) => {
     if (breakALeg && !value) {
+      cancelBreakALeg(breakALegSrc, breakALegDst);
       setBreakALeg(false);
       return;
     }
     if (canBreakALeg()) {
+      executeBreakALeg(breakALegSrc, breakALegDst);
       setBreakALeg(true);
     }
   };
@@ -151,37 +192,6 @@ const SvgEditor = (props: SvgEditorProps) => {
     setBreakALegDst(val);
   };
 
-  const BreakALegPanel = () => (
-    <Row>
-      <Col>
-        <Form.Check
-          type="checkbox"
-          label="Break A Leg"
-          checked={breakALeg}
-          disabled={!canBreakALeg()}
-          onChange={(e) => updateBreakALeg(e.target.value === "true")}
-        />
-      </Col>
-      <Col>
-        <Form.Control
-          type="number"
-          min={0}
-          max={problem.figure.vertices.length - 1}
-          value={breakALegSrc}
-          onChange={(e) => updateBreakALegSrc(parseInt(e.target.value))}
-        />
-      </Col>
-      <Col>
-        <Form.Control
-          type="number"
-          min={0}
-          max={problem.figure.vertices.length - 1}
-          value={breakALegDst}
-          onChange={(e) => updateBreakALegDst(parseInt(e.target.value))}
-        />
-      </Col>
-    </Row>
-  );
   return (
     <Container>
       <Row style={{ marginBottom: "8px" }}>
@@ -276,7 +286,37 @@ const SvgEditor = (props: SvgEditorProps) => {
               onChange={(e) => setText(e.target.value)}
             />
           </Row>
-          {bonusMode === "BREAK_A_LEG" && <BreakALegPanel />}
+          {bonusMode === "BREAK_A_LEG" && (
+            <Row>
+              <Col>
+                <Form.Check
+                  type="checkbox"
+                  label="Break A Leg"
+                  checked={breakALeg}
+                  disabled={!canBreakALeg()}
+                  onChange={(e) => updateBreakALeg(e.target.value === "true")}
+                />
+              </Col>
+              <Col>
+                <Form.Control
+                  type="number"
+                  min={0}
+                  max={problem.figure.vertices.length - 1}
+                  value={breakALegSrc}
+                  onChange={(e) => updateBreakALegSrc(parseInt(e.target.value))}
+                />
+              </Col>
+              <Col>
+                <Form.Control
+                  type="number"
+                  min={0}
+                  max={problem.figure.vertices.length - 1}
+                  value={breakALegDst}
+                  onChange={(e) => updateBreakALegDst(parseInt(e.target.value))}
+                />
+              </Col>
+            </Row>
+          )}
           <Row>
             <Col>
               <Row>

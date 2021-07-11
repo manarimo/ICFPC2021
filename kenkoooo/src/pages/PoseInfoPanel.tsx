@@ -51,6 +51,47 @@ export const PoseInfoPanel = (props: Props) => {
       outsideEdges.push([from, to]);
     }
   });
+  // break a leg case
+  const isLegBroken =
+    props.userFigure.vertices.length > problem.figure.vertices.length;
+  if (isLegBroken) {
+    const k = problem.figure.vertices.length;
+    const [iLeg, jLeg] = props.userFigure.edges.filter(
+      ([i, j]) => i === k || j === k
+    );
+    const i = iLeg[0] + iLeg[1] - k;
+    const j = jLeg[0] + jLeg[1] - k;
+
+    const piOriginal = originalVertices[i];
+    const pjOriginal = originalVertices[j];
+    const originalDist = sqDistance(piOriginal, pjOriginal);
+
+    const handleRestrictions = (a: number, b: number) => {
+      const pa = props.userFigure.vertices[a];
+      const pb = props.userFigure.vertices[b];
+
+      const dist = sqDistance(pa, pb);
+      const difference = absoluteBigInt(BigInt(4) * dist - originalDist);
+      const ok = difference * BigInt(1_000_000) <= BigInt(eps) * originalDist;
+      if (!ok) {
+        if (originalDist > dist * BigInt(4)) {
+          tooShortEdges.push([a, b]);
+        } else {
+          tooLongEdges.push([a, b]);
+        }
+      }
+      const edge = {
+        src: { x: pa[0], y: pa[1] },
+        dst: { x: pb[0], y: pb[1] },
+      };
+      if (!isEdgeInside(hole, edge)) {
+        outsideEdges.push([a, b]);
+      }
+    };
+    handleRestrictions(i, k);
+    handleRestrictions(j, k);
+  }
+
   return (
     <Container>
       <Row>
