@@ -49,33 +49,33 @@ def write_svg(f, problem, solution = nil)
 SVG
 end
 
-def bonus_link(bonus, bonus_source)
+def bonus_link(bonus, bonus_solutions)
   if bonus
-    source = bonus_source&.fetch(bonus.bonus, nil)&.find { |s| s.id == bonus.source}
+    source = bonus_solutions[bonus.source]&.fetch(bonus.bonus, nil)
     if source
       %Q(<a href="#{bonus.bonus.downcase}_get.html##{source.id}"><b>#{bonus.bonus} #{source.id}</b></a>)
     else
-      %Q(<a href="#{bonus.bonus.downcase}_obtainable.html##{bonus.source}">#{bonus.bonus} #{bonus.source}</a> （未知）)
+      %Q(<a href="#{bonus.bonus.downcase}_obtainable.html##{bonus.source}">#{bonus.bonus} #{bonus.source}</a>（未知）)
     end
   else
     nil
   end
 end
 
-def used_bonus_link(bonus, bonus_source)
+def used_bonus_link(bonus, bonus_solutions)
   if bonus
-    source = bonus_source&.fetch(bonus.bonus, nil)&.find { |s| s.id == bonus.problem }
+    source = bonus_solutions[bonus.problem]&.fetch(bonus.bonus, nil)
     if source
       %Q(<a href="#{bonus.bonus.downcase}_get.html##{source.id}"><b>#{bonus.bonus} #{source.id}</b></a>)
     else
-      %Q(<a href="#{bonus.bonus.downcase}_obtainable.html##{bonus.problem}">#{bonus.bonus} #{bonus.problem}</a> （未知）)
+      %Q(<a href="#{bonus.bonus.downcase}_obtainable.html##{bonus.problem}">#{bonus.bonus} #{bonus.problem}</a>（未知）)
     end
   else
     nil
   end
 end
 
-def index_tr(problem, solution, global_dislike, bonus_graph, bonus_source)
+def index_tr(problem, solution, global_dislike, bonus_graph, bonus_solutions)
   score_base = 1000 * Math.log(problem.figure.vertices.size * problem.figure.edges.size * problem.hole.size / 6, 2)
   max_score = score_base.ceil
 
@@ -105,7 +105,7 @@ def index_tr(problem, solution, global_dislike, bonus_graph, bonus_source)
           <div style="display: flex">
             <img src="images/#{solution.name}/#{problem.id}.svg" height="200">
             <div>
-              使用: #{used_bonus_link(used_bonus, bonus_source)} <br>
+              使用: #{used_bonus_link(used_bonus, bonus_solutions)} <br>
               取得: #{solution.verdict && solution.verdict.bonus_obtained&.map{ |b| %Q(#{b.bonus} <a href="##{b.problem}">#{b.problem}</a>) }.join(', ')}
             </div>
           </div>
@@ -124,7 +124,7 @@ def index_tr(problem, solution, global_dislike, bonus_graph, bonus_source)
     <div style="display: flex">
       <img src="images/#{problem.id}.svg" height="200">
       <div>
-        使用可能: <ul style="margin-top: 0">#{bonus_graph.usable[problem.id]&.map{|b| "<li>#{bonus_link(b, bonus_source)}</li>"}&.join} </ul>
+        使用可能: <ul style="margin-top: 0">#{bonus_graph.usable[problem.id]&.map{|b| "<li>#{bonus_link(b, bonus_solutions)}</li>"}&.join} </ul>
         取得可能: <ul style="margin-top: 0">#{bonus_graph.obtainable[problem.id]&.map{|b| %Q(<li>#{b.bonus} <a href="##{b.problem}">#{b.problem}</a></li>)}&.join} </ul>
       </div>
     </div>
@@ -181,8 +181,8 @@ def page_header(solution_names)
 LINKS
 end
 
-Row = Struct.new(:problem, :solution, :dislike, :bonus_source)
-def write_index(f, rows, solution_title = nil, solution_names = [], bonus_graph)
+Row = Struct.new(:problem, :solution, :dislike)
+def write_index(f, rows, solution_title = nil, solution_names = [], bonus_graph, bonus_solutions)
   solution_header = solution_title && %Q(<h2>Name: #{solution_title}</h2>)
 
   f.puts <<-EOF
@@ -206,14 +206,14 @@ def write_index(f, rows, solution_title = nil, solution_names = [], bonus_graph)
       <th>Dislikes</th>
       <th>Score</th>
     </tr>
-    #{rows.map {|row| index_tr(row.problem, row.solution, row.dislike, bonus_graph, row.bonus_source) }.join}
+    #{rows.map {|row| index_tr(row.problem, row.solution, row.dislike, bonus_graph, bonus_solutions) }.join}
   </table>
 </body>
 </html>
 EOF
 end
 
-def write_top_solutions(file, title, problems, solutions, dislikes, bonus_graph, bonus_source, &block)
+def write_top_solutions(file, title, problems, solutions, dislikes, bonus_graph, bonus_solutions, &block)
   top_solutions = {}
   solutions.each do |name, list|
     list.each do |id, solution|
@@ -234,9 +234,9 @@ def write_top_solutions(file, title, problems, solutions, dislikes, bonus_graph,
 
   File.open(file, 'w') do |f|
     rows = problems.map { |p|
-      Row.new(p, top_solutions[p.id], dislikes[p.id], bonus_source[p.id])
+      Row.new(p, top_solutions[p.id], dislikes[p.id])
     }
-    write_index(f, rows, title, solutions.keys.sort, bonus_graph)
+    write_index(f, rows, title, solutions.keys.sort, bonus_graph, bonus_solutions)
   end
 end
 
@@ -258,15 +258,16 @@ dislikes = File.open("#{__dir__}/../problems/minimal_dislikes.txt") { |f|
 bonus_graph = Problem::bonus_graph(problems)
 solution_names = solutions.keys.sort
 
-bonus_source = {}
+bonus_solutions = {}
 solutions.each do |_, list|
   list.each do |_, solution|
+    next unless solution&.verdict&.valid
     solution.verdict&.bonus_obtained&.each do |bonus|
-      name = bonus['bonus']
-      target = bonus['problem']
-      bonus_source[target] ||= {}
-      bonus_source[target][name] ||= []
-      bonus_source[target][name] << solution
+      bonus_solutions[solution.id] ||= {}
+      cur = bonus_solutions[solution.id][bonus.bonus]
+      if cur == nil || cur.verdict&.dislike > solution.verdict.dislike
+        bonus_solutions[solution.id][bonus.bonus] = solution
+      end
     end
   end
 end
@@ -285,9 +286,9 @@ solutions.each do |solution_name, solution_list|
   # Generate solution overview
   File.open("#{__dir__}/../web/#{solution_name}.html", 'w') do |f|
     rows = problems.select{|p| solutions[solution_name].has_key?(p.id)}.map{|p|
-      Row.new(p, solutions[solution_name][p.id], dislikes[p.id], bonus_source[p.id])
+      Row.new(p, solutions[solution_name][p.id], dislikes[p.id])
     }
-    write_index(f, rows, solution_name, solution_names, bonus_graph)
+    write_index(f, rows, solution_name, solution_names, bonus_graph, bonus_solutions)
   end
 end
 
@@ -296,12 +297,12 @@ problems.each do |problem|
   rows = []
   solution_names.each do |name|
     if solutions[name][problem.id]
-      rows << Row.new(problem, solutions[name][problem.id], dislikes[problem.id], bonus_source[problem.id])
+      rows << Row.new(problem, solutions[name][problem.id], dislikes[problem.id])
     end
   end
   rows.sort_by! { |row| row.solution&.verdict&.dislike || Float::INFINITY }
   File.open("#{__dir__}/../web/#{problem.id}.html", "w") do |f|
-    write_index(f, rows, "Problem #{problem.id}", solution_names, bonus_graph)
+    write_index(f, rows, "Problem #{problem.id}", solution_names, bonus_graph, bonus_solutions)
   end
 end
 
@@ -309,23 +310,23 @@ File.open("#{__dir__}/../web/index.html", 'w') do |f|
   rows = problems.map { |p|
     Row.new(p, nil, nil)
   }
-  write_index(f, rows, nil, solutions.keys.sort, bonus_graph)
+  write_index(f, rows, nil, solutions.keys.sort, bonus_graph, bonus_solutions)
 end
 
-write_top_solutions("#{__dir__}/../web/best.html", "Best", problems, solutions, dislikes, bonus_graph, bonus_source)
+write_top_solutions("#{__dir__}/../web/best.html", "Best", problems, solutions, dislikes, bonus_graph, bonus_solutions)
 
 %w(GLOBALIST BREAK_A_LEG WALLHACK SUPERFLEX).each do |bonus_name|
-  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}.html", "#{bonus_name}使用", problems, solutions, dislikes, bonus_graph, bonus_source) do |sol|
+  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}.html", "#{bonus_name}使用", problems, solutions, dislikes, bonus_graph, bonus_solutions) do |sol|
     sol.bonuses&.any? { |b| b.bonus == bonus_name }
   end
 
-  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_get.html", "#{bonus_name}取得", problems, solutions, dislikes, bonus_graph, bonus_source) do |sol|
+  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_get.html", "#{bonus_name}取得", problems, solutions, dislikes, bonus_graph, bonus_solutions) do |sol|
     sol.verdict&.bonus_obtained&.any? { |b| b.bonus == bonus_name }
   end
 
   usable = problems.select{|p| bonus_graph.to_use[bonus_name].index(p.id)}
-  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_usable.html", "#{bonus_name}使用可能", usable, solutions, dislikes, bonus_graph, bonus_source)
+  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_usable.html", "#{bonus_name}使用可能", usable, solutions, dislikes, bonus_graph, bonus_solutions)
 
   obtainable = problems.select{|p| bonus_graph.to_obtain[bonus_name].index(p.id)}
-  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_obtainable.html", "#{bonus_name}取得可能", obtainable, solutions, dislikes, bonus_graph, bonus_source)
+  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_obtainable.html", "#{bonus_name}取得可能", obtainable, solutions, dislikes, bonus_graph, bonus_solutions)
 end
