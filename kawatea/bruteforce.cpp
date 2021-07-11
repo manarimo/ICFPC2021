@@ -233,6 +233,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < edge.size(); i++) {
         number orig = d(figure[edge[i].first], figure[edge[i].second]);
         number diff = orig * epsilon / 1000000;
+        if (orig * epsilon % 1000000 == 0) diff++;
         min_len[i] = orig - diff;
         max_len[i] = orig + diff;
     }
