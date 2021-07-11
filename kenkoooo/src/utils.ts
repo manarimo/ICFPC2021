@@ -20,7 +20,7 @@ export interface Figure {
   vertices: Pair[];
 }
 
-interface Submission {
+export interface Submission {
   vertices: Pair[];
   bonuses?: BonusSubmission[];
 }
@@ -141,3 +141,34 @@ export const pairToPoint = (pair: [number, number]) => ({
   x: pair[0],
   y: pair[1],
 });
+
+export const submissionToFigure = (
+  submission: Submission,
+  problem: Problem
+): Figure => {
+  if (
+    submission.bonuses &&
+    submission.bonuses.length > 0 &&
+    submission.bonuses[0].bonus === "BREAK_A_LEG"
+  ) {
+    const mid = problem.figure.vertices.length;
+    const breakingLeg = submission.bonuses[0].edge;
+    const nextEdges = problem.figure.edges.filter(
+      (leg) =>
+        Math.min(leg[0], leg[1]) !== Math.min(breakingLeg[0], breakingLeg[1]) ||
+        Math.max(leg[0], leg[1]) !== Math.max(breakingLeg[0], breakingLeg[1])
+    );
+    nextEdges.push([breakingLeg[0], mid]);
+    nextEdges.push([mid, breakingLeg[1]]);
+
+    return {
+      vertices: [...submission.vertices],
+      edges: nextEdges,
+    };
+  } else {
+    return {
+      vertices: [...submission.vertices],
+      edges: [...problem.figure.edges],
+    };
+  }
+};
