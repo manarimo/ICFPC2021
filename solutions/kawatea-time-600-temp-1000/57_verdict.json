@@ -3,16 +3,26 @@
     "score": 0,
     "bonusObtained": [],
     "error": {
-        "dstEdge": {
+        "srcEdge": {
             "src": {
-                "x": 9,
-                "y": 88
+                "x": 59,
+                "y": 105
             },
             "dst": {
-                "x": 27,
-                "y": 120
+                "x": 94,
+                "y": 108
             }
         },
-        "message": "Edge 1 is not in the hole"
+        "dstEdge": {
+            "src": {
+                "x": 53,
+                "y": 97
+            },
+            "dst": {
+                "x": 87,
+                "y": 90
+            }
+        },
+        "message": "Edge 11 violates length constraint"
     }
 }

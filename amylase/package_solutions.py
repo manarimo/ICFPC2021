@@ -109,6 +109,8 @@ def main():
         if round(pulp.value(variable)):
             solution = solutions[solution_id]
             selected_solutions[solution["problem_id"]] = solution
+            with open(f"submission_dump/{solution['problem_id']}.json", "w") as f:
+                json.dump(solution["solution"], f)
     return selected_solutions
 
 

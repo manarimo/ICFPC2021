@@ -13,6 +13,6 @@
                 "y": 91
             }
         },
-        "message": "Edge 81 is not in the hole"
+        "message": "Edge 81 is not in the hole. (7 edges are outside in total)"
     }
 }
