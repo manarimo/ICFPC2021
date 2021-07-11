@@ -3,5 +3,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-10 -10 109 111" style="background-color: #00000066">
   <path d="M 19,19 L 15,0 L 22,15 L 23,35 L 67,38 L 33,67 L 61,91 L 6,72 L 8,59 L 0,50" style="fill:#ffffff; fill-rule:evenodd; stroke:none" />
   <g style="fill:none;stroke:#ff0000;stroke-linecap:round"><path d="M 44,58 L 44,0" /><path d="M 44,0 L 27,41" /><path d="M 27,41 L 44,58" /><path d="M 27,41 L 30,53" /><path d="M 30,53 L 44,58" /><path d="M 44,58 L 44,63" /><path d="M 44,63 L 33,68" /><path d="M 33,68 L 30,53" /><path d="M 44,63 L 56,68" /><path d="M 56,68 L 59,53" /><path d="M 59,53 L 44,58" /><path d="M 44,58 L 61,41" /><path d="M 61,41 L 59,53" /><path d="M 61,41 L 44,0" /><path d="M 56,68 L 89,21" /><path d="M 89,21 L 44,63" /><path d="M 33,68 L 9,34" /><path d="M 9,34 L 14,34" /><path d="M 14,34 L 44,63" /><path d="M 14,34 L 0,48" /><path d="M 0,48 L 9,34" /></g>
-  <circle cx="44" cy="46" r="5px" style="fill:#0000ff80" />
+  <circle cx="44" cy="46" r="5px" style="fill:#0000ff80" /><circle cx="42" cy="84" r="5px" style="fill:#00ffff80" /><circle cx="27" cy="51" r="5px" style="fill:#d0d00080" />
 </svg>
