@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { Figure, parseUserInput, Problem } from "../utils";
+import {
+  parseUserInput,
+  Problem,
+  Submission,
+  submissionToFigure,
+} from "../utils";
 import {
   Alert,
   Container,
@@ -34,10 +39,11 @@ const SvgEditor = (props: SvgEditorProps) => {
 
   const [design, setDesign] = useState<"single" | "triple">("triple");
   const [editorState, setEditState] = useState<EditorState | null>(null);
-  const [userFigure, setUserFigure] = useState<Figure>({
+
+  const [userSubmission, setUserSubmission] = useState<Submission>({
     vertices: [...problem.figure.vertices],
-    edges: [...problem.figure.edges],
   });
+
   const [text, setText] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [slideSize, setSlideSize] = useState<number>(1);
@@ -46,42 +52,36 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [breakALegSrc, setBreakALegSrc] = useState<number>(0);
   const [breakALegDst, setBreakALegDst] = useState<number>(0);
 
-  const getOutput = () => {
-    return JSON.stringify({
-      vertices: userFigure.vertices,
-    });
-  };
-
   useEffect(() => {
     if (solution.data) {
-      setUserFigure({
-        edges: [...problem.figure.edges],
-        vertices: [...solution.data.vertices],
-      });
+      setUserSubmission(solution.data);
     }
   }, [solution, problem]);
 
   useEffect(() => {
-    setText(
-      JSON.stringify({
-        vertices: userFigure.vertices,
-      })
-    );
-  }, [userFigure]);
+    setText(JSON.stringify(userSubmission));
+    if (
+      userSubmission.bonuses &&
+      userSubmission.bonuses.length > 0 &&
+      userSubmission.bonuses[0].bonus === "BREAK_A_LEG"
+    ) {
+      setBreakALeg(true);
+      setBreakALegSrc(userSubmission.bonuses[0].edge[0]);
+      setBreakALegDst(userSubmission.bonuses[0].edge[1]);
+    }
+  }, [userSubmission]);
 
   const onCopyOutput = async () => {
-    setText(getOutput());
-    await navigator.clipboard.writeText(getOutput());
+    setText(JSON.stringify(userSubmission));
+    await navigator.clipboard.writeText(JSON.stringify(userSubmission));
   };
+
   const onLoadInput = () => {
     const parseResult = parseUserInput(text);
     if (parseResult.result === "failed") {
       setErrorMessage(parseResult.errorMessage);
     } else {
-      setUserFigure({
-        ...problem.figure,
-        vertices: parseResult.submission.vertices,
-      });
+      setUserSubmission(parseResult.submission);
       setErrorMessage(null);
     }
   };
@@ -94,28 +94,30 @@ const SvgEditor = (props: SvgEditorProps) => {
   };
 
   const isAllSelected = () =>
-    selectedVertices.length === userFigure.vertices.length;
+    selectedVertices.length === userSubmission.vertices.length;
 
   const toggleAllVertices = () => {
     if (isAllSelected()) {
       setSelectedVertices([]);
     } else {
-      setSelectedVertices(userFigure.vertices.map((_p, idx) => idx));
+      setSelectedVertices(userSubmission.vertices.map((_p, idx) => idx));
     }
   };
 
   const slideSelectedVertices = (dir: string) => {
     const dx = dir === "L" ? -1 : dir === "R" ? 1 : 0;
     const dy = dir === "D" ? 1 : dir === "U" ? -1 : 0;
-    setUserFigure({
-      edges: [...userFigure.edges],
-      vertices: userFigure.vertices.map(([x, y], idx) => {
-        if (selectedVertices.includes(idx)) {
-          return [x + dx * slideSize, y + dy * slideSize];
-        } else {
-          return [x, y];
-        }
-      }),
+
+    const newVertices = userSubmission.vertices.map(([x, y], idx) => {
+      if (selectedVertices.includes(idx)) {
+        return [x + dx * slideSize, y + dy * slideSize] as [number, number];
+      } else {
+        return [x, y] as [number, number];
+      }
+    });
+    setUserSubmission({
+      ...userSubmission,
+      vertices: newVertices,
     });
   };
 
@@ -131,44 +133,33 @@ const SvgEditor = (props: SvgEditorProps) => {
     return !!findBreakingLeg(breakALegSrc, breakALegDst);
   };
 
-  const cancelBreakALeg = (src: number, dst: number) => {
-    const mid = problem.figure.vertices.length;
-    const nextEdges = userFigure.edges.filter(
-      (leg) => !(leg[0] === mid || leg[1] === mid)
-    );
-    nextEdges.push([src, dst]);
-    setUserFigure({
-      edges: nextEdges,
-      vertices: userFigure.vertices.slice(0, -1),
+  const cancelBreakALeg = () => {
+    setUserSubmission({
+      ...userSubmission,
+      bonuses: [],
+      vertices: userSubmission.vertices.slice(0, -1),
     });
   };
 
   const executeBreakALeg = (src: number, dst: number) => {
-    const [sx, sy] = userFigure.vertices[src];
-    const [tx, ty] = userFigure.vertices[dst];
+    const [sx, sy] = userSubmission.vertices[src];
+    const [tx, ty] = userSubmission.vertices[dst];
     const mx = Math.floor((sx + tx) / 2);
     const my = Math.floor((sy + ty) / 2);
-    const mid = problem.figure.vertices.length;
-    const breakingLeg = findBreakingLeg(src, dst);
-    if (!breakingLeg) {
+    if (!findBreakingLeg(src, dst)) {
       return;
     }
 
-    const nextEdges = problem.figure.edges.filter(
-      (leg) => !(leg[0] === breakingLeg[0] && leg[1] === breakingLeg[1])
-    );
-
-    nextEdges.push([src, mid]);
-    nextEdges.push([mid, dst]);
-    setUserFigure({
-      edges: nextEdges,
-      vertices: [...userFigure.vertices, [mx, my]],
+    setUserSubmission({
+      ...userSubmission,
+      bonuses: [{ bonus: "BREAK_A_LEG", edge: [src, dst] }],
+      vertices: [...userSubmission.vertices, [mx, my]],
     });
   };
 
   const updateBreakALeg = (value: boolean) => {
     if (breakALeg && !value) {
-      cancelBreakALeg(breakALegSrc, breakALegDst);
+      cancelBreakALeg();
       setBreakALeg(false);
       return;
     }
@@ -192,6 +183,7 @@ const SvgEditor = (props: SvgEditorProps) => {
     setBreakALegDst(val);
   };
 
+  const userFigure = submissionToFigure(userSubmission, problem);
   return (
     <Container>
       <Row style={{ marginBottom: "8px" }}>
@@ -246,13 +238,13 @@ const SvgEditor = (props: SvgEditorProps) => {
             onLatticeTouch={([x, y]) => {
               if (editorState) {
                 const pointId = editorState.pointId;
-                const [curX, curY] = userFigure.vertices[pointId];
+                const [curX, curY] = userSubmission.vertices[pointId];
                 if (curX !== x || curY !== y) {
-                  const newPose = [...userFigure.vertices];
-                  newPose[pointId] = [x, y];
-                  setUserFigure({
-                    edges: [...userFigure.edges],
-                    vertices: newPose,
+                  const newVertices = [...userSubmission.vertices];
+                  newVertices[pointId] = [x, y];
+                  setUserSubmission({
+                    ...userSubmission,
+                    vertices: newVertices,
                   });
                 }
               }
@@ -359,7 +351,7 @@ const SvgEditor = (props: SvgEditorProps) => {
                 </Form.Check.Label>
               </Form.Check>
               <Form>
-                {userFigure.vertices.map((_p, idx) => (
+                {userSubmission.vertices.map((_p, idx) => (
                   <Form.Check inline key={idx}>
                     <Form.Check.Input
                       type="checkbox"
@@ -379,10 +371,10 @@ const SvgEditor = (props: SvgEditorProps) => {
               problem={problem}
               userFigure={userFigure}
               selectedVertices={selectedVertices}
-              onSolve={(newPose) => {
-                setUserFigure({
-                  vertices: [...newPose],
-                  edges: [...userFigure.edges],
+              onSolve={(newVertices) => {
+                setUserSubmission({
+                  ...userSubmission,
+                  vertices: [...newVertices],
                 });
               }}
             />
