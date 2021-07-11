@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {dislike, Edge, isEdgeInside, isPointInside, isValidEdge, Point, Polygon, d, sub} from "../ts-lib/amyfunc";
 
+const INVALID_SCORE = 1e8;
+
 enum BonusType {
     GLOBALIST = "GLOBALIST",
     BREAK_A_LEG = "BREAK_A_LEG",
@@ -94,7 +96,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
     if (solution.bonuses !== undefined && solution.bonuses.length > 1) {
         return {
             isValid: false,
-            score: 0,
+            score: INVALID_SCORE,
             bonusObtained: [],
             error: {
                 bonuses: solution.bonuses,
@@ -125,7 +127,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
             if (!isValidEdge(srcEdge, doubledAddedEdge1, problem['epsilon']) || !isValidEdge(srcEdge, doubledAddedEdge2, problem['epsilon'])) {
                 return {
                     isValid: false,
-                    score: 0,
+                    score: INVALID_SCORE,
                     bonusObtained: [],
                     error: {
                         srcEdge,
@@ -162,7 +164,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
         const {i, srcEdge, dstEdge} = edgeLengthViolations[0]
         return {
             isValid: false,
-            score: 0,
+            score: INVALID_SCORE,
             bonusObtained: [],
             error: {
                 srcEdge,
@@ -177,7 +179,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
         if (globalLengthCost > globalLengthBudget) {
             return {
                 isValid: false,
-                score: 0,
+                score: INVALID_SCORE,
                 bonusObtained: [],
                 error: {
                     globalLengthCost,
@@ -203,7 +205,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
         if (!ok) {
             return {
                 isValid: false,
-                score: 0,
+                score: INVALID_SCORE,
                 bonusObtained: [],
                 error: {
                     message: `Wallhack constraint is not satisfied. (${edgeInsideViolations.length} edges are outside in total)`,
@@ -216,7 +218,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
             const dstEdge = edgeInsideViolations[0].dstEdge;
             return {
                 isValid: false,
-                score: 0,
+                score: INVALID_SCORE,
                 bonusObtained: [],
                 error: {
                     dstEdge,

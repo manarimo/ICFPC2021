@@ -91,7 +91,7 @@ def index_tr(problem, solution, global_dislike, bonus_graph)
 
   <<-TR
 <tr style="#{style}" id="#{problem.id}">
-  <td>#{problem.id}</td>
+  <td><a href="#{problem.id}.html">#{problem.id}</a></td>
   <td>
     <div style="display: flex">
       <img src="images/#{problem.id}.svg" height="200">
@@ -233,6 +233,7 @@ dislikes = File.open("#{__dir__}/../problems/minimal_dislikes.txt") { |f|
 }
 
 bonus_graph = Problem::bonus_graph(problems)
+solution_names = solutions.keys.sort
 
 solutions.each do |solution_name, solution_list|
   output_dir = "#{__dir__}/../web/images/#{solution_name}"
@@ -250,7 +251,19 @@ solutions.each do |solution_name, solution_list|
     rows = problems.select{|p| solutions[solution_name].has_key?(p.id)}.map{|p|
       Row.new(p, solutions[solution_name][p.id], dislikes[p.id])
     }
-    write_index(f, rows, solution_name, solutions.keys.sort, bonus_graph)
+    write_index(f, rows, solution_name, solution_names, bonus_graph)
+  end
+end
+
+# 個別問題解答集
+problems.each do |problem|
+  rows = []
+  solution_names.each do |name|
+    rows << Row.new(problem, solutions[name][problem.id], dislikes[problem.id])
+  end
+  rows.sort_by! { |row| row.solution&.verdict&.fetch('score') || Float::INFINITY }
+  File.open("#{__dir__}/../web/#{problem.id}.html", "w") do |f|
+    write_index(f, rows, "Problem #{problem.id}", solution_names, bonus_graph)
   end
 end
 
