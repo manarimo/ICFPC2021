@@ -41,6 +41,9 @@ def load_solutions():
 def is_qualified(solution, minimal_dislikes):
     if not solution["verdict"]["isValid"]:
         return False
+    if solution["verdict"]["score"] < minimal_dislikes[solution["problem_id"]]:
+        print(f"excluding {solution['output_path']} because it is too good to share with rivals.")
+        return False
     return True
 
 

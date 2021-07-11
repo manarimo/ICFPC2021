@@ -9,9 +9,11 @@ def main():
         solution = selected_solutions.get(problem_id)
         if solution is None:
             solution_name = "None"
+            score = "None"
         else:
             solution_name = solution["output_path"].parent.name
-        print(f"{problem_id:03}: {solution_name} ({solution['verdict']['score']})")
+            score = solution['verdict']['score']
+        print(f"{problem_id:03}: {solution_name} ({score})")
 
     # return  # for dry run.
     for problem_id, solution in selected_solutions.items():
