@@ -1,4 +1,4 @@
-hints = %w(nohint rot-90 rot-180 rot-270 flip-rot-0 flip-rot-90 flip-rot-180 flip-rot-270)
+hints = %w(rot-0 rot-90 rot-180 rot-270 flip-rot-0 flip-rot-90 flip-rot-180 flip-rot-270)
 
 if ARGV.size < 1
   STDERR.puts "Usage: ruby download.rb <name>"

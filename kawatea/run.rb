@@ -5,7 +5,8 @@ count = 0
 program = ARGV[0]
 name = ARGV[1]
 hints.each do |hint|
-  `mkdir -p '#{hint}'`
+  dirname = "#{name}-#{hint}"
+  `mkdir -p '#{dirname}'`
   prob_ids.each do |id|
     if hint == 'nohint'
       hint_path = ''
@@ -13,7 +14,8 @@ hints.each do |hint|
       hint_path = "../hints/#{hint}/#{id}.json"
     end
 
-    cmdline = "#{program} /dev/null #{hint_path} < ../problems/#{id}.json > #{name}-#{hint}/#{id}.json 2> #{name}-#{hint}/#{id}.log &"
+    cmdline = "#{program} /dev/null #{hint_path} < ../problems/#{id}.json > #{dirname}/#{id}.json 2> #{dirname}/#{id}.log &"
+    puts cmdline
     system(cmdline)
 
     count += 1

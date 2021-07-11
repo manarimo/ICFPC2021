@@ -11,7 +11,7 @@
 using namespace std;
 using namespace manarimo;
 
-const int MAX_M = 1000;
+const int MAX_M = 10000;
 number min_len[MAX_M];
 number max_len[MAX_M];
 double penalty_weight;
