@@ -1,4 +1,5 @@
 require 'json'
+require 'set'
 
 module Problem
   Point = Struct.new(:x, :y)
@@ -117,6 +118,19 @@ module Problem
       end
 
       BonusGraph.new(to_obtain, to_use, obtainable, usable)
+    end
+
+    def valuable_problems(solutions)
+      solved = {}
+      solutions.each do |_, list|
+        list.each do |_, sol|
+          if sol.verdict&.dislike == 0
+            solved[sol.id] = true
+          end
+        end
+      end
+
+      Set.new((1..132).select {|i| !solved[i]})
     end
   end
 end

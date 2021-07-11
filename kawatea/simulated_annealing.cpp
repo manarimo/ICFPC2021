@@ -8,6 +8,10 @@
 #include "problem.h"
 #include "geo.h"
 
+#if defined(TIME_LIMIT) || defined(START_TEMP)
+#error "制限時間と初期温度はコマンドライン引数で渡すようになりました"
+#endif
+
 using namespace std;
 using namespace manarimo;
 
@@ -78,17 +82,9 @@ class timer {
     }
 };
 
-#ifndef START_TEMP
-#define START_TEMP 100
-#endif
-
-#ifndef TIME_LIMIT
-#define TIME_LIMIT 10
-#endif
-
 class simulated_annealing {
     public:
-    simulated_annealing();
+    simulated_annealing(double start_temp, int time_limit);
     inline double get_time();
     inline bool end();
     inline bool accept(double current_score, double next_score);
@@ -99,17 +95,22 @@ class simulated_annealing {
     constexpr static int LOG_SIZE = 0xFFFF;
     constexpr static int UPDATE_INTERVAL = 0xFF;
     constexpr static double END_TEMP = 1e-9;
-    constexpr static double TEMP_RATIO = (END_TEMP - START_TEMP) / TIME_LIMIT;
     double log_probability[LOG_SIZE + 1];
     long long iteration = 0;
     long long accepted = 0;
     long long rejected = 0;
     double time = 0;
-    double temp = START_TEMP;
+    double temp;
     timer timer1;
+    double start_temp;
+    int time_limit;
+    double temp_ratio;
 };
 
-simulated_annealing::simulated_annealing() {
+simulated_annealing::simulated_annealing(double start_temp, int time_limit) {
+    this->start_temp = this->temp = start_temp;
+    this->time_limit = time_limit;
+    this->temp_ratio = (END_TEMP - start_temp) / time_limit;
     timer1.start();
     for (int i = 0; i <= LOG_SIZE; i++) log_probability[i] = log(random::probability());
 }
@@ -122,8 +123,8 @@ inline bool simulated_annealing::end() {
     iteration++;
     if ((iteration & UPDATE_INTERVAL) == 0) {
         time = timer1.get_time();
-        temp = START_TEMP + TEMP_RATIO * time;
-        return time >= TIME_LIMIT;
+        temp = start_temp + temp_ratio * time;
+        return time >= time_limit;
     } else {
         return false;
     }
@@ -273,8 +274,8 @@ void update_dist(const vector<P>& hole, int v, const P& p) {
     for (int i = 0; i < hole.size(); i++) current_dist[i][v] = d(hole[i], p);
 }
 
-void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
-    FILE* fp = fopen(file, "w");
+void output_svg(const string &file, const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
+    FILE* fp = fopen(file.c_str(), "w");
     
     number min_x = 1e18, min_y = 1e18, max_x = 0, max_y = 0;
     for (const P& p : hole) {
@@ -312,7 +313,52 @@ void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, 
     fclose(fp);
 }
 
+struct options {
+    int start_temp = 100;
+    int time_limit = 10;
+    string svg_file;
+    string hint_file;
+};
+
+options parse_options(char **argv) {
+    options opt;
+
+    ++argv; // Skip program name
+    while (*argv) {
+        if ((*argv)[0] != '-') break;
+        char cmd = (*argv)[1];
+        switch (cmd) {
+            case 's':
+                ++argv;
+                opt.start_temp = std::atoi(*argv);
+                break;
+            case 't':
+                ++argv;
+                opt.time_limit = std::atoi(*argv);
+                break;
+            default:
+                std::cerr << "Unknown option " << *argv << std::endl;
+                exit(1);
+        }
+        ++argv;
+    }
+    if (*argv) {
+        opt.svg_file = string(*argv);
+        ++argv;
+    }
+    if (*argv) {
+        opt.hint_file = string(*argv);
+        ++argv;
+    }
+    if (*argv) {
+        std::cerr << "Extraneous options provided: starting from '" << *argv << "'" << std::endl;
+        exit(1);
+    }
+    return opt;
+}
+
 int main(int argc, char* argv[]) {
+    options opt = parse_options(argv);
     load_problem(std::cin, problem);
 
     vector<P> hole = problem.hole;
@@ -321,8 +367,8 @@ int main(int argc, char* argv[]) {
     number epsilon = problem.epsilon;
     
     vector<P> figure_hint;
-    if (argc >= 3) {
-        ifstream i(argv[2]);
+    if (opt.hint_file != "") {
+        ifstream i(opt.hint_file);
         json j;
         i >> j;
         hint h = j.get<hint>();
@@ -381,7 +427,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "initial_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
     fflush(stderr);
     
-    simulated_annealing sa;
+    simulated_annealing sa(opt.start_temp, opt.time_limit);
     number best_dislike = 1e18;
     vector<P> new_figure(n);
     vector<P> best_figure(n);
@@ -536,11 +582,11 @@ int main(int argc, char* argv[]) {
     if (best_dislike < 1e18) {
         fprintf(stderr, "dislike: %lld\n", best_dislike);
         problem.output(best_figure);
-        if (argc >= 2) output_svg(argv[1], hole, edge, best_figure);
+        if (opt.svg_file != "") output_svg(opt.svg_file, hole, edge, best_figure);
     } else {
         fprintf(stderr, "final_penalty: %.6lf %.6lf %.6lf\n", penalty_vertex, penalty_edge, penalty_length);
         problem.output(figure);
-        if (argc >= 2) output_svg(argv[1], hole, edge, figure);
+        if (opt.svg_file != "") output_svg(opt.svg_file, hole, edge, figure);
     }
     
     return 0;
