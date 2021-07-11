@@ -51,6 +51,8 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [breakALeg, setBreakALeg] = useState<boolean>(false);
   const [breakALegSrc, setBreakALegSrc] = useState<number>(0);
   const [breakALegDst, setBreakALegDst] = useState<number>(0);
+  const [zoom, setZoom] = useState(false);
+  const [zoomSize, setZoomSize] = useState(2000);
 
   useEffect(() => {
     if (solution.data) {
@@ -210,6 +212,28 @@ const SvgEditor = (props: SvgEditorProps) => {
           </ButtonGroup>
         </Col>
         <Col>
+          <div style={{ display: "flex" }}>
+            <div>
+              <Form.Check
+                type="checkbox"
+                label="Zoom"
+                checked={zoom}
+                onChange={(e) => {
+                  setZoom(!zoom);
+                }}
+              />
+            </div>
+            <div>
+              <Form.Control
+                type="number"
+                min={0}
+                value={zoomSize}
+                onChange={(e) => setZoomSize(parseInt(e.target.value))}
+              />
+            </div>
+          </div>
+        </Col>
+        <Col>
           <ButtonGroup toggle>
             {BonusModes.map((mode) => (
               <ToggleButton
@@ -256,6 +280,7 @@ const SvgEditor = (props: SvgEditorProps) => {
             }}
             editorState={editorState}
             selectedVertices={selectedVertices}
+            forcedWidth={zoom ? zoomSize : undefined}
           />
         </Col>
         <Col>
@@ -286,7 +311,9 @@ const SvgEditor = (props: SvgEditorProps) => {
                   label="Break A Leg"
                   checked={breakALeg}
                   disabled={!canBreakALeg()}
-                  onChange={(e) => updateBreakALeg(e.target.value === "true")}
+                  onChange={(e) => {
+                    updateBreakALeg(!breakALeg);
+                  }}
                 />
               </Col>
               <Col>

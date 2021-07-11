@@ -200,6 +200,7 @@ interface Props {
   onLatticeTouch: (p: [number, number]) => void;
   onEdit: (pointId: number) => void;
   selectedVertices: number[];
+  forcedWidth?: number;
 }
 
 export const SvgViewer = (props: Props) => {
@@ -229,6 +230,7 @@ export const SvgViewer = (props: Props) => {
 
   return (
     <svg
+      style={props.forcedWidth ? { width: props.forcedWidth } : {}}
       viewBox={`${minX - offset} ${minY - offset} ${width} ${width}`}
       xmlns="http://www.w3.org/2000/svg"
       onMouseUp={props.onMouseUp}
