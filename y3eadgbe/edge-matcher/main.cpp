@@ -111,7 +111,14 @@ int dfs(const vector<vector<E>> &graph, const vector<number> &hole_d, const vect
     return best;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    int filter = -1;
+    if (argc >= 2) {
+      string filter_string(argv[1]);
+      filter = stoi(filter_string);
+      cout << "FILTER: " << filter << endl; 
+    }
+  
     load_problem(cin, problem);
 
     vector<P> hole = problem.hole;
@@ -178,10 +185,21 @@ int main() {
             vector<int> used(figure.size());
             vector<int> pos;
             vector<vector<int>> result;
-            int threshold = 3;
+            int threshold = 1;
             int len = dfs(graph, hole_d, edge_d, i, j + 1, used, pos, epsilon, j, result, threshold);
 
             if (len > threshold) {
+	      bool match_filter = false;
+	      if (filter != -1) {
+		for (int l = 0; l < len; l++) {
+		  int ii = (j + 1 + l) % hole_d.size();
+		  if (ii == filter) {
+		    match_filter = true;
+		    break;
+		  }
+		}
+		if (!match_filter) continue;
+	      }
                 cout << "\n\n" << threshold + 1 << "-" << len << endl;
                 cout << "start hole:" << (j + 1) % hole_d.size() << endl;
                 for (int k = 0; k < result.size(); ++k) {
@@ -207,7 +225,7 @@ int main() {
     set<int> vused;
     bool warn = false;
     for (int i = 0; i < best_fit.size(); i++) {
-      cout << best_fit[i] << " ";
+      cout << i << ":" << best_fit[i] << " ";
       if (best_fit[i] != -1) {
 	figure[best_fit[i]] = hole[i];
       }
