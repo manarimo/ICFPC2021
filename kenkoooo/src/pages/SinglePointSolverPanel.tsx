@@ -17,6 +17,13 @@ export const SinglePointSolverPanel = (props: Props) => {
       <Button
         disabled={isLegBroken}
         onClick={async () => {
+          // eslint-disable-next-line no-restricted-globals
+          const ans = confirm(
+            "SinglePointSolverを本当に実行しても良いですね？"
+          );
+          if (!ans) {
+            return;
+          }
           await solvePartialBruteForce(
             props.problem,
             { vertices: props.userFigure.vertices },
