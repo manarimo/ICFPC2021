@@ -226,6 +226,7 @@ Dir.glob("#{__dir__}/../solutions/*").each do |dir|
     json = File.open(file) do |f|
       JSON.load(f)
     end
+    next if json == nil
     vertices = new_vertices(json['vertices'])
 
     verdict = JSON.load(File.read(file.sub(/\.json$/, '_verdict.json'))) rescue nil
