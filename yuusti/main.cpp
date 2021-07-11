@@ -5,68 +5,17 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include "json.hpp"
+#include "problem.h"
+#include "geo.h"
 
 using namespace std;
-using json = nlohmann::json;
+using namespace manarimo;
 
-#define X first
-#define Y second
-
-using number = long long;
-using P = pair<number, number>;
-using E = pair<int, int>;
-
-const int MAX_C = 1000;
 const int MAX_M = 1000;
-bool inside[MAX_C][MAX_C];
-bool inside_double[MAX_C * 2][MAX_C * 2];
-double dist[MAX_C][MAX_C];
 number min_len[MAX_M];
 number max_len[MAX_M];
-number min_x = 1e18, min_y = 1e18, max_x = 0, max_y = 0;
 double penalty_weight;
-P outer;
-
-struct figure_t {
-    vector<E> edges;
-    vector<P> vertices;
-};
-
-struct problem {
-    vector<P> hole;
-    figure_t figure;
-    number epsilon;
-};
-
-struct hint {
-    vector<P> vertices;
-};
-
-void from_json(const json& j, P& p) {
-    j.at(0).get_to(p.first);
-    j.at(1).get_to(p.second);
-}
-
-void from_json(const json& j, E& e) {
-    j.at(0).get_to(e.first);
-    j.at(1).get_to(e.second);
-}
-
-void from_json(const json& j, figure_t& f) {
-    j.at("edges").get_to(f.edges);
-    j.at("vertices").get_to(f.vertices);
-}
-
-void from_json(const json& j, problem& p) {
-    j.at("hole").get_to(p.hole);
-    j.at("figure").get_to(p.figure);
-    j.at("epsilon").get_to(p.epsilon);
-}
-
-void from_json(const json& j, hint& h) {
-    j.at("vertices").get_to(h.vertices);
-}
+problem_t problem;
 
 class random {
 public:
@@ -126,74 +75,6 @@ private:
     }
 };
 
-number dot(const P& p, const P& q) {
-    return p.X * q.X + p.Y * q.Y;
-}
-
-number cross(const P& p, const P& q) {
-    return p.X * q.Y - p.Y * q.X;
-}
-
-number ccw (const P& p, const P& q, const P& r) {
-    return (q.X - p.X) * (r.Y - p.Y) - (q.Y - p.Y) * (r.X - p.X);
-}
-
-bool is_on_segment(const P& p1, const P& p2, const P& p) {
-    number area = (p1.X - p.X) * (p2.Y - p.Y) - (p1.Y - p.Y) * (p2.X - p.X);
-    if (area == 0 && (p1.X - p.X) * (p2.X - p.X) <= 0 && (p1.Y - p.Y) * (p2.Y - p.Y) <= 0) return true;
-    return false;
-}
-
-bool is_point_inside(const vector<P>& hole, const P& point) {
-    int crossings = 0;
-    for (int i = 0; i < hole.size(); ++i) {
-        int j = i + 1;
-        if (__builtin_expect(j >= hole.size(), 0)) {
-            j = 0;
-        }
-        if (is_on_segment(hole[i], hole[j], point)) return true;
-        if (ccw(point, outer, hole[i]) * ccw(point, outer, hole[j]) < 0 && ccw(hole[i], hole[j], point) * ccw(hole[i], hole[j], outer) < 0) {
-            ++crossings;
-        }
-    }
-    return crossings % 2 == 1;
-}
-
-bool is_edge_inside(const vector<P>& hole, const P& p1, const P& p2) {
-    if (!inside[p1.X][p1.Y]) return false;
-    if (!inside[p2.X][p2.Y]) return false;
-
-    int prev_ccw = ccw(p1, p2, hole[0]);
-    for (int i = 0; i < hole.size(); ++i) {
-        int j = i + 1;
-        if (__builtin_expect(j >= hole.size(), 0)) {
-            j = 0;
-        }
-        const int next_ccw = ccw(p1, p2, hole[j]);
-        if (prev_ccw * next_ccw < 0 && ccw(hole[i], hole[j], p1) * ccw(hole[i], hole[j], p2) < 0) return false;
-        prev_ccw = next_ccw;
-    }
-
-    static vector<P> splitting_points;
-    splitting_points.clear();
-    splitting_points.push_back(p1);
-    splitting_points.push_back(p2);
-    for (const P& p : hole) {
-        if (is_on_segment(p1, p2, p)) splitting_points.push_back(p);
-    }
-    sort(splitting_points.begin(), splitting_points.end());
-
-    for (int i = 0; i + 1 < splitting_points.size(); i++) {
-        if (!inside_double[splitting_points[i].X + splitting_points[i + 1].X][splitting_points[i].Y + splitting_points[i + 1].Y]) return false;
-    }
-
-    return true;
-}
-
-number d(const P& p, const P& q) {
-    return (p.X - q.X) * (p.X - q.X) + (p.Y - q.Y) * (p.Y - q.Y);
-}
-
 bool stretch(const number& d1, const number &d2, const number epsilon) {
     return abs((d1 * 1. / d2 - 1)) * 1000000. < (epsilon + 1e-9);
 }
@@ -230,14 +111,12 @@ int dfs(const vector<vector<E>> &graph, const vector<number> &hole_d, const vect
 }
 
 int main() {
-    json js;
-    cin >> js;
-    auto prob = js.get<problem>();
+    load_problem(cin, problem);
 
-    vector<P> hole = prob.hole;
-    vector<E> edge = prob.figure.edges;
-    vector<P> figure = prob.figure.vertices;
-    number epsilon = prob.epsilon;
+    vector<P> hole = problem.hole;
+    vector<E> edge = problem.figure.edges;
+    vector<P> figure = problem.figure.vertices;
+    number epsilon = problem.epsilon;
 
     int n = figure.size();
 
