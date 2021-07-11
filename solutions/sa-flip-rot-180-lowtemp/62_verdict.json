@@ -23,6 +23,6 @@
                 "y": 116
             }
         },
-        "message": "Edge 29 violates length constraint"
+        "message": "Edge 29 violates the length constraint. (21 edges violates in total.)"
     }
 }

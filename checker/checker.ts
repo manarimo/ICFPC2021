@@ -7,6 +7,7 @@ enum BonusType {
     BREAK_A_LEG = "BREAK_A_LEG",
     WALLHACK = "WALLHACK",
     NO_BONUS = "NO_BONUS",
+    SUPERFLEX = "SUPERFLEX",
 }
 
 interface ProblemBonus {
@@ -104,7 +105,8 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
     const bonus: SolutionBonus = solution.bonuses !== undefined ? solution.bonuses[0] : {bonus: BonusType.NO_BONUS, problem: -1};
     let globalLengthCost = 0.;
 
-    const edgeViolations = [];
+    const edgeInsideViolations = [];
+    const edgeLengthViolations = [];
     for (let i = 0; i < problem.figure.edges.length; ++i) {
         const e = problem.figure.edges[i];
         const srcEdge = { src: problem.figure.vertices[e[0]], dst: problem.figure.vertices[e[1]] };
@@ -137,26 +139,37 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
                 globalLengthCost += Math.abs(d(dstEdge[0], dstEdge[1]) / d(srcEdge[0], srcEdge[1]) - 1);
             } else {
                 if (!isValidEdge(srcEdge, dstEdge, problem['epsilon'])) {
-                    return {
-                        isValid: false,
-                        score: 0,
-                        bonusObtained: [],
-                        error: {
-                            srcEdge,
-                            dstEdge,
-                            message: `Edge ${i} violates length constraint`,
-                        }
-                    };
+                    edgeLengthViolations.push({
+                        e,
+                        srcEdge,
+                        dstEdge,
+                        i
+                    })
                 }
             }
             if (!isEdgeInside(problem.hole, dstEdge)) {
-                edgeViolations.push({
+                edgeInsideViolations.push({
                     e,
                     dstEdge,
                     i
                 });
             }
         }
+    }
+
+    const allowedEdgeLengthViolations = bonus.bonus === BonusType.SUPERFLEX ? 1 : 0;
+    if (edgeLengthViolations.length > allowedEdgeLengthViolations) {
+        const {i, srcEdge, dstEdge} = edgeLengthViolations[0]
+        return {
+            isValid: false,
+            score: 0,
+            bonusObtained: [],
+            error: {
+                srcEdge,
+                dstEdge,
+                message: `Edge ${i} violates the length constraint. (${edgeInsideViolations.length} edges violates in total.)`,
+            },
+        };
     }
 
     if (bonus.bonus === BonusType.GLOBALIST) {
@@ -179,7 +192,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
         let ok = false;
         for (let hackedVertexId = 0; hackedVertexId < problem.figure.vertices.length; hackedVertexId++) {
             let subOk = true;
-            for (const edgeViolation of edgeViolations) {
+            for (const edgeViolation of edgeInsideViolations) {
                 subOk = subOk && (edgeViolation.e[0] === hackedVertexId || edgeViolation.e[1] === hackedVertexId);
             }
             ok = ok || subOk;
@@ -193,21 +206,21 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
                 score: 0,
                 bonusObtained: [],
                 error: {
-                    message: `Wallhack constraint is not satisfied. (${edgeViolations.length} edges are outside in total)`,
+                    message: `Wallhack constraint is not satisfied. (${edgeInsideViolations.length} edges are outside in total)`,
                 },
             };
         }
     } else {
-        if (edgeViolations.length > 0) {
-            const i = edgeViolations[0].i;
-            const dstEdge = edgeViolations[0].dstEdge;
+        if (edgeInsideViolations.length > 0) {
+            const i = edgeInsideViolations[0].i;
+            const dstEdge = edgeInsideViolations[0].dstEdge;
             return {
                 isValid: false,
                 score: 0,
                 bonusObtained: [],
                 error: {
                     dstEdge,
-                    message: `Edge ${i} is not in the hole. (${edgeViolations.length} edges are outside in total)`,
+                    message: `Edge ${i} is not in the hole. (${edgeInsideViolations.length} edges are outside in total)`,
                 },
             };
         }
