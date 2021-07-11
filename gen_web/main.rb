@@ -86,11 +86,11 @@ def index_tr(problem, solution, global_dislike, bonus_graph, bonus_source)
     if solution.verdict == nil
       dislike = '(not yet evaluated)'
       score = 0
-    elsif !solution.verdict['isValid']
+    elsif !solution.verdict.valid
       dislike = 'INVALID'
       score = 0
     else
-      dislike = solution.verdict['score']
+      dislike = solution.verdict.dislike
       score = (score_base * Math.sqrt((global_dislike+1.0) / (dislike+1.0))).ceil
       if score > max_score
         style = "background-color: hotpink"
@@ -106,7 +106,7 @@ def index_tr(problem, solution, global_dislike, bonus_graph, bonus_source)
             <img src="images/#{solution.name}/#{problem.id}.svg" height="200">
             <div>
               使用: #{used_bonus_link(used_bonus, bonus_source)} <br>
-              取得: #{solution.verdict && solution.verdict['bonusObtained']&.map{ |b| %Q(#{b['bonus']} <a href="##{b['problem']}">#{b['problem']}</a>) }.join(', ')}
+              取得: #{solution.verdict && solution.verdict.bonus_obtained&.map{ |b| %Q(#{b.bonus} <a href="##{b.problem}">#{b.problem}</a>) }.join(', ')}
             </div>
           </div>
           <a href="kenkoooo/#/problem/#{problem.id}?solution=#{solution.name}/#{problem.id}.json">つづきからはじめる</a>
@@ -217,12 +217,12 @@ def write_top_solutions(file, title, problems, solutions, dislikes, bonus_graph,
   top_solutions = {}
   solutions.each do |name, list|
     list.each do |id, solution|
-      next if solution.verdict == nil || !solution.verdict['isValid']
+      next if solution.verdict == nil || !solution.verdict.valid
       if block_given?
         next unless block.call(solution)
       end
       current_verdict = top_solutions[id]&.verdict
-      if current_verdict == nil || (current_verdict['isValid'] && current_verdict['score'] > solution.verdict['score'])
+      if current_verdict == nil || (current_verdict.valid && current_verdict.dislike > solution.verdict.dislike)
         top_solutions[id] = solution
       end
     end
@@ -261,7 +261,7 @@ solution_names = solutions.keys.sort
 bonus_source = {}
 solutions.each do |_, list|
   list.each do |_, solution|
-    solution.verdict&.fetch('bonusObtained')&.each do |bonus|
+    solution.verdict&.bonus_obtained&.each do |bonus|
       name = bonus['bonus']
       target = bonus['problem']
       bonus_source[target] ||= {}
@@ -299,7 +299,7 @@ problems.each do |problem|
       rows << Row.new(problem, solutions[name][problem.id], dislikes[problem.id], bonus_source[problem.id])
     end
   end
-  rows.sort_by! { |row| row.solution&.verdict&.fetch('score') || Float::INFINITY }
+  rows.sort_by! { |row| row.solution&.verdict&.dislike || Float::INFINITY }
   File.open("#{__dir__}/../web/#{problem.id}.html", "w") do |f|
     write_index(f, rows, "Problem #{problem.id}", solution_names, bonus_graph)
   end
@@ -320,7 +320,7 @@ write_top_solutions("#{__dir__}/../web/best.html", "Best", problems, solutions, 
   end
 
   write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_get.html", "#{bonus_name}取得", problems, solutions, dislikes, bonus_graph, bonus_source) do |sol|
-    sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == bonus_name }
+    sol.verdict&.bonus_obtained&.any? { |b| b.bonus == bonus_name }
   end
 
   usable = problems.select{|p| bonus_graph.to_use[bonus_name].index(p.id)}

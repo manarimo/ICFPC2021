@@ -7,6 +7,7 @@ module Problem
   Figure = Struct.new(:edges, :vertices)
   Bonus = Struct.new(:position, :bonus, :problem, :source)
   Solution = Struct.new(:id, :name, :verdict, :vertices, :bonuses)
+  Verdict = Struct.new(:valid, :dislike, :bonus_obtained)
 
   BonusGraph = Struct.new(:to_obtain, :to_use, :obtainable, :usable)
 
@@ -34,7 +35,16 @@ module Problem
 
     def new_bonuses(json, problem_id)
       return nil if json == nil
-      json.map { |b| Bonus.new(new_point(b['position']), b['bonus'], b['problem'].to_i, problem_id) }
+      json.map { |b| Bonus.new(new_point(b['position']), b['bonus'], b['problem'].to_i, problem_id || b['problem'].to_i) }
+    end
+
+    def new_verdict(json, problem_id)
+      return nil if json == nil
+      Verdict.new(json['isValid'], json['score'], new_bonuses(json['bonusObtained'], problem_id))
+    end
+
+    def new_solution(json, problem_id, name, verdict_json)
+      Solution.new(problem_id, name, new_verdict(verdict_json, problem_id), new_vertices(json['vertices']), new_bonuses(json['bonuses'], nil))
     end
 
     def new_problem(id, json)
@@ -75,12 +85,11 @@ module Problem
             JSON.load(f)
           end
           next if json == nil
-          vertices = new_vertices(json['vertices'])
 
           verdict = JSON.load(File.read(file.sub(/\.json$/, '_verdict.json'))) rescue nil
 
           solutions[solution_name] ||= {}
-          solutions[solution_name][id] = Solution.new(id, solution_name, verdict, vertices, new_bonuses(json['bonuses'], id))
+          solutions[solution_name][id] = new_solution(json, id, solution_name, verdict)
         end
       end
 
