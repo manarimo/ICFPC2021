@@ -1,7 +1,7 @@
 require 'fileutils'
 
 solution_base = ARGV[0]
-program = ARGV[1]
+programs = %w(./time_600_temp_100 ./time_600_temp_1000 ./time_600_temp_10000)
 
 process_count = 0
 current_dir = "#{__dir__}/../solutions/#{solution_base}"
@@ -10,6 +10,7 @@ loop do
   next_dir = "#{__dir__}/../solutions/#{solution_base}-loop-#{loop_count}"
   FileUtils.makedirs(next_dir)
 
+  program = programs.sample
   Dir.glob("#{current_dir}/*.json") do |file|
     next if file.match(/_verdict.json/)
     id = file.match(/^(\d+).json/)[1].to_i
