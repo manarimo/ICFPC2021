@@ -10,9 +10,12 @@ interface Props {
   onSolve: (pose: [number, number][]) => void;
 }
 export const SinglePointSolverPanel = (props: Props) => {
+  const isLegBroken =
+    props.userFigure.vertices.length > props.problem.figure.vertices.length;
   return (
     <Container>
       <Button
+        disabled={isLegBroken}
         onClick={async () => {
           await solvePartialBruteForce(
             props.problem,
