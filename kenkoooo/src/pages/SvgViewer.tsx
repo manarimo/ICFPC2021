@@ -55,13 +55,13 @@ const UserPoseLayer = (props: {
   };
   return (
     <>
+      {props.problem.hole.map(([x, y], idx) => {
+        return <circle key={idx} cx={x} cy={y} r="0.7" fill="#F0F" />;
+      })}
       {props.problem.bonuses.map((bonus, idx) => {
         const [x, y] = bonus.position;
         const color = getBonusColor(bonus.bonus);
         return <circle key={idx} cx={x} cy={y} r="0.7" fill={color} />;
-      })}
-      {props.problem.hole.map(([x, y], idx) => {
-        return <circle key={idx} cx={x} cy={y} r="0.7" fill="#F0F" />;
       })}
       {props.problem.figure.edges.map(([i, j]) => {
         const piOriginal = originalVertices[i];
