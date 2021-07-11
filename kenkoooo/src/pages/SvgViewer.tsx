@@ -9,6 +9,7 @@ import React from "react";
 import { EditorState } from "./EditorState";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
 import { solveSinglePoint } from "../Solver";
+import { GlobalistSvgEdges } from "./GlobalistSvgEdges";
 
 export const getBonusColor = (bonusType: BonusType) => {
   switch (bonusType) {
@@ -69,7 +70,7 @@ const UserPoseLayer = (props: {
   editorState: EditorState | null;
   selectedVertices: number[];
   updateVertices: (vertices: [number, number][]) => void;
-  isWallHacking: boolean;
+  bonusMode?: "WallHack" | "Globalist";
 }) => {
   const epsilon = BigInt(props.problem.epsilon);
   const originalVertices = props.problem.figure.vertices;
@@ -96,12 +97,13 @@ const UserPoseLayer = (props: {
     return [i, j];
   };
 
-  const outsidePointIds = props.isWallHacking
-    ? getOutsidePointIds(
-        props.userFigure.vertices,
-        props.problem.hole.map(pairToPoint)
-      )
-    : [];
+  const outsidePointIds =
+    props.bonusMode === "WallHack"
+      ? getOutsidePointIds(
+          props.userFigure.vertices,
+          props.problem.hole.map(pairToPoint)
+        )
+      : [];
 
   return (
     <>
@@ -113,41 +115,52 @@ const UserPoseLayer = (props: {
         const color = getBonusColor(bonus.bonus);
         return <circle key={idx} cx={x} cy={y} r="0.7" fill={color} />;
       })}
-      {props.problem.figure.edges
-        .filter(([i, j]) => !isLegBroken || !isBrokenLeg([i, j]))
-        .map(([i, j]) => {
-          const piOriginal = originalVertices[i];
-          const pjOriginal = originalVertices[j];
-          const originalDist = sqDistance(piOriginal, pjOriginal);
+      {props.bonusMode === "Globalist" ? (
+        <GlobalistSvgEdges
+          problem={props.problem}
+          userFigure={props.userFigure}
+        />
+      ) : (
+        props.problem.figure.edges
+          .filter(([i, j]) => !isLegBroken || !isBrokenLeg([i, j]))
+          .map(([i, j]) => {
+            const piOriginal = originalVertices[i];
+            const pjOriginal = originalVertices[j];
+            const originalDist = sqDistance(piOriginal, pjOriginal);
 
-          const pi = props.userFigure.vertices[i];
-          const pj = props.userFigure.vertices[j];
-          const userDist = sqDistance(pi, pj);
+            const pi = props.userFigure.vertices[i];
+            const pj = props.userFigure.vertices[j];
+            const userDist = sqDistance(pi, pj);
 
-          const difference = absoluteBigInt(userDist - originalDist);
+            const difference = absoluteBigInt(userDist - originalDist);
 
-          // difference/originalDist <= epsilon/1_000_000
-          const ok = difference * BigInt(1_000_000) <= epsilon * originalDist;
-          const color = ok ? "green" : originalDist < userDist ? "red" : "blue";
-          const strokeWidth = ok ? "0.3" : "0.5";
+            // difference/originalDist <= epsilon/1_000_000
+            const ok = difference * BigInt(1_000_000) <= epsilon * originalDist;
+            const color = ok
+              ? "green"
+              : originalDist < userDist
+              ? "red"
+              : "blue";
+            const strokeWidth = ok ? "0.3" : "0.5";
 
-          const strike =
-            props.isWallHacking &&
-            (outsidePointIds.includes(i) || outsidePointIds.includes(j));
-          const key = `${i}-${j}`;
-          return (
-            <line
-              key={key}
-              strokeDasharray={strike ? 2 : undefined}
-              x1={pi[0]}
-              y1={pi[1]}
-              x2={pj[0]}
-              y2={pj[1]}
-              stroke={color}
-              strokeWidth={strokeWidth}
-            />
-          );
-        })}
+            const strike =
+              props.bonusMode === "WallHack" &&
+              (outsidePointIds.includes(i) || outsidePointIds.includes(j));
+            const key = `${i}-${j}`;
+            return (
+              <line
+                key={key}
+                strokeDasharray={strike ? 2 : undefined}
+                x1={pi[0]}
+                y1={pi[1]}
+                x2={pj[0]}
+                y2={pj[1]}
+                stroke={color}
+                strokeWidth={strokeWidth}
+              />
+            );
+          })
+      )}
       {brokenLegs.map(([a, b]) => {
         const i = a + b - brokenPointId;
         const k = brokenPointId;
@@ -246,7 +259,7 @@ interface Props {
   selectedVertices: number[];
   forcedWidth?: number;
   updateVertices: (vertices: [number, number][]) => void;
-  isWallHacking: boolean;
+  bonusMode?: "Globalist" | "WallHack";
 }
 
 export const SvgViewer = (props: Props) => {
@@ -302,7 +315,7 @@ export const SvgViewer = (props: Props) => {
       <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
       <UserPoseLayer
         problem={problem}
-        isWallHacking={props.isWallHacking}
+        bonusMode={props.bonusMode}
         updateVertices={props.updateVertices}
         userFigure={props.userFigure}
         editorState={props.editorState}

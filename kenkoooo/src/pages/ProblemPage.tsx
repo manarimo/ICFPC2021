@@ -342,7 +342,13 @@ const SvgEditor = (props: SvgEditorProps) => {
             selectedVertices={selectedVertices}
             forcedWidth={zoom ? zoomSize : undefined}
             updateVertices={updateVertices}
-            isWallHacking={wallHack}
+            bonusMode={
+              wallHack
+                ? "WallHack"
+                : bonusMode === "GLOBALIST"
+                ? "Globalist"
+                : undefined
+            }
           />
         </Col>
         <Col>

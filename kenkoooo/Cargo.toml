@@ -1,2 +1,2 @@
 [workspace]
-members = ["wasm-rust", "manarimo-lib", "brute-force"]
+members = ["wasm-rust", "manarimo-lib", "brute-force", "no-wasm"]
