@@ -112,7 +112,8 @@ const SvgEditor = (props: SvgEditorProps) => {
     if (solution.data) {
       setUserSubmission(solution.data);
     }
-  }, [solution, problem, setUserSubmission]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solution]);
 
   useEffect(() => {
     setText(JSON.stringify(userSubmission));
