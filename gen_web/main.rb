@@ -49,13 +49,26 @@ def write_svg(f, problem, solution = nil)
 SVG
 end
 
-def used_bonus_link(bonus, bonus_source)
+def bonus_link(bonus, bonus_source)
   if bonus
     source = bonus_source&.fetch(bonus.bonus, nil)&.find { |s| s.id == bonus.source}
     if source
       %Q(<a href="#{bonus.bonus.downcase}_get.html##{source.id}"><b>#{bonus.bonus} #{source.id}</b></a>)
     else
       %Q(<a href="#{bonus.bonus.downcase}_obtainable.html##{bonus.source}">#{bonus.bonus} #{bonus.source}</a> （未知）)
+    end
+  else
+    nil
+  end
+end
+
+def used_bonus_link(bonus, bonus_source)
+  if bonus
+    source = bonus_source&.fetch(bonus.bonus, nil)&.find { |s| s.id == bonus.problem }
+    if source
+      %Q(<a href="#{bonus.bonus.downcase}_get.html##{source.id}"><b>#{bonus.bonus} #{source.id}</b></a>)
+    else
+      %Q(<a href="#{bonus.bonus.downcase}_obtainable.html##{bonus.problem}">#{bonus.bonus} #{bonus.problem}</a> （未知）)
     end
   else
     nil
@@ -111,7 +124,7 @@ def index_tr(problem, solution, global_dislike, bonus_graph, bonus_source)
     <div style="display: flex">
       <img src="images/#{problem.id}.svg" height="200">
       <div>
-        使用可能: <ul style="margin-top: 0">#{bonus_graph.usable[problem.id]&.map{|b| "<li>#{used_bonus_link(b, bonus_source)}</li>"}&.join} </ul>
+        使用可能: <ul style="margin-top: 0">#{bonus_graph.usable[problem.id]&.map{|b| "<li>#{bonus_link(b, bonus_source)}</li>"}&.join} </ul>
         取得可能: <ul style="margin-top: 0">#{bonus_graph.obtainable[problem.id]&.map{|b| %Q(<li>#{b.bonus} <a href="##{b.problem}">#{b.problem}</a></li>)}&.join} </ul>
       </div>
     </div>
