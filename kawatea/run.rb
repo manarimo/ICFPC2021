@@ -1,5 +1,6 @@
-prob_ids = (89..106).to_a
-hints = %w(rot-0 rot-90 rot-180 rot-270 flip-rot-0 flip-rot-90 flip-rot-180 flip-rot-270)
+prob_ids = (1..106).to_a
+hints = %w(rot-0 rot-90 rot-180 rot-270 flip-rot-0 flip-rot-90 flip-rot-180 flip-rot-270).map { |w| "spring-expand-" + w }
+#hints = %w(spring-expand)
 
 count = 0
 program = ARGV[0]
@@ -19,7 +20,7 @@ hints.each do |hint|
     system(cmdline)
 
     count += 1
-    if count % 35 == 0
+    if count % 71 == 0
       sleep 600
     end
   end
