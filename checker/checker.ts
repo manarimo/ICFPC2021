@@ -138,7 +138,7 @@ function isValidSolution(problem: Problem, solution: Solution): Verdict {
             }
         } else {
             if (bonus.bonus === BonusType.GLOBALIST) {
-                globalLengthCost += Math.abs(d(dstEdge[0], dstEdge[1]) / d(srcEdge[0], srcEdge[1]) - 1);
+                globalLengthCost += Math.abs(d(dstEdge.src, dstEdge.dst) / d(srcEdge.src, srcEdge.dst) - 1);
             } else {
                 if (!isValidEdge(srcEdge, dstEdge, problem['epsilon'])) {
                     edgeLengthViolations.push({
