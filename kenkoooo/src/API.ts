@@ -1,5 +1,5 @@
 import useSWR, { SWRConfiguration } from "swr";
-import { Problem } from "./utils";
+import { Problem, Submission } from "./utils";
 
 const API_SERVER = process.env.REACT_APP_API_SERVER;
 const useSWRData = <T>(
@@ -29,7 +29,7 @@ export const useSolutionData = (solutionId: string | null) => {
     solutionId
       ? fetch(url)
           .then((response) => response.json())
-          .then((problem) => problem as { vertices: [number, number][] })
+          .then((problem) => problem as Submission)
       : Promise.resolve(null);
   return useSWRData(url, fetcher);
 };
