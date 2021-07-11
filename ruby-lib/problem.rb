@@ -6,9 +6,9 @@ module Problem
   Edge = Struct.new(:from, :to)
   Figure = Struct.new(:edges, :vertices)
   Bonus = Struct.new(:position, :bonus, :problem)
-  Solution = Struct.new(:name, :verdict, :vertices, :bonuses)
+  Solution = Struct.new(:id, :name, :verdict, :vertices, :bonuses)
 
-  BonusGraph = Struct.new(:to_obtain, :to_use_in, :obtainable, :usable)
+  BonusGraph = Struct.new(:to_obtain, :to_use, :obtainable, :usable)
 
   class << self
     def new_point(json)
@@ -64,7 +64,7 @@ module Problem
 
     def bonus_graph(problems)
       to_obtain = {}
-      to_use_in = {}
+      to_use = {}
       obtainable = {}
       usable = {}
 
@@ -73,8 +73,8 @@ module Problem
           to_obtain[bonus.bonus] ||= []
           to_obtain[bonus.bonus].push(problem.id)
 
-          to_use_in[bonus.bonus] ||= []
-          to_use_in[bonus.bonus].push(bonus.problem)
+          to_use[bonus.bonus] ||= []
+          to_use[bonus.bonus].push(bonus.problem)
 
           usable[bonus.problem] ||= []
           usable[bonus.problem].push(Bonus.new(bonus.position, bonus.bonus, problem.id))
@@ -82,7 +82,7 @@ module Problem
         obtainable[problem.id] = problem.bonuses
       end
 
-      BonusGraph.new(to_obtain, to_use_in, obtainable, usable)
+      BonusGraph.new(to_obtain, to_use, obtainable, usable)
     end
   end
 end
