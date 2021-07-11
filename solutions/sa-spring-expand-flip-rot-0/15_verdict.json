@@ -1,0 +1,28 @@
+{
+    "isValid": false,
+    "score": 100000000,
+    "bonusObtained": [],
+    "error": {
+        "srcEdge": {
+            "src": {
+                "x": 0,
+                "y": 20
+            },
+            "dst": {
+                "x": 20,
+                "y": 0
+            }
+        },
+        "dstEdge": {
+            "src": {
+                "x": 15,
+                "y": 0
+            },
+            "dst": {
+                "x": 2,
+                "y": 25
+            }
+        },
+        "message": "Edge 0 violates the length constraint. (4 edges violates in total.)"
+    }
+}

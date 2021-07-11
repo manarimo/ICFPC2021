@@ -1,0 +1,22 @@
+{
+    "isValid": true,
+    "bonusObtained": [
+        {
+            "bonus": "BREAK_A_LEG",
+            "problem": 86,
+            "position": [
+                20,
+                58
+            ]
+        },
+        {
+            "bonus": "GLOBALIST",
+            "problem": 41,
+            "position": [
+                30,
+                36
+            ]
+        }
+    ],
+    "score": 656
+}
