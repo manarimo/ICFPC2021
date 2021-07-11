@@ -23,7 +23,13 @@ extern "C" {
 pub fn solve_annealing(problem_json: &str) -> String {
     let problem: Problem = serde_json::from_str(problem_json).unwrap();
     let vertices = problem.figure.vertices.clone();
-    let (ans, score) = solve(problem, Pose { vertices });
+    let (ans, score) = solve(
+        problem,
+        Pose {
+            vertices,
+            bonuses: None,
+        },
+    );
     log(&format!("score={}", score));
     let ans = serde_json::to_string(&ans).unwrap();
     ans

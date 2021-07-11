@@ -130,7 +130,10 @@ impl<G: Fn(usize) + Copy> DfsSolver<G> {
                     .map(|i| positions[self.vid_to_order[i]])
                     .map(|p| [p.x, p.y])
                     .collect::<Vec<_>>();
-                let pose = Pose { vertices };
+                let pose = Pose {
+                    vertices,
+                    bonuses: None,
+                };
                 (report)(pose, result);
                 result
             } else {
