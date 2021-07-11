@@ -19,6 +19,7 @@ bool inside_double[MAX_CC * 2][MAX_CC * 2];
 vector<P> available;
 bool edge_inside[MAX_CC * MAX_CC][MAX_CC * MAX_CC];
 vector<number> dist[MAX_CC * MAX_CC];
+vector<number> ddist[MAX_CC * MAX_CC];
 vector<number> dist_hole[MAX_CC * MAX_CC];
 number min_len[MAX_M];
 number max_len[MAX_M];
@@ -28,6 +29,7 @@ int target[MAX_N];
 int best_target[MAX_N];
 number min_dislike = 0;
 number best_dislike = 1e18;
+int best_edge;
 number min_x = 1e18, min_y = 1e18, max_x = 0, max_y = 0;
 P outer;
 number counter;
@@ -76,7 +78,22 @@ bool is_edge_inside(const vector<P>& hole, const P& p1, const P& p2) {
     return true;
 }
 
-bool check(const vector<P>& hole) {
+
+string output(const vector<P>& figure, const vector<pair<int, int>>& edge) {
+    string res = "";
+    res += "{\"vertices\": [";
+    for (int i = 0; i < figure.size(); i++) {
+        if (i != 0) res += ", ";
+        res += "[" + to_string(figure[i].X) + "," + to_string(figure[i].Y) + "]";
+    }
+    res += "]";
+    res += ",\"bonuses\":[{\"bonus\":\"BREAK_A_LEG\",\"edge\":[";
+    res += to_string(edge[best_edge].first) + "," + to_string(edge[best_edge].second);
+    res +="]}]}";
+    return res;
+}
+
+bool check(const vector<P>& hole, int be, const vector<pair<int, int>>& edge) {
     number dislike = 0;
     for (int i = 0; i < hole.size(); i++) {
         number min_p = 1e18;
@@ -91,8 +108,11 @@ bool check(const vector<P>& hole) {
     fprintf(stderr, "updated : %lld -> %lld\n", best_dislike, dislike);
     fflush(stderr);
     best_dislike = dislike;
+    best_edge = be;
     for (int i = 0; i < order.size(); i++) best_target[i] = target[i];
-    
+    vector<P> best_figure(order.size());
+    for (int i = 0; i < order.size(); i++) best_figure[i] = available[best_target[i]];
+    cerr << output(best_figure, edge) << endl;
     return best_dislike <= min_dislike;
 }
 
@@ -104,7 +124,7 @@ bool dfs(const vector<P>& hole, const vector<vector<pair<int, int>>>& graph, int
     counter++;
     
     if (x == order.size()) {
-        return check(hole);
+        return check(hole, broken_e, edge);
     } else {
         if (order[x] == order.size() - 1) {
             // place broken edge
@@ -113,8 +133,8 @@ bool dfs(const vector<P>& hole, const vector<vector<pair<int, int>>>& graph, int
                 int up = target[be.first];
                 int vp = target[be.second];
                 if (!edge_inside[i][up] || !edge_inside[i][vp]) continue;
-                number d1 = d({available[i].first * 2, available[i].second * 2}, {available[up].first * 2, available[up].second * 2});
-                number d2 = d({available[i].first * 2, available[i].second * 2}, {available[vp].first * 2, available[vp].second * 2});
+                number d1 = ddist[i][up];
+                number d2 = ddist[i][vp];
                 if (d1 < min_len[broken_e] || max_len[broken_e] < d1) continue;
                 if (d2 < min_len[broken_e] || max_len[broken_e] < d2) continue;
                 target[order[x]] = i;
@@ -146,15 +166,6 @@ bool dfs(const vector<P>& hole, const vector<vector<pair<int, int>>>& graph, int
         }
       return false;
     }
-}
-
-void output(const vector<P>& figure) {
-    printf("{\"vertices\": [");
-    for (int i = 0; i < figure.size(); i++) {
-        if (i > 0) printf(", ");
-        printf("[%lld, %lld]", figure[i].X, figure[i].Y);
-    }
-    printf("]}");
 }
 
 void output_svg(const char* file, const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
@@ -236,6 +247,7 @@ int main(int argc, char* argv[]) {
     
     for (int i = 0; i < available.size(); i++) {
         dist[i].resize(available.size());
+	ddist[i].resize(available.size());
         dist_hole[i].resize(hole.size());
     }
     
@@ -244,6 +256,7 @@ int main(int argc, char* argv[]) {
             if (is_edge_inside(hole, available[i], available[j])) {
                 edge_inside[i][j] = edge_inside[j][i] = true;
                 dist[i][j] = dist[j][i] = d(available[i], available[j]);
+		ddist[i][j] = ddist[j][i] = d({available[i].first * 2, available[i].second * 2}, {available[j].first * 2, available[j].second * 2});
             }
         }
         for (int j = 0; j < hole.size(); j++) {
@@ -295,7 +308,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "dislike: %lld\n", best_dislike);
     vector<P> best_figure(n + 1);
     for (int i = 0; i < n + 1; i++) best_figure[i] = available[best_target[i]];
-    output(best_figure);
+    cout << output(best_figure, edge) << endl;
     if (argc >= 2) output_svg(argv[1], hole, edge, best_figure);
     
     return 0;
