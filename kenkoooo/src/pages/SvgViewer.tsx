@@ -138,7 +138,7 @@ const UserPoseLayer = (props: {
           return (
             <line
               key={key}
-              stroke-dasharray={strike ? 2 : undefined}
+              strokeDasharray={strike ? 2 : undefined}
               x1={pi[0]}
               y1={pi[1]}
               x2={pj[0]}

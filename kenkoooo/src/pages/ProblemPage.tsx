@@ -280,6 +280,7 @@ const SvgEditor = (props: SvgEditorProps) => {
           <ButtonGroup toggle>
             {BonusModes.map((mode) => (
               <ToggleButton
+                key={mode}
                 type="checkbox"
                 variant="secondary"
                 value="single"

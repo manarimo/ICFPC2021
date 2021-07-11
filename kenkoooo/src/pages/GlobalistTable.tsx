@@ -12,6 +12,7 @@ const calcEdgeCost = (figure: Figure, pose: [number, number][]) => {
     const vj2 = pairToPoint(pose[to]);
     const d2 = d(vi2, vj2);
     const cost = Math.abs(d1 - d2) / d1;
+    console.log(cost);
     return {
       cost,
       from,
@@ -30,7 +31,7 @@ export const GlobalistTable = (props: Props) => {
   const edges = calcEdgeCost(problem.figure, pose);
   edges.sort((e1, e2) => e2.cost - e1.cost);
   return (
-    <Table>
+    <Table size="sm">
       <thead>
         <tr>
           <th>辺</th>

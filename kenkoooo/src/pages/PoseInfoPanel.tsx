@@ -115,7 +115,7 @@ export const PoseInfoPanel = (props: Props) => {
   return (
     <Container>
       <Row>
-        <Table>
+        <Table size="sm">
           <tbody>
             <tr>
               <th>dislike</th>
@@ -164,15 +164,7 @@ export const PoseInfoPanel = (props: Props) => {
               </>
             )}
             <tr>
-              <th>
-                収まっていない辺
-                {usingGlobalist && (
-                  <GlobalistTable
-                    problem={problem}
-                    pose={props.userFigure.vertices}
-                  />
-                )}
-              </th>
+              <th>収まっていない辺</th>
               <td>
                 <ul>
                   {outsideEdges.map(([from, to]) => (
@@ -185,6 +177,11 @@ export const PoseInfoPanel = (props: Props) => {
             </tr>
           </tbody>
         </Table>
+      </Row>
+      <Row>
+        {usingGlobalist && (
+          <GlobalistTable problem={problem} pose={props.userFigure.vertices} />
+        )}
       </Row>
     </Container>
   );
