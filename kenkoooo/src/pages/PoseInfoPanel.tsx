@@ -2,18 +2,18 @@ import React from "react";
 
 import { Container, Row, Table } from "react-bootstrap";
 import { dislike, isEdgeInside } from "../tslib/amyfunc";
-import { Problem } from "../utils";
+import { Figure, Problem } from "../utils";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
 
 interface Props {
-  userPose: [number, number][];
+  userFigure: Figure;
   problem: Problem;
 }
 
 export const PoseInfoPanel = (props: Props) => {
   const { problem } = props;
   const hole = problem.hole.map(([x, y]) => ({ x, y }));
-  const ps = props.userPose.map(([x, y]) => ({ x, y }));
+  const ps = props.userFigure.vertices.map(([x, y]) => ({ x, y }));
   const dislikeScore = dislike(hole, ps);
 
   const originalVertices = problem.figure.vertices;
@@ -27,8 +27,8 @@ export const PoseInfoPanel = (props: Props) => {
     const pjOriginal = originalVertices[to];
     const originalDist = sqDistance(piOriginal, pjOriginal);
 
-    const pi = props.userPose[from];
-    const pj = props.userPose[to];
+    const pi = props.userFigure.vertices[from];
+    const pj = props.userFigure.vertices[to];
     const userDist = sqDistance(pi, pj);
 
     const difference = absoluteBigInt(userDist - originalDist);
