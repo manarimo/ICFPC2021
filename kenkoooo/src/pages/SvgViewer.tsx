@@ -193,6 +193,7 @@ const UserPoseLayer = (props: {
             onMouseDown={() => props.onEdit(pointId)}
             onClick={() => {
               if (isLegBroken) {
+                alert("便利クリック with BREAK_A_LEGは未実装");
                 return;
               }
               const target = solveSinglePoint(
