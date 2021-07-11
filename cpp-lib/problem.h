@@ -13,7 +13,7 @@ namespace manarimo {
     using json = nlohmann::json;
     using E = pair<int, int>;
     using number = long long;
-    constexpr int MAX_C = 1000;
+    constexpr int MAX_C = 2000;
 
     struct figure_t {
         vector<E> edges;
