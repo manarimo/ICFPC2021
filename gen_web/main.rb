@@ -254,7 +254,9 @@ end
 problems.each do |problem|
   rows = []
   solution_names.each do |name|
-    rows << Row.new(problem, solutions[name][problem.id], dislikes[problem.id])
+    if solutions[name][problem.id]
+      rows << Row.new(problem, solutions[name][problem.id], dislikes[problem.id])
+    end
   end
   rows.sort_by! { |row| row.solution&.verdict&.fetch('score') || Float::INFINITY }
   File.open("#{__dir__}/../web/#{problem.id}.html", "w") do |f|
