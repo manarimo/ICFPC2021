@@ -19,7 +19,7 @@ export const getBonusColor = (bonusType: BonusType) => {
     case "WALLHACK":
       return "orange";
     default:
-      // bug
+      // bugだったけど今はSUPERFLEX
       return "white";
   }
 };

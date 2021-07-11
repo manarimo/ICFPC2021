@@ -61,6 +61,7 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [zoom, setZoom] = useState(false);
   const [zoomSize, setZoomSize] = useState(2000);
   const [wallHack, setWallHack] = useState(false);
+  const [superFlex, setSuperFlex] = useState(false);
 
   const [globalistEnabled, setGlobalistEnabled] = useState(false);
 
@@ -81,6 +82,8 @@ const SvgEditor = (props: SvgEditorProps) => {
         setWallHack(true);
       } else if (userSubmission.bonuses[0].bonus === "GLOBALIST") {
         setGlobalistEnabled(true);
+      } else if (userSubmission.bonuses[0].bonus === "SUPERFLEX") {
+        setSuperFlex(true);
       }
     }
   }, [userSubmission]);
@@ -213,46 +216,23 @@ const SvgEditor = (props: SvgEditorProps) => {
     setBreakALegDst(val);
   };
 
-  const cancelWallHack = () => {
+  const cancelBonus = () => {
     setUserSubmission({
       ...userSubmission,
       bonuses: [],
     });
   };
 
-  const executeWallHack = () => {
+  const applyBonus = (bonus: Exclude<BonusType, "BREAK_A_LEG">) => {
     setUserSubmission({
       ...userSubmission,
       bonuses: [
         {
-          bonus: "WALLHACK",
-          problem: getPossibleBonusSourceProblemId(props.problemId, "WALLHACK"),
+          bonus,
+          problem: getPossibleBonusSourceProblemId(props.problemId, bonus),
         },
       ],
     });
-  };
-
-  const executeGlobalist = () => {
-    setUserSubmission({
-      ...userSubmission,
-      bonuses: [
-        {
-          bonus: "GLOBALIST",
-          problem: getPossibleBonusSourceProblemId(
-            props.problemId,
-            "GLOBALIST"
-          ),
-        },
-      ],
-    });
-    setGlobalistEnabled(true);
-  };
-  const cancelGlobalist = () => {
-    setUserSubmission({
-      ...userSubmission,
-      bonuses: [],
-    });
-    setGlobalistEnabled(false);
   };
 
   const userFigure = submissionToFigure(userSubmission, problem);
@@ -426,11 +406,29 @@ const SvgEditor = (props: SvgEditorProps) => {
                 checked={wallHack}
                 onChange={() => {
                   if (wallHack) {
-                    cancelWallHack();
+                    cancelBonus();
                     setWallHack(false);
                   } else {
-                    executeWallHack();
+                    applyBonus("WALLHACK");
                     setWallHack(true);
+                  }
+                }}
+              />
+            </Col>
+          )}
+          {bonusMode === "SUPERFLEX" && (
+            <Col>
+              <Form.Check
+                type="checkbox"
+                label="SuperFlex"
+                checked={superFlex}
+                onChange={() => {
+                  if (superFlex) {
+                    cancelBonus();
+                    setSuperFlex(false);
+                  } else {
+                    applyBonus("SUPERFLEX");
+                    setSuperFlex(true);
                   }
                 }}
               />
@@ -444,9 +442,11 @@ const SvgEditor = (props: SvgEditorProps) => {
                 checked={globalistEnabled}
                 onChange={() => {
                   if (globalistEnabled) {
-                    cancelGlobalist();
+                    cancelBonus();
+                    setGlobalistEnabled(false);
                   } else {
-                    executeGlobalist();
+                    applyBonus("GLOBALIST");
+                    setGlobalistEnabled(true);
                   }
                 }}
               />

@@ -93,7 +93,7 @@ function doublePoint(p: Point): Point {
 }
 
 function isValidSolution(problem: Problem, solution: Solution): Verdict {
-    if (solution.bonuses !== undefined && solution.bonuses.length > 1) {
+    if (solution.bonuses !== undefined && solution.bonuses !== null && solution.bonuses.length > 1) {
         return {
             isValid: false,
             score: INVALID_SCORE,
