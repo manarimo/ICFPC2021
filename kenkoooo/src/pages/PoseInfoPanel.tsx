@@ -4,14 +4,16 @@ import { Container, Row, Table } from "react-bootstrap";
 import { dislike, isEdgeInside } from "../tslib/amyfunc";
 import { Figure, Problem } from "../utils";
 import { absoluteBigInt, sqDistance } from "../calcUtils";
+import { GlobalistTable } from "./GlobalistTable";
 
 interface Props {
   userFigure: Figure;
   problem: Problem;
+  usingGlobalist: boolean;
 }
 
 export const PoseInfoPanel = (props: Props) => {
-  const { problem } = props;
+  const { problem, usingGlobalist } = props;
   const hole = problem.hole.map(([x, y]) => ({ x, y }));
   const ps = props.userFigure.vertices.map(([x, y]) => ({ x, y }));
   const dislikeScore = dislike(hole, ps);
@@ -105,32 +107,44 @@ export const PoseInfoPanel = (props: Props) => {
               <th>eps</th>
               <td>{eps}</td>
             </tr>
+            {!usingGlobalist && (
+              <>
+                <tr>
+                  <th>長すぎる辺</th>
+                  <td>
+                    <ul>
+                      {tooLongEdges.map(([from, to]) => (
+                        <li key={`${from}-${to}`}>
+                          ({from}, {to})
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <th>短すぎる辺</th>
+                  <td>
+                    <ul>
+                      {tooShortEdges.map(([from, to]) => (
+                        <li key={`${from}-${to}`}>
+                          ({from}, {to})
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              </>
+            )}
             <tr>
-              <th>長すぎる辺</th>
-              <td>
-                <ul>
-                  {tooLongEdges.map(([from, to]) => (
-                    <li key={`${from}-${to}`}>
-                      ({from}, {to})
-                    </li>
-                  ))}
-                </ul>
-              </td>
-            </tr>
-            <tr>
-              <th>短すぎる辺</th>
-              <td>
-                <ul>
-                  {tooShortEdges.map(([from, to]) => (
-                    <li key={`${from}-${to}`}>
-                      ({from}, {to})
-                    </li>
-                  ))}
-                </ul>
-              </td>
-            </tr>
-            <tr>
-              <th>収まっていない辺</th>
+              <th>
+                収まっていない辺
+                {usingGlobalist && (
+                  <GlobalistTable
+                    problem={problem}
+                    pose={props.userFigure.vertices}
+                  />
+                )}
+              </th>
               <td>
                 <ul>
                   {outsideEdges.map(([from, to]) => (

@@ -417,7 +417,11 @@ const SvgEditor = (props: SvgEditorProps) => {
         </Col>
         <Col className="ml-3">
           <Row>
-            <PoseInfoPanel userFigure={userFigure} problem={problem} />
+            <PoseInfoPanel
+              userFigure={userFigure}
+              problem={problem}
+              usingGlobalist={bonusMode === "GLOBALIST"}
+            />
           </Row>
         </Col>
       </Row>
