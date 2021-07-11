@@ -22,15 +22,22 @@ import { SinglePointSolverPanel } from "./SinglePointSolverPanel";
 import { useProblemData, useSolutionData } from "../API";
 import ToggleButton from "react-bootstrap/ToggleButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import {
+  getAvailableBonuses,
+  getPossibleBonusSourceProblemId,
+} from "../bonusInfo";
 
 const BonusModes = ["NONE", "BREAK_A_LEG", "GLOBALIST", "WALLHACK"] as const;
 type BonusMode = typeof BonusModes[number];
 
 interface SvgEditorProps {
   problem: Problem;
+  problemId: number;
 }
 const SvgEditor = (props: SvgEditorProps) => {
   const { problem } = props;
+
+  const availableBonusSet = getAvailableBonuses(props.problemId);
 
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -154,7 +161,16 @@ const SvgEditor = (props: SvgEditorProps) => {
 
     setUserSubmission({
       ...userSubmission,
-      bonuses: [{ bonus: "BREAK_A_LEG", edge: [src, dst] }],
+      bonuses: [
+        {
+          bonus: "BREAK_A_LEG",
+          edge: [src, dst],
+          problem: getPossibleBonusSourceProblemId(
+            props.problemId,
+            "BREAK_A_LEG"
+          ),
+        },
+      ],
       vertices: [...userSubmission.vertices, [mx, my]],
     });
   };
@@ -247,6 +263,13 @@ const SvgEditor = (props: SvgEditorProps) => {
                 type="checkbox"
                 variant="secondary"
                 value="single"
+                style={
+                  mode !== "NONE" && availableBonusSet.has(mode)
+                    ? {
+                        backgroundColor: "green",
+                      }
+                    : {}
+                }
                 checked={bonusMode === mode}
                 onChange={() => setBonusMode(mode)}
               >
@@ -448,7 +471,7 @@ export const ProblemPage = () => {
 
   return (
     <Container>
-      <SvgEditor problem={problem.data} />
+      <SvgEditor problem={problem.data} problemId={parseInt(problemId)} />
     </Container>
   );
 };

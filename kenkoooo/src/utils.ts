@@ -32,16 +32,16 @@ interface BreakALegBonusSubmission {
   edge: [number, number];
 
   // The ID of the problem in which this bonus has been unlocked
-  // とりあえずフロントで読む分には無くてもええやろ
-  problem?: number;
+  // 適当にそれっぽい値を突っ込む。バックエンドがなんとかするんだって
+  problem: number;
 }
 
 interface OtherBonusSubmission {
   bonus: "GLOBALIST" | "WALLHACK";
 
   // The ID of the problem in which this bonus has been unlocked
-  // とりあえずフロントで読む分には無くてもええやろ
-  problem?: number;
+  // 適当にそれっぽい値を突っ込む。バックエンドがなんとかするんだって
+  problem: number;
 }
 
 export const hasOwnProperty = <X extends {}, Y extends PropertyKey>(
