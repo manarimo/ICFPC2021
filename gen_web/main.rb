@@ -168,7 +168,12 @@ def write_index(f, problems, solutions = {}, solution_title = nil, solution_name
   if solution_names.size > 0
     solution_links = <<-LINKS
 <div style="margin-bottom: 32px">
-  <div><a href="best.html"><h3>Best</h3></a></div>
+  <div style="display: flex">
+    <a href="best.html" style="margin-right: 10px"><h3>Best</h3></a>
+    <a href="globalist.html" style="margin-right: 10px"><h3>Globalist</h3></a>
+    <a href="break_a_leg.html" style="margin-right: 10px"><h3>Break a Leg</h3></a>
+    <a href="wallhack.html" style="margin-right: 10px"><h3>Wallhack</h3></a>
+  </div>
   <div style="display: flex; flex-wrap: wrap; line-height: 1.5em">
     #{solution_names.map { |sn| %Q(<div style="margin-right: 10px"><a href="#{sn}.html">#{sn}</a></div>) }.join}
   </div>
@@ -204,6 +209,30 @@ LINKS
 </body>
 </html>
 EOF
+end
+
+def write_top_solutions(file, title, problems, solutions, dislikes, &block)
+  top_solutions = {}
+  solutions.each do |name, list|
+    list.each do |id, solution|
+      next if solution.verdict == nil || !solution.verdict['isValid']
+      if block_given?
+        next unless block.call(solution)
+      end
+      current_verdict = top_solutions[id]&.verdict
+      if current_verdict == nil || (current_verdict['isValid'] && current_verdict['score'] > solution.verdict['score'])
+        top_solutions[id] = solution
+      end
+    end
+  end
+
+  if title != 'Best'
+    problems = problems.select { |p| top_solutions.has_key?(p.id) }
+  end
+
+  File.open(file, 'w') do |f|
+    write_index(f, problems, top_solutions, title, solutions.keys.sort, dislikes)
+  end
 end
 
 problems = load_problems
@@ -261,18 +290,13 @@ File.open("#{__dir__}/../web/index.html", 'w') do |f|
   write_index(f, problems, {}, nil, solutions.keys.sort, dislikes)
 end
 
-# Top solutions
-best_solutions = {}
-solutions.each do |name, list|
-  list.each do |id, solution|
-    next if solution.verdict == nil || !solution.verdict['isValid']
-    current_verdict = best_solutions[id]&.verdict
-    if current_verdict == nil || (current_verdict['isValid'] && current_verdict['score'] > solution.verdict['score'])
-      best_solutions[id] = solution
-    end
-  end
+write_top_solutions("#{__dir__}/../web/best.html", "Best", problems, solutions, dislikes)
+write_top_solutions("#{__dir__}/../web/globalist.html", "Globalist", problems, solutions, dislikes) do |sol|
+  sol.bonuses&.any? { |b| b.bonus == 'GLOBALIST' }
 end
-
-File.open("#{__dir__}/../web/best.html", 'w') do |f|
-  write_index(f, problems, best_solutions, 'Best', solutions.keys.sort, dislikes)
+write_top_solutions("#{__dir__}/../web/break_a_leg.html", "Break a Leg", problems, solutions, dislikes) do |sol|
+  sol.bonuses&.any? { |b| b.bonus == 'BREAK_A_LEG' }
+end
+write_top_solutions("#{__dir__}/../web/wallhack.html", "Wallhack", problems, solutions, dislikes) do |sol|
+  sol.bonuses&.any? { |b| b.bonus == 'WALLHACK' }
 end
