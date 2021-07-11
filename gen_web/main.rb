@@ -75,7 +75,18 @@ def used_bonus_link(bonus, bonus_solutions)
   end
 end
 
-def index_tr(problem, solution, global_dislike, bonus_graph, bonus_solutions)
+def obtainable_bonus_link(bonus, bonus_solutions)
+  source = bonus_solutions[bonus.source]&.fetch(bonus.bonus, nil)
+  if source
+    %Q[<a href="#{bonus.bonus.downcase}_usable.html##{bonus.problem}"><b>#{bonus.bonus} #{bonus.problem}</b></a>
+      (dislike <a href="#{source.id}.html##{source.name}">#{source.verdict.dislike}</a>)
+    ]
+  else
+    %Q(<a href="#{bonus.bonus.downcase}_usable.html##{bonus.problem}">#{bonus.bonus} #{bonus.problem}</a>)
+  end
+end
+
+def index_tr(problem, solution, global_dislike, bonus_graph, bonus_solutions, best_page)
   score_base = 1000 * Math.log(problem.figure.vertices.size * problem.figure.edges.size * problem.hole.size / 6, 2)
   max_score = score_base.ceil
 
@@ -117,15 +128,20 @@ def index_tr(problem, solution, global_dislike, bonus_graph, bonus_solutions)
       )
   end
 
+  if best_page
+    id_attr = problem.id
+  else
+    id_attr = solution&.name || ''
+  end
   <<-TR
-<tr style="#{style}" id="#{problem.id}">
+<tr style="#{style}" id="#{id_attr}">
   <td><a href="#{problem.id}.html">#{problem.id}</a></td>
   <td>
     <div style="display: flex">
       <img src="images/#{problem.id}.svg" height="200">
       <div>
         使用可能: <ul style="margin-top: 0">#{bonus_graph.usable[problem.id]&.map{|b| "<li>#{bonus_link(b, bonus_solutions)}</li>"}&.join} </ul>
-        取得可能: <ul style="margin-top: 0">#{bonus_graph.obtainable[problem.id]&.map{|b| %Q(<li>#{b.bonus} <a href="##{b.problem}">#{b.problem}</a></li>)}&.join} </ul>
+        取得可能: <ul style="margin-top: 0">#{bonus_graph.obtainable[problem.id]&.map{|b| "<li>#{obtainable_bonus_link(b, bonus_solutions)}</li>"}&.join} </ul>
       </div>
     </div>
     <a href="/kenkoooo/#/problem/#{problem.id}">さいしょからはじめる</a>
@@ -182,7 +198,7 @@ LINKS
 end
 
 Row = Struct.new(:problem, :solution, :dislike)
-def write_index(f, rows, solution_title = nil, solution_names = [], bonus_graph, bonus_solutions)
+def write_index(f, rows, solution_title, solution_names, bonus_graph, bonus_solutions, best_page = true)
   solution_header = solution_title && %Q(<h2>Name: #{solution_title}</h2>)
 
   f.puts <<-EOF
@@ -206,7 +222,7 @@ def write_index(f, rows, solution_title = nil, solution_names = [], bonus_graph,
       <th>Dislikes</th>
       <th>Score</th>
     </tr>
-    #{rows.map {|row| index_tr(row.problem, row.solution, row.dislike, bonus_graph, bonus_solutions) }.join}
+    #{rows.map {|row| index_tr(row.problem, row.solution, row.dislike, bonus_graph, bonus_solutions, best_page) }.join}
   </table>
 </body>
 </html>
@@ -302,7 +318,7 @@ problems.each do |problem|
   end
   rows.sort_by! { |row| row.solution&.verdict&.dislike || Float::INFINITY }
   File.open("#{__dir__}/../web/#{problem.id}.html", "w") do |f|
-    write_index(f, rows, "Problem #{problem.id}", solution_names, bonus_graph, bonus_solutions)
+    write_index(f, rows, "Problem #{problem.id}", solution_names, bonus_graph, bonus_solutions, false)
   end
 end
 
