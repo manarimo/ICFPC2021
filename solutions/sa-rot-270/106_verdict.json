@@ -3,26 +3,16 @@
     "score": 100000000,
     "bonusObtained": [],
     "error": {
-        "srcEdge": {
-            "src": {
-                "x": 123,
-                "y": 299
-            },
-            "dst": {
-                "x": 163,
-                "y": 267
-            }
-        },
         "dstEdge": {
             "src": {
-                "x": 262,
-                "y": 259
+                "x": 270,
+                "y": 323
             },
             "dst": {
-                "x": 231,
-                "y": 219
+                "x": 233,
+                "y": 393
             }
         },
-        "message": "Edge 60 violates the length constraint. (11 edges violates in total.)"
+        "message": "Edge 21 is not in the hole. (11 edges are outside in total)"
     }
 }
