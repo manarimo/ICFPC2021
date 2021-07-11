@@ -76,3 +76,8 @@ export const parseUserInput = (
     };
   }
 };
+
+export const pairToPoint = (pair: [number, number]) => ({
+  x: pair[0],
+  y: pair[1],
+});

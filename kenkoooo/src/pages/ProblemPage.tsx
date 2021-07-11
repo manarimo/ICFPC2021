@@ -15,8 +15,11 @@ import { EditorState } from "./EditorState";
 import { PoseInfoPanel } from "./PoseInfoPanel";
 import { SinglePointSolverPanel } from "./SinglePointSolverPanel";
 import { useProblemData, useSolutionData } from "../API";
-import ToggleButton from 'react-bootstrap/ToggleButton'
+import ToggleButton from "react-bootstrap/ToggleButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+
+const BonusModes = ["NONE", "BREAK_A_LEG", "GLOBALIST", "WALLHACK"] as const;
+type BonusMode = typeof BonusModes[number];
 
 interface SvgEditorProps {
   problem: Problem;
@@ -27,8 +30,9 @@ const SvgEditor = (props: SvgEditorProps) => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const solution = useSolutionData(params.get("solution"));
+  const [bonusMode, setBonusMode] = useState<BonusMode>("NONE");
 
-  const [design, setDesign] = useState<'single' | 'triple'>('triple');
+  const [design, setDesign] = useState<"single" | "triple">("triple");
   const [editorState, setEditState] = useState<EditorState | null>(null);
   const [userPose, setUserPose] = useState([...problem.figure.vertices]);
   const [text, setText] = useState<string>("");
@@ -134,32 +138,80 @@ const SvgEditor = (props: SvgEditorProps) => {
     setBreakALegDst(val);
   };
 
+  const BreakALegPanel = () => (
+    <Row>
+      <Col>
+        <Form.Check
+          type="checkbox"
+          label="Break A Leg"
+          checked={breakALeg}
+          disabled={!canBreakALeg()}
+          onChange={(e) => updateBreakALeg(e.target.value === "true")}
+        />
+      </Col>
+      <Col>
+        <Form.Control
+          type="number"
+          min={0}
+          max={problem.figure.vertices.length - 1}
+          value={breakALegSrc}
+          onChange={(e) => updateBreakALegSrc(parseInt(e.target.value))}
+        />
+      </Col>
+      <Col>
+        <Form.Control
+          type="number"
+          min={0}
+          max={problem.figure.vertices.length - 1}
+          value={breakALegDst}
+          onChange={(e) => updateBreakALegDst(parseInt(e.target.value))}
+        />
+      </Col>
+    </Row>
+  );
   return (
     <Container>
-      <Row style={{marginBottom: '8px'}}>
+      <Row style={{ marginBottom: "8px" }}>
         <Col>
           <ButtonGroup toggle>
             <ToggleButton
-                type="checkbox"
-                variant="secondary"
-                value="single"
-                checked={design === 'single'}
-                onChange={(e) => setDesign('single')}>
+              type="checkbox"
+              variant="secondary"
+              value="single"
+              checked={design === "single"}
+              onChange={() => setDesign("single")}
+            >
               1カラム
             </ToggleButton>
             <ToggleButton
-                type="checkbox"
-                variant="secondary"
-                value="triple"
-                checked={design === 'triple'}
-                onChange={(e) => setDesign('triple')}>
+              type="checkbox"
+              variant="secondary"
+              value="triple"
+              checked={design === "triple"}
+              onChange={() => setDesign("triple")}
+            >
               3カラム
             </ToggleButton>
           </ButtonGroup>
         </Col>
+        <Col>
+          <ButtonGroup toggle>
+            {BonusModes.map((mode) => (
+              <ToggleButton
+                type="checkbox"
+                variant="secondary"
+                value="single"
+                checked={bonusMode === mode}
+                onChange={() => setBonusMode(mode)}
+              >
+                {mode}
+              </ToggleButton>
+            ))}
+          </ButtonGroup>
+        </Col>
       </Row>
       <Row>
-        <Col sm={design === 'single' ? 12 : undefined}>
+        <Col sm={design === "single" ? 12 : undefined}>
           <SvgViewer
             userPose={userPose}
             problem={problem}
@@ -208,35 +260,7 @@ const SvgEditor = (props: SvgEditorProps) => {
               onChange={(e) => setText(e.target.value)}
             />
           </Row>
-          <Row>
-            <Col>
-              <Form.Check
-                type="checkbox"
-                label="Break A Leg"
-                checked={breakALeg}
-                disabled={!canBreakALeg()}
-                onChange={(e) => updateBreakALeg(e.target.value === "true")}
-              />
-            </Col>
-            <Col>
-              <Form.Control
-                type="number"
-                min={0}
-                max={problem.figure.vertices.length - 1}
-                value={breakALegSrc}
-                onChange={(e) => updateBreakALegSrc(parseInt(e.target.value))}
-              />
-            </Col>
-            <Col>
-              <Form.Control
-                type="number"
-                min={0}
-                max={problem.figure.vertices.length - 1}
-                value={breakALegDst}
-                onChange={(e) => updateBreakALegDst(parseInt(e.target.value))}
-              />
-            </Col>
-          </Row>
+          {bonusMode === "BREAK_A_LEG" && <BreakALegPanel />}
           <Row>
             <Col>
               <Row>
