@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import {
+  BonusType,
+  BonusTypes,
   parseUserInput,
   Problem,
   Submission,
@@ -27,9 +29,6 @@ import {
   getPossibleBonusSourceProblemId,
 } from "../bonusInfo";
 
-const BonusModes = ["NONE", "BREAK_A_LEG", "GLOBALIST", "WALLHACK"] as const;
-type BonusMode = typeof BonusModes[number];
-
 interface SvgEditorProps {
   problem: Problem;
   problemId: number;
@@ -42,7 +41,7 @@ const SvgEditor = (props: SvgEditorProps) => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const solution = useSolutionData(params.get("solution"));
-  const [bonusMode, setBonusMode] = useState<BonusMode>("NONE");
+  const [bonusMode, setBonusMode] = useState<BonusType | "NONE">("NONE");
 
   const [design, setDesign] = useState<"single" | "triple">("triple");
   const [editorState, setEditState] = useState<EditorState | null>(null);
@@ -305,15 +304,20 @@ const SvgEditor = (props: SvgEditorProps) => {
         </Col>
         <Col>
           <ButtonGroup toggle>
-            {BonusModes.map((mode) => (
+            <ToggleButton
+              type="checkbox"
+              variant={"secondary"}
+              value="single"
+              checked={bonusMode === "NONE"}
+              onChange={() => setBonusMode("NONE")}
+            >
+              NONE
+            </ToggleButton>
+            {BonusTypes.map((mode) => (
               <ToggleButton
                 key={mode}
                 type="checkbox"
-                variant={
-                  mode !== "NONE" && availableBonusSet.has(mode)
-                    ? "success"
-                    : "secondary"
-                }
+                variant={availableBonusSet.has(mode) ? "success" : "secondary"}
                 value="single"
                 checked={bonusMode === mode}
                 onChange={() => setBonusMode(mode)}

@@ -1,6 +1,6 @@
-import { BONUSTYPE } from "./utils";
+import { BonusType } from "./utils";
 // https://docs.google.com/spreadsheets/d/1mYvl8AJRo-4DsGNv92sHBL0_Eg_7AsbH4-A_C3ltNVU/edit#gid=0
-const FROM_TO_BONUSTYPE: [number, number, BONUSTYPE][] = [
+const FROM_TO_BONUSTYPE: [number, number, BonusType][] = [
   [79, 1, "GLOBALIST"],
   [82, 2, "GLOBALIST"],
   [96, 2, "WALLHACK"],
@@ -177,7 +177,7 @@ const FROM_TO_BONUSTYPE: [number, number, BONUSTYPE][] = [
 // あとのプロセスがその適当な番号を、それっぽい値に置き換えるとのこと
 export const getPossibleBonusSourceProblemId = (
   problemId: number,
-  bonusType: BONUSTYPE
+  bonusType: BonusType
 ) => {
   const candidate = FROM_TO_BONUSTYPE.find(
     ([from, to, bt]) => problemId === to && bt === bonusType
