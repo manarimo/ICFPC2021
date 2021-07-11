@@ -29,6 +29,49 @@ import {
   getAvailableBonuses,
   getPossibleBonusSourceProblemId,
 } from "../bonusInfo";
+import { pushStack, redo, undo, UndoStack } from "../UndoStack";
+
+const useSubmissionAndStack = (initialSubmission: Submission) => {
+  const [{ stack: undoStack, submission: userSubmission }, setState] =
+    useState<{
+      stack: UndoStack;
+      submission: Submission;
+    }>({
+      submission: initialSubmission,
+      stack: {
+        referenceIndex: 0,
+        internalStack: [initialSubmission],
+      },
+    });
+
+  const setUserSubmission = (newSubmission: Submission) => {
+    const newStack = pushStack(undoStack, newSubmission);
+    setState({
+      stack: newStack,
+      submission: newSubmission,
+    });
+  };
+  const redoState = () => {
+    const { stack: newStack, submission: newSubmission } = redo(undoStack);
+    setState({
+      stack: newStack,
+      submission: newSubmission,
+    });
+  };
+  const undoState = () => {
+    const { stack: newStack, submission: newSubmission } = undo(undoStack);
+    setState({
+      stack: newStack,
+      submission: newSubmission,
+    });
+  };
+  return [userSubmission, setUserSubmission, redoState, undoState] as [
+    Submission,
+    (s: Submission) => void,
+    () => void,
+    () => void
+  ];
+};
 
 interface SvgEditorProps {
   problem: Problem;
@@ -47,9 +90,10 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [design, setDesign] = useState<"single" | "triple">("triple");
   const [editorState, setEditState] = useState<EditorState | null>(null);
 
-  const [userSubmission, setUserSubmission] = useState<Submission>({
-    vertices: [...problem.figure.vertices],
-  });
+  const [userSubmission, setUserSubmission, redoState, undoState] =
+    useSubmissionAndStack({
+      vertices: [...problem.figure.vertices],
+    });
 
   const [text, setText] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -62,14 +106,13 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [zoomSize, setZoomSize] = useState(2000);
   const [wallHack, setWallHack] = useState(false);
   const [superFlex, setSuperFlex] = useState(false);
-
   const [globalistEnabled, setGlobalistEnabled] = useState(false);
 
   useEffect(() => {
     if (solution.data) {
       setUserSubmission(solution.data);
     }
-  }, [solution, problem]);
+  }, [solution, problem, setUserSubmission]);
 
   useEffect(() => {
     setText(JSON.stringify(userSubmission));
@@ -338,6 +381,8 @@ const SvgEditor = (props: SvgEditorProps) => {
                 setEditState(null);
               }
             }}
+            onRedo={redoState}
+            onUndo={undoState}
             editorState={editorState}
             selectedVertices={selectedVertices}
             forcedWidth={zoom ? zoomSize : undefined}
