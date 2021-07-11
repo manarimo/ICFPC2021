@@ -76,13 +76,13 @@ fn main() -> Result<()> {
         }
     }
 
-    best_solutions.into_par_iter().for_each(
-        |(problem_id, (dislike, problem, mut solution, solver_name)): (
-            i64,
-            (i64, Problem, Pose, String),
-        )| {
-            let mut best_dislike = dislike;
-            for force in 1..=2 {
+    for force in 1..=2 {
+        best_solutions.clone().into_par_iter().for_each(
+            |(problem_id, (dislike, problem, mut solution, solver_name)): (
+                i64,
+                (i64, Problem, Pose, String),
+            )| {
+                let mut best_dislike = dislike;
                 loop {
                     let before_dislike = best_dislike;
 
@@ -118,9 +118,9 @@ fn main() -> Result<()> {
                         break;
                     }
                 }
-            }
-        },
-    );
+            },
+        );
+    }
 
     Ok(())
 }
