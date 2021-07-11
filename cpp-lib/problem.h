@@ -37,6 +37,8 @@ namespace manarimo {
         bool is_point_inside(const P& point);
         bool is_edge_inside(const P& p1, const P& p2);
         number calc_dislike(const vector<P>& positions);
+        
+        void output(const vector<P>& vertices);
     private:
         // 前計算の初期化用にinit()内で使うための関数群
         bool is_point_inside(const vector<P>& hole, const P& point);
@@ -175,6 +177,15 @@ manarimo::number manarimo::problem_t::calc_dislike(const vector<P>& positions) {
         ds += min_p;
     }
     return ds;
+}
+
+void manarimo::problem_t::output(const vector<P>& vertices) {
+    printf("{\"vertices\": [");
+    for (int i = 0; i < vertices.size(); i++) {
+        if (i > 0) printf(", ");
+        printf("[%lld, %lld]", vertices[i].X, vertices[i].Y);
+    }
+    printf("]}");
 }
 
 double manarimo::problem_t::dist_hole_point(const vector<P>& hole, const P& p) {

@@ -1,16 +1,24 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {dislike, Edge, isEdgeInside, isValidEdge, Point, Polygon} from "../ts-lib/amyfunc";
+import {dislike, Edge, isEdgeInside, isPointInside, isValidEdge, Point, Polygon, d, sub} from "../ts-lib/amyfunc";
 
 enum BonusType {
     GLOBALIST = "GLOBALIST",
-    BREAK_A_LEG = "BREAK_A_LEG"
+    BREAK_A_LEG = "BREAK_A_LEG",
+    WALLHACK = "WALLHACK",
+    NO_BONUS = "NO_BONUS",
 }
 
-interface Bonus {
+interface ProblemBonus {
     bonus: BonusType,
     problem: number,
     position: number[]
+}
+
+interface SolutionBonus {
+    bonus: BonusType,
+    problem: number
+    edge?: number[]
 }
 
 interface Problem {
@@ -20,17 +28,18 @@ interface Problem {
         vertices: Point[];
     };
     epsilon: number;
-    bonuses: Bonus[];
+    bonuses: ProblemBonus[];
 }
 
 interface Solution {
     vertices: Point[];
+    bonuses?: SolutionBonus[];
 }
 
 interface Verdict {
     isValid: boolean;
     score: number;
-    bonusObtained: Bonus[];
+    bonusObtained: ProblemBonus[];
     error?: any;
 }
 
@@ -72,35 +81,136 @@ function loadSolution(file: string): Solution | null {
     }
 }
 
+function doublePoint(p: Point): Point {
+    return {
+        x: 2 * p.x,
+        y: 2 * p.y
+    }
+}
+
 function isValidSolution(problem: Problem, solution: Solution): Verdict {
+    if (solution.bonuses !== undefined && solution.bonuses.length > 1) {
+        return {
+            isValid: false,
+            score: 0,
+            bonusObtained: [],
+            error: {
+                bonuses: solution.bonuses,
+                message: `At most one bonus can be enabled, while ${solution.bonuses.length} bonuses are enabled.`
+            }
+        }
+    }
+    const bonus: SolutionBonus = solution.bonuses !== undefined ? solution.bonuses[0] : {bonus: BonusType.NO_BONUS, problem: -1};
+    let globalLengthCost = 0.;
+
+    const edgeViolations = [];
     for (let i = 0; i < problem.figure.edges.length; ++i) {
         const e = problem.figure.edges[i];
         const srcEdge = { src: problem.figure.vertices[e[0]], dst: problem.figure.vertices[e[1]] };
         const dstEdge = { src: solution.vertices[e[0]], dst: solution.vertices[e[1]] };
-        if (!isValidEdge(srcEdge, dstEdge, problem['epsilon'])) {
+
+        if (bonus.bonus === BonusType.BREAK_A_LEG && (e[0] == bonus.edge[0] && e[1] == bonus.edge[1] || e[0] == bonus.edge[1] && e[1] == bonus.edge[0])) {
+            // this edge is broken. validating broken edges.
+            const doubledAddedEdge1 = {
+                src: doublePoint(problem.figure.vertices[e[0]]),
+                dst: doublePoint(problem.figure.vertices[problem.figure.vertices.length - 1])
+            }
+            const doubledAddedEdge2 = {
+                src: doublePoint(problem.figure.vertices[e[1]]),
+                dst: doublePoint(problem.figure.vertices[problem.figure.vertices.length - 1])
+            }
+            if (!isValidEdge(srcEdge, doubledAddedEdge1, problem['epsilon']) || !isValidEdge(srcEdge, doubledAddedEdge2, problem['epsilon'])) {
+                return {
+                    isValid: false,
+                    score: 0,
+                    bonusObtained: [],
+                    error: {
+                        srcEdge,
+                        dstEdge,
+                        message: `broken edge(s) violates length constraint`,
+                    }
+                };
+            }
+        }
+        if (bonus.bonus === BonusType.GLOBALIST) {
+            globalLengthCost += Math.abs(d(dstEdge[0], dstEdge[1]) / d(srcEdge[0], srcEdge[1]) - 1);
+        } else {
+            if (!isValidEdge(srcEdge, dstEdge, problem['epsilon'])) {
+                return {
+                    isValid: false,
+                    score: 0,
+                    bonusObtained: [],
+                    error: {
+                        srcEdge,
+                        dstEdge,
+                        message: `Edge ${i} violates length constraint`,
+                    }
+                };
+            }
+        }
+        if (!isEdgeInside(problem.hole, dstEdge)) {
+            edgeViolations.push({
+                e,
+                dstEdge,
+                i
+            });
+        }
+    }
+
+    if (bonus.bonus === BonusType.GLOBALIST) {
+        const globalLengthBudget = problem.figure.edges.length * problem.epsilon / 1_000_000;
+        if (globalLengthCost > globalLengthBudget) {
             return {
                 isValid: false,
                 score: 0,
                 bonusObtained: [],
                 error: {
-                    srcEdge,
-                    dstEdge,
-                    message: `Edge ${i} violates length constraint`,
+                    globalLengthCost,
+                    globalLengthBudget,
+                    message: `Global length constraint is violated.`,
                 }
             };
         }
-        if (!isEdgeInside(problem.hole, dstEdge)) {
+    }
+
+    if (bonus.bonus === BonusType.WALLHACK) {
+        let ok = false;
+        for (let hackedVertexId = 0; hackedVertexId < problem.figure.vertices.length; hackedVertexId++) {
+            let subOk = true;
+            for (const edgeViolation of edgeViolations) {
+                subOk = subOk && (edgeViolation.e[0] === hackedVertexId || edgeViolation.e[1] === hackedVertexId);
+            }
+            ok = ok || subOk;
+            if (ok) {
+                break;
+            }
+        }
+        if (!ok) {
+            return {
+                isValid: false,
+                score: 0,
+                bonusObtained: [],
+                error: {
+                    message: `Wallhack constraint is not satisfied. (${edgeViolations.length} edges are outside in total)`,
+                },
+            };
+        }
+    } else {
+        if (edgeViolations.length > 0) {
+            const i = edgeViolations[0].i;
+            const dstEdge = edgeViolations[0].dstEdge;
             return {
                 isValid: false,
                 score: 0,
                 bonusObtained: [],
                 error: {
                     dstEdge,
-                    message: `Edge ${i} is not in the hole`,
+                    message: `Edge ${i} is not in the hole. (${edgeViolations.length} edges are outside in total)`,
                 },
             };
         }
     }
+
     const bonusObtained = [];
     for (const bonus of problem.bonuses) {
         if (solution.vertices.some(point => point.x === bonus.position[0] && point.y === bonus.position[1])) {

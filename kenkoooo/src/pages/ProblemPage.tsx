@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { parseUserInput, Problem } from "../utils";
+import {
+  parseUserInput,
+  Problem,
+  Submission,
+  submissionToFigure,
+} from "../utils";
 import {
   Alert,
   Container,
@@ -17,15 +22,22 @@ import { SinglePointSolverPanel } from "./SinglePointSolverPanel";
 import { useProblemData, useSolutionData } from "../API";
 import ToggleButton from "react-bootstrap/ToggleButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import {
+  getAvailableBonuses,
+  getPossibleBonusSourceProblemId,
+} from "../bonusInfo";
 
 const BonusModes = ["NONE", "BREAK_A_LEG", "GLOBALIST", "WALLHACK"] as const;
 type BonusMode = typeof BonusModes[number];
 
 interface SvgEditorProps {
   problem: Problem;
+  problemId: number;
 }
 const SvgEditor = (props: SvgEditorProps) => {
   const { problem } = props;
+
+  const availableBonusSet = getAvailableBonuses(props.problemId);
 
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -34,7 +46,11 @@ const SvgEditor = (props: SvgEditorProps) => {
 
   const [design, setDesign] = useState<"single" | "triple">("triple");
   const [editorState, setEditState] = useState<EditorState | null>(null);
-  const [userPose, setUserPose] = useState([...problem.figure.vertices]);
+
+  const [userSubmission, setUserSubmission] = useState<Submission>({
+    vertices: [...problem.figure.vertices],
+  });
+
   const [text, setText] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [slideSize, setSlideSize] = useState<number>(1);
@@ -42,35 +58,39 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [breakALeg, setBreakALeg] = useState<boolean>(false);
   const [breakALegSrc, setBreakALegSrc] = useState<number>(0);
   const [breakALegDst, setBreakALegDst] = useState<number>(0);
+  const [zoom, setZoom] = useState(false);
+  const [zoomSize, setZoomSize] = useState(2000);
 
-  const getOutput = () => {
-    return JSON.stringify({
-      vertices: userPose,
-    });
-  };
   useEffect(() => {
     if (solution.data) {
-      setUserPose([...solution.data.vertices]);
+      setUserSubmission(solution.data);
     }
-  }, [solution]);
+  }, [solution, problem]);
+
   useEffect(() => {
-    setText(
-      JSON.stringify({
-        vertices: userPose,
-      })
-    );
-  }, [userPose]);
+    setText(JSON.stringify(userSubmission));
+    if (
+      userSubmission.bonuses &&
+      userSubmission.bonuses.length > 0 &&
+      userSubmission.bonuses[0].bonus === "BREAK_A_LEG"
+    ) {
+      setBreakALeg(true);
+      setBreakALegSrc(userSubmission.bonuses[0].edge[0]);
+      setBreakALegDst(userSubmission.bonuses[0].edge[1]);
+    }
+  }, [userSubmission]);
 
   const onCopyOutput = async () => {
-    setText(getOutput());
-    await navigator.clipboard.writeText(getOutput());
+    setText(JSON.stringify(userSubmission));
+    await navigator.clipboard.writeText(JSON.stringify(userSubmission));
   };
+
   const onLoadInput = () => {
-    const parseResult = parseUserInput(text, userPose.length);
+    const parseResult = parseUserInput(text);
     if (parseResult.result === "failed") {
       setErrorMessage(parseResult.errorMessage);
     } else {
-      setUserPose(parseResult.polygon);
+      setUserSubmission(parseResult.submission);
       setErrorMessage(null);
     }
   };
@@ -82,44 +102,94 @@ const SvgEditor = (props: SvgEditorProps) => {
     }
   };
 
-  const isAllSelected = () => selectedVertices.length === userPose.length;
+  const isAllSelected = () =>
+    selectedVertices.length === userSubmission.vertices.length;
 
   const toggleAllVertices = () => {
     if (isAllSelected()) {
       setSelectedVertices([]);
     } else {
-      setSelectedVertices(userPose.map((_p, idx) => idx));
+      setSelectedVertices(userSubmission.vertices.map((_p, idx) => idx));
     }
   };
 
   const slideSelectedVertices = (dir: string) => {
     const dx = dir === "L" ? -1 : dir === "R" ? 1 : 0;
     const dy = dir === "D" ? 1 : dir === "U" ? -1 : 0;
-    setUserPose(
-      userPose.map(([x, y], idx) => {
-        if (selectedVertices.includes(idx)) {
-          return [x + dx * slideSize, y + dy * slideSize];
-        } else {
-          return [x, y];
-        }
-      })
+
+    const newVertices = userSubmission.vertices.map(([x, y], idx) => {
+      if (selectedVertices.includes(idx)) {
+        return [x + dx * slideSize, y + dy * slideSize] as [number, number];
+      } else {
+        return [x, y] as [number, number];
+      }
+    });
+    setUserSubmission({
+      ...userSubmission,
+      vertices: newVertices,
+    });
+  };
+
+  const findBreakingLeg = (src: number, dst: number) => {
+    return problem.figure.edges.find(
+      ([i, j]) =>
+        Math.min(i, j) === Math.min(src, dst) &&
+        Math.max(i, j) === Math.max(src, dst)
     );
   };
 
   const canBreakALeg = () => {
-    return !!problem.figure.edges.find(
-      ([i, j]) =>
-        Math.min(i, j) === Math.min(breakALegSrc, breakALegDst) &&
-        Math.max(i, j) === Math.max(breakALegSrc, breakALegDst)
-    );
+    return !!findBreakingLeg(breakALegSrc, breakALegDst);
+  };
+
+  const cancelBreakALeg = () => {
+    setUserSubmission({
+      ...userSubmission,
+      bonuses: [],
+      vertices: userSubmission.vertices.slice(0, -1),
+    });
+  };
+
+  const executeBreakALeg = (src: number, dst: number) => {
+    const [sx, sy] = userSubmission.vertices[src];
+    const [tx, ty] = userSubmission.vertices[dst];
+    const mx = Math.floor((sx + tx) / 2);
+    const my = Math.floor((sy + ty) / 2);
+    if (!findBreakingLeg(src, dst)) {
+      return;
+    }
+
+    setUserSubmission({
+      ...userSubmission,
+      bonuses: [
+        {
+          bonus: "BREAK_A_LEG",
+          edge: [src, dst],
+          problem: getPossibleBonusSourceProblemId(
+            props.problemId,
+            "BREAK_A_LEG"
+          ),
+        },
+      ],
+      vertices: [...userSubmission.vertices, [mx, my]],
+    });
+  };
+
+  const updateVertices = (vertices: [number, number][]) => {
+    setUserSubmission({
+      ...userSubmission,
+      vertices,
+    });
   };
 
   const updateBreakALeg = (value: boolean) => {
     if (breakALeg && !value) {
+      cancelBreakALeg();
       setBreakALeg(false);
       return;
     }
     if (canBreakALeg()) {
+      executeBreakALeg(breakALegSrc, breakALegDst);
       setBreakALeg(true);
     }
   };
@@ -138,37 +208,7 @@ const SvgEditor = (props: SvgEditorProps) => {
     setBreakALegDst(val);
   };
 
-  const BreakALegPanel = () => (
-    <Row>
-      <Col>
-        <Form.Check
-          type="checkbox"
-          label="Break A Leg"
-          checked={breakALeg}
-          disabled={!canBreakALeg()}
-          onChange={(e) => updateBreakALeg(e.target.value === "true")}
-        />
-      </Col>
-      <Col>
-        <Form.Control
-          type="number"
-          min={0}
-          max={problem.figure.vertices.length - 1}
-          value={breakALegSrc}
-          onChange={(e) => updateBreakALegSrc(parseInt(e.target.value))}
-        />
-      </Col>
-      <Col>
-        <Form.Control
-          type="number"
-          min={0}
-          max={problem.figure.vertices.length - 1}
-          value={breakALegDst}
-          onChange={(e) => updateBreakALegDst(parseInt(e.target.value))}
-        />
-      </Col>
-    </Row>
-  );
+  const userFigure = submissionToFigure(userSubmission, problem);
   return (
     <Container>
       <Row style={{ marginBottom: "8px" }}>
@@ -195,12 +235,41 @@ const SvgEditor = (props: SvgEditorProps) => {
           </ButtonGroup>
         </Col>
         <Col>
+          <div style={{ display: "flex" }}>
+            <div>
+              <Form.Check
+                type="checkbox"
+                label="Zoom"
+                checked={zoom}
+                onChange={(e) => {
+                  setZoom(!zoom);
+                }}
+              />
+            </div>
+            <div>
+              <Form.Control
+                type="number"
+                min={0}
+                value={zoomSize}
+                onChange={(e) => setZoomSize(parseInt(e.target.value))}
+              />
+            </div>
+          </div>
+        </Col>
+        <Col>
           <ButtonGroup toggle>
             {BonusModes.map((mode) => (
               <ToggleButton
                 type="checkbox"
                 variant="secondary"
                 value="single"
+                style={
+                  mode !== "NONE" && availableBonusSet.has(mode)
+                    ? {
+                        backgroundColor: "green",
+                      }
+                    : {}
+                }
                 checked={bonusMode === mode}
                 onChange={() => setBonusMode(mode)}
               >
@@ -213,7 +282,7 @@ const SvgEditor = (props: SvgEditorProps) => {
       <Row>
         <Col sm={design === "single" ? 12 : undefined}>
           <SvgViewer
-            userPose={userPose}
+            userFigure={userFigure}
             problem={problem}
             onEdit={(pointId) => {
               if (!editorState) {
@@ -223,11 +292,14 @@ const SvgEditor = (props: SvgEditorProps) => {
             onLatticeTouch={([x, y]) => {
               if (editorState) {
                 const pointId = editorState.pointId;
-                const [curX, curY] = userPose[pointId];
+                const [curX, curY] = userSubmission.vertices[pointId];
                 if (curX !== x || curY !== y) {
-                  const newPose = [...userPose];
-                  newPose[pointId] = [x, y];
-                  setUserPose(newPose);
+                  const newVertices = [...userSubmission.vertices];
+                  newVertices[pointId] = [x, y];
+                  setUserSubmission({
+                    ...userSubmission,
+                    vertices: newVertices,
+                  });
                 }
               }
             }}
@@ -238,6 +310,8 @@ const SvgEditor = (props: SvgEditorProps) => {
             }}
             editorState={editorState}
             selectedVertices={selectedVertices}
+            forcedWidth={zoom ? zoomSize : undefined}
+            updateVertices={updateVertices}
           />
         </Col>
         <Col>
@@ -260,7 +334,39 @@ const SvgEditor = (props: SvgEditorProps) => {
               onChange={(e) => setText(e.target.value)}
             />
           </Row>
-          {bonusMode === "BREAK_A_LEG" && <BreakALegPanel />}
+          {bonusMode === "BREAK_A_LEG" && (
+            <Row>
+              <Col>
+                <Form.Check
+                  type="checkbox"
+                  label="Break A Leg"
+                  checked={breakALeg}
+                  disabled={!canBreakALeg()}
+                  onChange={(e) => {
+                    updateBreakALeg(!breakALeg);
+                  }}
+                />
+              </Col>
+              <Col>
+                <Form.Control
+                  type="number"
+                  min={0}
+                  max={problem.figure.vertices.length - 1}
+                  value={breakALegSrc}
+                  onChange={(e) => updateBreakALegSrc(parseInt(e.target.value))}
+                />
+              </Col>
+              <Col>
+                <Form.Control
+                  type="number"
+                  min={0}
+                  max={problem.figure.vertices.length - 1}
+                  value={breakALegDst}
+                  onChange={(e) => updateBreakALegDst(parseInt(e.target.value))}
+                />
+              </Col>
+            </Row>
+          )}
           <Row>
             <Col>
               <Row>
@@ -303,7 +409,7 @@ const SvgEditor = (props: SvgEditorProps) => {
                 </Form.Check.Label>
               </Form.Check>
               <Form>
-                {userPose.map((_p, idx) => (
+                {userSubmission.vertices.map((_p, idx) => (
                   <Form.Check inline key={idx}>
                     <Form.Check.Input
                       type="checkbox"
@@ -321,17 +427,24 @@ const SvgEditor = (props: SvgEditorProps) => {
           <Row>
             <SinglePointSolverPanel
               problem={problem}
-              userPose={userPose}
+              userFigure={userFigure}
               selectedVertices={selectedVertices}
-              onSolve={(newPose) => {
-                setUserPose([...newPose]);
+              onSolve={(newVertices) => {
+                setUserSubmission({
+                  ...userSubmission,
+                  vertices: [...newVertices],
+                });
               }}
             />
           </Row>
         </Col>
         <Col className="ml-3">
           <Row>
-            <PoseInfoPanel userPose={userPose} problem={problem} />
+            <PoseInfoPanel
+              userFigure={userFigure}
+              problem={problem}
+              usingGlobalist={bonusMode === "GLOBALIST"}
+            />
           </Row>
         </Col>
       </Row>
@@ -358,7 +471,7 @@ export const ProblemPage = () => {
 
   return (
     <Container>
-      <SvgEditor problem={problem.data} />
+      <SvgEditor problem={problem.data} problemId={parseInt(problemId)} />
     </Container>
   );
 };
