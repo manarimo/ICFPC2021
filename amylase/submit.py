@@ -11,11 +11,11 @@ def main():
             solution_name = "None"
             score = "None"
         else:
-            solution_name = solution["output_path"].parent.name
+            solution_name = solution["solver_name"]
             score = solution['verdict']['score']
         print(f"{problem_id:03}: {solution_name} ({score})")
 
-    # return  # for dry run.
+    return  # for dry run.
     for problem_id, solution in selected_solutions.items():
         print(f"submitting {problem_id}")
         headers = {'Authorization': 'Bearer 78145a42-91f5-4559-af81-3b0990463771'}

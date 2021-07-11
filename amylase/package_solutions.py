@@ -33,7 +33,7 @@ def load_solutions():
                 "problem": problems[problem_id],
                 "solution": solution,
                 "verdict": verdict,
-                "output_path": solution_file,
+                "solver_name": solution_dir.name,
             })
     return solutions
 
@@ -41,8 +41,10 @@ def load_solutions():
 def is_qualified(solution, minimal_dislikes):
     if not solution["verdict"]["isValid"]:
         return False
+    if solution["problem_id"] == 11 and solution["solver_name"] != "y3-hand":
+        return False
     if solution["verdict"]["score"] < minimal_dislikes[solution["problem_id"]]:
-        print(f"excluding {solution['output_path']} because it is too good to share with rivals.")
+        print(f"excluding {solution['solver_name']}/{solution['problem_id']} because it is too good to share with rivals.")
         return False
     return True
 
@@ -95,9 +97,8 @@ def main():
             bonus_providers[(solution["problem_id"], bonus["bonus"])].append(solution_id)
     for solution_id, solution in enumerate(solutions):
         for bonus in solution["solution"].get("bonuses", []):
-            bonus_problem_id = bonus["problem"]
             bonus_type = bonus["bonus"]
-            provider_ids = bonus_providers[(bonus_problem_id, bonus_type)]
+            provider_ids = bonus_providers[(solution["problem_id"], bonus_type)]
             constraint = 1 - variables[solution_id]
             for provider_id in provider_ids:
                 constraint += variables[provider_id]
@@ -111,6 +112,33 @@ def main():
             selected_solutions[solution["problem_id"]] = solution
             with open(f"submission_dump/{solution['problem_id']}.json", "w") as f:
                 json.dump(solution["solution"], f)
+
+    # bonus verification/postprocessing
+    for problem_id, solution in selected_solutions.items():
+        for using_bonus in solution["solution"].get("bonuses", []):
+            ok = True
+            if using_bonus["problem"] not in selected_solutions:
+                ok = False
+            else:
+                found = False
+                for provided_bonus in selected_solutions[using_bonus["problem"]]["verdict"]["bonusObtained"]:
+                    if provided_bonus["bonus"] == using_bonus["bonus"] and provided_bonus["problem"] == problem_id:
+                        found = True
+                if not found:
+                    ok = False
+            if ok:
+                continue
+            print(f"bonus validation failed for problem_id: {problem_id} (solver: {solution['solver_name']}). searching for other available choices.")
+            found_id = None
+            for provider_id, provider_solution in selected_solutions.items():
+                for provided_bonus in provider_solution["verdict"]["bonusObtained"]:
+                    if provided_bonus["bonus"] == using_bonus["bonus"] and provided_bonus["problem"] == problem_id:
+                        found_id = provider_id
+            if found_id is None:
+                print("!!! No bonus providers found. This submission will be invalid.")
+            else:
+                print(f"using problem_id: {found_id} as a bonus provider for problem_id: {problem_id} (solver: {solution['solver_name']})")
+                using_bonus["problem"] = found_id
     return selected_solutions
 
 
