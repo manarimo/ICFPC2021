@@ -186,3 +186,30 @@ export const getOutsidePointIds = (vertices: Pair[], hole: Point[]) => {
     .filter(([x, y, id]) => !isPointInside(hole, { x, y }))
     .map(([x, y, id]) => id);
 };
+
+export const rotate90 = (vertices: Pair[]) => {
+  let initialShiftX = vertices[0][0];
+  let initialShiftY = vertices[0][1];
+  vertices.forEach(([x, y]) => {
+    initialShiftX = Math.min(initialShiftX, x);
+    initialShiftY = Math.min(initialShiftY, y);
+  });
+
+  const rotatedVertices = vertices
+    .map(([x, y]) => [x - initialShiftX, y - initialShiftY])
+    .map(([x, y]) => [-y, x]);
+
+  let rotatedMinX = rotatedVertices[0][0];
+  let rotatedMinY = rotatedVertices[0][1];
+  rotatedVertices.forEach(([x, y]) => {
+    rotatedMinX = Math.min(rotatedMinX, x);
+    rotatedMinY = Math.min(rotatedMinY, y);
+  });
+
+  return rotatedVertices.map(
+    ([x, y]): Pair => [
+      x - rotatedMinX + initialShiftX,
+      y - rotatedMinY + initialShiftY,
+    ]
+  );
+};

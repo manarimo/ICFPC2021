@@ -78,7 +78,7 @@ def index_tr(problem, solution, global_dislike, bonus_graph)
             <img src="images/#{solution.name}/#{problem.id}.svg" height="200">
             <div>
               使用: #{solution.bonuses&.map{|b| %Q(#{b.bonus} <a href="##{b.problem}">#{b.problem}</a>)}&.join(', ')} <br>
-              取得: #{solution.verdict && solution.verdict['bonusObtained']&.map{ |b| b['bonus'] }.join(', ')}
+              取得: #{solution.verdict && solution.verdict['bonusObtained']&.map{ |b| %Q(#{b['bonus']} <a href="##{b['problem']}">#{b['problem']}</a>) }.join(', ')}
             </div>
           </div>
           <a href="kenkoooo/#/problem/#{problem.id}?solution=#{solution.name}/#{problem.id}.json">つづきからはじめる</a>
@@ -117,9 +117,9 @@ end
 def page_header(solution_names)
   <<-LINKS
 <div style="margin-bottom: 32px">
+  <a href="best.html" style="margin-right: 10px"><h3>Best</h3></a>
   <div style="display: flex">
     使用：
-    <a href="best.html" style="margin-right: 10px"><h3>Best</h3></a>
     <a href="globalist.html" style="margin-right: 10px"><h3>Globalist</h3></a>
     <a href="break_a_leg.html" style="margin-right: 10px"><h3>Break a Leg</h3></a>
     <a href="wallhack.html" style="margin-right: 10px"><h3>Wallhack</h3></a>
@@ -131,6 +131,20 @@ def page_header(solution_names)
     <a href="break_a_leg_get.html" style="margin-right: 10px"><h3>Break a Leg</h3></a>
     <a href="wallhack_get.html" style="margin-right: 10px"><h3>Wallhack</h3></a>
     <a href="superflex_get.html" style="margin-right: 10px"><h3>Superflex</h3></a>
+  </div>
+  <div style="display: flex">
+    使用可能：
+    <a href="globalist_usable.html" style="margin-right: 10px"><h3>Globalist</h3></a>
+    <a href="break_a_leg_usable.html" style="margin-right: 10px"><h3>Break a Leg</h3></a>
+    <a href="wallhack_usable.html" style="margin-right: 10px"><h3>Wallhack</h3></a>
+    <a href="superflex_usable.html" style="margin-right: 10px"><h3>Superflex</h3></a>
+  </div>
+  <div style="display: flex">
+    取得可能：
+    <a href="globalist_obtainable.html" style="margin-right: 10px"><h3>Globalist</h3></a>
+    <a href="break_a_leg_obtainable.html" style="margin-right: 10px"><h3>Break a Leg</h3></a>
+    <a href="wallhack_obtainable.html" style="margin-right: 10px"><h3>Wallhack</h3></a>
+    <a href="superflex_obtainable.html" style="margin-right: 10px"><h3>Superflex</h3></a>
   </div>
   <div style="display: flex; flex-wrap: wrap; line-height: 1.5em">
     #{solution_names.map { |sn| %Q(<div style="margin-right: 10px"><a href="#{sn}.html">#{sn}</a></div>) }.join}
@@ -224,7 +238,7 @@ Dir.glob("#{__dir__}/../solutions/*").each do |dir|
     verdict = JSON.load(File.read(file.sub(/\.json$/, '_verdict.json'))) rescue nil
 
     solutions[solution_name] ||= {}
-    solutions[solution_name][id] = Problem::Solution.new(solution_name, verdict, vertices, Problem::new_bonuses(json['bonuses']))
+    solutions[solution_name][id] = Problem::Solution.new(id, solution_name, verdict, vertices, Problem::new_bonuses(json['bonuses']))
   end
 end
 
@@ -275,28 +289,19 @@ File.open("#{__dir__}/../web/index.html", 'w') do |f|
 end
 
 write_top_solutions("#{__dir__}/../web/best.html", "Best", problems, solutions, dislikes, bonus_graph)
-write_top_solutions("#{__dir__}/../web/globalist.html", "Globalist使用", problems, solutions, dislikes, bonus_graph) do |sol|
-  sol.bonuses&.any? { |b| b.bonus == 'GLOBALIST' }
-end
-write_top_solutions("#{__dir__}/../web/break_a_leg.html", "Break a Leg使用", problems, solutions, dislikes, bonus_graph) do |sol|
-  sol.bonuses&.any? { |b| b.bonus == 'BREAK_A_LEG' }
-end
-write_top_solutions("#{__dir__}/../web/wallhack.html", "Wallhack使用", problems, solutions, dislikes, bonus_graph) do |sol|
-  sol.bonuses&.any? { |b| b.bonus == 'WALLHACK' }
-end
-write_top_solutions("#{__dir__}/../web/superflex.html", "Superflex使用", problems, solutions, dislikes, bonus_graph) do |sol|
-  sol.bonuses&.any? { |b| b.bonus == 'SUPERFLEX' }
-end
 
-write_top_solutions("#{__dir__}/../web/globalist_get.html", "Globalist取得", problems, solutions, dislikes, bonus_graph) do |sol|
-  sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == 'GLOBALIST' }
-end
-write_top_solutions("#{__dir__}/../web/break_a_leg_get.html", "Break a Leg取得", problems, solutions, dislikes, bonus_graph) do |sol|
-  sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == 'BREAK_A_LEG' }
-end
-write_top_solutions("#{__dir__}/../web/wallhack_get.html", "Wallhack取得", problems, solutions, dislikes, bonus_graph) do |sol|
-  sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == 'WALLHACK' }
-end
-write_top_solutions("#{__dir__}/../web/superflex_get.html", "Superflex取得", problems, solutions, dislikes, bonus_graph) do |sol|
-  sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == 'SUPERFLEX' }
+%w(GLOBALIST BREAK_A_LEG WALLHACK SUPERFLEX).each do |bonus_name|
+  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}.html", "#{bonus_name}使用", problems, solutions, dislikes, bonus_graph) do |sol|
+    sol.bonuses&.any? { |b| b.bonus == bonus_name }
+  end
+
+  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_get.html", "#{bonus_name}取得", problems, solutions, dislikes, bonus_graph) do |sol|
+    sol.verdict&.fetch('bonusObtained')&.any? { |b| b['bonus'] == bonus_name }
+  end
+
+  usable = problems.select{|p| bonus_graph.to_use[bonus_name].index(p.id)}
+  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_usable.html", "#{bonus_name}使用可能", usable, solutions, dislikes, bonus_graph)
+
+  obtainable = problems.select{|p| bonus_graph.to_obtain[bonus_name].index(p.id)}
+  write_top_solutions("#{__dir__}/../web/#{bonus_name.downcase}_obtainable.html", "#{bonus_name}取得可能", obtainable, solutions, dislikes, bonus_graph)
 end

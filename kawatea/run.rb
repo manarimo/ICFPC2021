@@ -6,7 +6,7 @@ count = 0
 program = ARGV[0]
 name = ARGV[1]
 hints.each do |hint|
-  dirname = "#{name}-#{hint}"
+  dirname = "../solutions/#{name}-#{hint}"
   `mkdir -p '#{dirname}'`
   prob_ids.each do |id|
     if hint == 'nohint'

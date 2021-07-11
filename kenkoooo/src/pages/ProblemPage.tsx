@@ -5,6 +5,7 @@ import {
   BonusTypes,
   parseUserInput,
   Problem,
+  rotate90,
   Submission,
   submissionToFigure,
 } from "../utils";
@@ -509,17 +510,32 @@ const SvgEditor = (props: SvgEditorProps) => {
             </div>
           </Row>
           <Row>
-            <SinglePointSolverPanel
-              problem={problem}
-              userFigure={userFigure}
-              selectedVertices={selectedVertices}
-              onSolve={(newVertices) => {
-                setUserSubmission({
-                  ...userSubmission,
-                  vertices: [...newVertices],
-                });
-              }}
-            />
+            <Col>
+              <SinglePointSolverPanel
+                problem={problem}
+                userFigure={userFigure}
+                selectedVertices={selectedVertices}
+                onSolve={(newVertices) => {
+                  setUserSubmission({
+                    ...userSubmission,
+                    vertices: [...newVertices],
+                  });
+                }}
+              />
+            </Col>
+            <Col>
+              <Button
+                onClick={() => {
+                  const rotatedVertices = rotate90(userFigure.vertices);
+                  setUserSubmission({
+                    ...userSubmission,
+                    vertices: [...rotatedVertices],
+                  });
+                }}
+              >
+                R90
+              </Button>
+            </Col>
           </Row>
         </Col>
         <Col className="ml-3">
