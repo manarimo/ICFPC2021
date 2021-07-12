@@ -13,6 +13,7 @@ ICFPC 2021 Team Manarimo
 
 # GitHub
 * Organization icon "manarimo" illustration by @yuusti
+* GitHub repository: https://github.com/manarimo/ICFPC2021/
 
 # Portal site
 * Problem listing http://icfpc2021-manarimo.s3-website-us-east-1.amazonaws.com/best.html
