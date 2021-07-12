@@ -30,6 +30,7 @@ import {
   getPossibleBonusSourceProblemId,
 } from "../bonusInfo";
 import { pushStack, redo, undo, UndoStack } from "../UndoStack";
+import { solveSinglePoints } from "../Solver";
 
 const useSubmissionAndStack = (initialSubmission: Submission) => {
   const [{ stack: undoStack, submission: userSubmission }, setState] =
@@ -107,6 +108,10 @@ const SvgEditor = (props: SvgEditorProps) => {
   const [wallHack, setWallHack] = useState(false);
   const [superFlex, setSuperFlex] = useState(false);
   const [globalistEnabled, setGlobalistEnabled] = useState(false);
+  const [locatablePoints, setLocatablePoints] = useState<[number, number][]>(
+    []
+  );
+  const [insiderProgram, setInsiderProgram] = useState(true);
 
   useEffect(() => {
     if (solution.data) {
@@ -131,6 +136,19 @@ const SvgEditor = (props: SvgEditorProps) => {
       }
     }
   }, [userSubmission]);
+
+  useEffect(() => {
+    if (!!editorState && !!userSubmission && insiderProgram) {
+      const points = solveSinglePoints(
+        userSubmission.vertices,
+        problem,
+        editorState.pointId
+      );
+      setLocatablePoints(points);
+    } else if (!!userSubmission) {
+      setLocatablePoints([]);
+    }
+  }, [userSubmission, editorState, problem, insiderProgram]);
 
   const onCopyOutput = async () => {
     setText(JSON.stringify(userSubmission));
@@ -310,6 +328,16 @@ const SvgEditor = (props: SvgEditorProps) => {
             <div>
               <Form.Check
                 type="checkbox"
+                label="X"
+                checked={insiderProgram}
+                onChange={() => {
+                  setInsiderProgram(!insiderProgram);
+                }}
+              />
+            </div>
+            <div>
+              <Form.Check
+                type="checkbox"
                 label="Zoom"
                 checked={zoom}
                 onChange={() => {
@@ -356,6 +384,7 @@ const SvgEditor = (props: SvgEditorProps) => {
       <Row>
         <Col sm={design === "single" ? 12 : undefined}>
           <SvgViewer
+            locatablePoints={locatablePoints}
             userFigure={userFigure}
             problem={problem}
             onEdit={(pointId) => {

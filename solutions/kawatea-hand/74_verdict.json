@@ -1,0 +1,22 @@
+{
+    "isValid": true,
+    "bonusObtained": [
+        {
+            "bonus": "SUPERFLEX",
+            "problem": 56,
+            "position": [
+                216,
+                78
+            ]
+        },
+        {
+            "bonus": "WALLHACK",
+            "problem": 121,
+            "position": [
+                150,
+                240
+            ]
+        }
+    ],
+    "score": 9858
+}

@@ -1,0 +1,22 @@
+{
+    "isValid": true,
+    "bonusObtained": [
+        {
+            "bonus": "SUPERFLEX",
+            "problem": 105,
+            "position": [
+                102,
+                69
+            ]
+        },
+        {
+            "bonus": "SUPERFLEX",
+            "problem": 7,
+            "position": [
+                15,
+                36
+            ]
+        }
+    ],
+    "score": 16412
+}
