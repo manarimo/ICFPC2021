@@ -11,6 +11,9 @@ ICFPC 2021 Team Manarimo
 * Yu Fujikake (@yuusti)
 * Yuki Kawata (@kawatea03)
 
+# GitHub
+* Organization icon "manarimo" illustration by @yuusti
+
 # Portal site
 * Problem listing http://icfpc2021-manarimo.s3-website-us-east-1.amazonaws.com/best.html
 * Manual solving http://icfpc2021-manarimo.s3-website-us-east-1.amazonaws.com/kenkoooo/#/problem/1
