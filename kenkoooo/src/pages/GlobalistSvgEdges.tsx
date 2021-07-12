@@ -24,7 +24,7 @@ export const GlobalistSvgEdges = (props: Props) => {
 
   const maxAbsCost = Math.max(...edgeCosts.map((cost) => Math.abs(cost)));
 
-  const highH = 240;
+  const highH = 200;
   const lowH = 360;
   return (
     <>
