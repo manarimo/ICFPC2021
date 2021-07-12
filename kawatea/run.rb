@@ -5,7 +5,7 @@ hints = %w(rot-0 rot-90 rot-180 rot-270 flip-rot-0 flip-rot-90 flip-rot-180 flip
 #hints = %w(spring-expand)
 
 solutions = Problem::load_solutions
-valueable_problems = Problem::valueable_problems(solutions)
+valueable_problems = Problem::valuable_problems(solutions)
 
 count = 0
 name = ARGV[0]
@@ -20,7 +20,7 @@ hints.each do |hint|
       hint_path = "../hints/#{hint}/#{id}.json"
     end
 
-    cmdline = "#{program} -s 10000 -t 600 /dev/null #{hint_path} < ../problems/#{id}.json > #{dirname}/#{id}.json 2> #{dirname}/#{id}.log &"
+    cmdline = "./a.out -s 10000 -t 600 /dev/null #{hint_path} < ../problems/#{id}.json > #{dirname}/#{id}.json 2> #{dirname}/#{id}.log &"
     puts cmdline
     system(cmdline)
 
