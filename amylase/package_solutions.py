@@ -5,6 +5,7 @@ from collections import defaultdict
 
 import pulp
 from pathlib import Path
+import shutil
 
 
 MAX_PROBLEM_ID = 132
@@ -115,7 +116,7 @@ def main(hide_betters: bool = False):
     for problem_id, solution in selected_solutions.items():
         for using_bonus in solution["solution"].get("bonuses", []):
             ok = True
-            if using_bonus["problem"] not in selected_solutions:
+            if using_bonus.get("problem", -1) not in selected_solutions:
                 ok = False
             else:
                 found = False
@@ -138,17 +139,24 @@ def main(hide_betters: bool = False):
                 print(f"using problem_id: {found_id} as a bonus provider for problem_id: {problem_id} (solver: {solution['solver_name']})")
                 using_bonus["problem"] = found_id
 
-    for problem_id in range(1, MAX_PROBLEM_ID + 1):
-        solution = selected_solutions.get(problem_id)
-        if solution is None:
-            solution_name = "None"
-            score = "None"
-        else:
-            solution_name = solution["solver_name"]
-            score = solution['verdict']['score']
-            with open(f"submission_dump/{solution['problem_id']}.json", "w") as f:
-                json.dump(solution["solution"], f)
-        print(f"{problem_id:03}: {solution_name} (dislike: {score})")
+    submission_dir = Path("../solutions/_best_submission/")
+    if submission_dir.exists():
+        shutil.rmtree(submission_dir)
+    submission_dir.mkdir(parents=True)
+
+    with open("../web/_submission_report.txt", "w") as report_f:
+        for problem_id in range(1, MAX_PROBLEM_ID + 1):
+            solution = selected_solutions.get(problem_id)
+            if solution is None:
+                solution_name = "None"
+                score = "None"
+            else:
+                solution_name = solution["solver_name"]
+                score = solution['verdict']['score']
+                with (submission_dir / f"{solution['problem_id']}.json").open("w") as f:
+                    json.dump(solution["solution"], f)
+            print(f"{problem_id:03}: {solution_name} (dislike: {score})")
+            print(f"{problem_id:03}: {solution_name} (dislike: {score})", file=report_f)
 
     return selected_solutions
 

@@ -161,7 +161,11 @@ end
 def page_header(solution_names)
   <<-LINKS
 <div style="margin-bottom: 32px">
-  <a href="best.html" style="margin-right: 10px"><h3>Best</h3></a>
+  <div style="display: flex">
+    <a href="best.html" style="margin-right: 10px"><h3>Best</h3></a>
+    <a href="_submission_report.html" style="margin-right: 10px"><h3>Submission</h3></a>
+    <a href="_submission_report.txt" style="margin-right: 10px">(details)</a>
+  </div>
   <div style="display: flex">
     使用：
     <a href="globalist.html" style="margin-right: 10px"><h3>Globalist</h3></a>

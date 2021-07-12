@@ -27,6 +27,22 @@ jobs:
             ~/.cargo
             /usr/share/rust/.cargo
           key: ${{ hashFiles('kenkoooo/wasm-rust/Cargo.toml') }}
+      - uses: actions/cache@v2
+        env:
+          cache-name: cache-pip-modules
+        with:
+          path: ~/.cache/pip
+          key: ${{ hashFiles('amylase/requirements.txt') }}
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install Python dependencies
+        run: pip install -r amylase/requirements.txt
+      - name: Generate submission report
+        env:
+          PYTHONPATH: ${{ env.GITHUB_WORKSPACE }}
+        working-directory: amylase
+        run: python -m amylase.package_solutions
       - name: run checker
         working-directory: checker
         run: |
