@@ -44,31 +44,54 @@ fn solve(problem: &Problem, solution: &Pose) -> (Vec<Point>, i64) {
     let edges = &edges;
     let orig_pose = &orig_pose;
 
-    let mut state: Vec<Point> = solution.vertices.iter().map(Point::from).collect();
+    let mut current_state: Vec<Point> = solution.vertices.iter().map(Point::from).collect();
     assert_eq!(
-        count_valid_edges(&state, edges, orig_pose, eps),
+        count_valid_edges(&current_state, edges, orig_pose, eps),
         edges.len(),
         "invalid edges"
     );
     assert_eq!(
-        count_contained_points(hole, &state),
-        state.len(),
+        count_contained_points(hole, &current_state),
+        current_state.len(),
         "out points"
     );
     assert_eq!(
-        count_contained_edges(hole, &state, edges),
+        count_contained_edges(hole, &current_state, edges),
         edges.len(),
         "out edges"
     );
 
-    let mut best_dislike = dislike(hole, &state);
+    let mut best_dislike = dislike(hole, &current_state);
+    let mut best_state = current_state.clone();
+    let mut current_dislike = best_dislike;
     log::info!("Start from {}", best_dislike);
-    const REPORT_INTERVAL: usize = 0xfffff;
+
+    const UPDATE_TEMP_INTERVAL: usize = 0xfff;
+    const REPORT_INTERVAL: u128 = 3000;
+    const START_TEMP: f64 = 15000.0;
+    const END_TEMP: f64 = 1.0;
+    const END_TIME: u128 = 60_000;
+
+    let mut temp = START_TEMP;
+    let start = Instant::now();
+    let mut prev = Instant::now();
     for step in 0.. {
-        if step & REPORT_INTERVAL == REPORT_INTERVAL {
-            log::info!("step={} dislike={}", step, best_dislike);
+        if step & UPDATE_TEMP_INTERVAL == UPDATE_TEMP_INTERVAL {
+            let elapsed_millis = start.elapsed().as_millis();
+            if elapsed_millis >= END_TIME {
+                break;
+            }
+
+            let progress_ratio = elapsed_millis as f64 / END_TIME as f64;
+            temp = START_TEMP + (END_TEMP - START_TEMP) * progress_ratio;
         }
-        let n = state.len();
+
+        if prev.elapsed().as_millis() > REPORT_INTERVAL {
+            log::info!("current={} best={}", current_dislike, best_dislike);
+            prev = Instant::now();
+        }
+
+        let n = current_state.len();
         let select = rng.gen_range(0..n);
 
         let dx = rng.gen_range(-1..=1);
@@ -76,23 +99,30 @@ fn solve(problem: &Problem, solution: &Pose) -> (Vec<Point>, i64) {
         if dx == dy {
             continue;
         }
-        let prev = state[select];
-        state[select].x += dx;
-        state[select].y += dy;
+        let prev = current_state[select];
+        current_state[select].x += dx;
+        current_state[select].y += dy;
 
-        if !is_valid(&state, hole, edges, orig_pose, eps) {
-            state[select] = prev;
+        if !is_valid(&current_state, hole, edges, orig_pose, eps) {
+            current_state[select] = prev;
             continue;
         }
 
-        let dislike = dislike(hole, &state);
-        if dislike < best_dislike {
-            best_dislike = dislike;
+        let new_dislike = dislike(hole, &current_state);
+        let point = current_dislike - new_dislike;
+        let prob = (point as f64 / temp).exp();
+        if prob > rng.gen_range(0.0..1.0) {
+            current_dislike = new_dislike;
         } else {
-            state[select] = prev;
+            current_state[select] = prev;
+        }
+
+        if current_dislike < best_dislike {
+            best_state = current_state.clone();
+            best_dislike = current_dislike;
         }
     }
-    (state, best_dislike)
+    (best_state, best_dislike)
 }
 
 fn is_valid(
