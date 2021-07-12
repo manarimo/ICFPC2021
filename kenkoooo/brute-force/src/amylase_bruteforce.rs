@@ -34,7 +34,14 @@ where
     F: FnMut(Pose, i64),
     G: Fn(usize) + Copy,
 {
-    solve_with_step_limit(problem, fixed, solution, report, progress_report, 1 << 60)
+    solve_with_step_limit(
+        problem,
+        fixed,
+        solution,
+        report,
+        progress_report,
+        1i32 << 30,
+    )
 }
 pub fn solve_with_step_limit<F, G>(
     problem: Problem,
