@@ -145,6 +145,11 @@ def main(hide_betters: bool = False):
     submission_dir.mkdir(parents=True)
 
     with open("../web/_submission_report.txt", "w") as report_f:
+        def _print(*args):
+            print(*args)
+            print(*args, file=report_f)
+        _print(f"objective: {pulp.value(model.objective)}")
+        _print("")
         for problem_id in range(1, MAX_PROBLEM_ID + 1):
             solution = selected_solutions.get(problem_id)
             if solution is None:
@@ -155,9 +160,7 @@ def main(hide_betters: bool = False):
                 score = solution['verdict']['score']
                 with (submission_dir / f"{solution['problem_id']}.json").open("w") as f:
                     json.dump(solution["solution"], f)
-            print(f"{problem_id:03}: {solution_name} (dislike: {score})")
-            print(f"{problem_id:03}: {solution_name} (dislike: {score})", file=report_f)
-
+            _print(f"{problem_id:03}: {solution_name} (dislike: {score})")
     return selected_solutions
 
 
