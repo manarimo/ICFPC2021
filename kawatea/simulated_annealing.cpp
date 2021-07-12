@@ -318,6 +318,7 @@ struct options {
     int time_limit = 10;
     string svg_file;
     string hint_file;
+    string fixed_points_file;
 };
 
 options parse_options(char **argv) {
@@ -335,6 +336,10 @@ options parse_options(char **argv) {
             case 't':
                 ++argv;
                 opt.time_limit = std::atoi(*argv);
+                break;
+            case 'f':
+                ++argv;
+                opt.fixed_points_file = string(*argv);
                 break;
             default:
                 std::cerr << "Unknown option " << *argv << std::endl;
@@ -365,6 +370,7 @@ int main(int argc, char* argv[]) {
     vector<pair<int, int>> edge = problem.figure.edges;
     vector<P> figure = problem.figure.vertices;
     number epsilon = problem.epsilon;
+    vector<bool> is_fixed(figure.size());
     
     vector<P> figure_hint;
     if (opt.hint_file != "") {
@@ -373,6 +379,17 @@ int main(int argc, char* argv[]) {
         i >> j;
         hint h = j.get<hint>();
         figure_hint = h.vertices;
+    }
+
+    if (opt.fixed_points_file != "") {
+        ifstream i(opt.fixed_points_file);
+        json j;
+        i >> j;
+        vector<int> fixed_points_list;
+        j.get_to(fixed_points_list);
+        for (int i : fixed_points_list) {
+            is_fixed[i] = true;
+        }
     }
 
     int n = figure.size();
@@ -450,6 +467,7 @@ int main(int argc, char* argv[]) {
             if (dx == 0 && dy == 0) continue;
             
             int v = random::get(n);
+            if (is_fixed[v]) continue;
             new_figure[v].X = figure[v].X + dx;
             new_figure[v].Y = figure[v].Y + dy;
             if (outside(new_figure[v])) continue;
@@ -465,6 +483,8 @@ int main(int argc, char* argv[]) {
             int r = random::get(edge.size());
             int v = edge[r].first;
             int w = edge[r].second;
+            if (is_fixed[v]) continue;
+            if (is_fixed[w]) continue;
             new_figure[v].X = figure[v].X + dx;
             new_figure[v].Y = figure[v].Y + dy;
             new_figure[w].X = figure[w].X + dx;
@@ -473,6 +493,8 @@ int main(int argc, char* argv[]) {
             update.push_back(v);
             update.push_back(w);
         } else if (select < 85) {
+            if (opt.fixed_points_file != "") continue;
+
             // 全体を平行移動する
             int dx = random::get(3);
             int dy = random::get(3);
@@ -489,6 +511,7 @@ int main(int argc, char* argv[]) {
             // 次数1の頂点を選び、点対称な位置に移す
             if (d1.size() == 0) continue;
             int v = d1[random::get(d1.size())];
+            if (is_fixed[v]) continue;
             
             int w = graph[v][0].first;
             new_figure[v].X = figure[w].X * 2 - figure[v].X;
@@ -499,6 +522,7 @@ int main(int argc, char* argv[]) {
             // 次数2の頂点を選び、三角形の対辺に対して鏡像移動する
             if (d2.size() == 0) continue;
             int v = d2[random::get(d2.size())];
+            if (is_fixed[v]) continue;
             
             int w1 = graph[v][0].first;
             int w2 = graph[v][1].first;
@@ -509,6 +533,7 @@ int main(int argc, char* argv[]) {
             // ランダムな点をランダムなholeの頂点に移す
             int vf = random::get(n);
             int vh = random::get(hole.size());
+            if (is_fixed[vf]) continue;
             
             new_figure[vf] = hole[vh];
             if (outside(new_figure[vf])) continue;
