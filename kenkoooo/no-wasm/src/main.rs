@@ -3,20 +3,20 @@ use brute_force::{extract_valid_best_solutions, load_all_problems, load_solution
 use manarimo_lib::geometry::{
     count_contained_edges, count_contained_points, count_valid_edges, dislike, Point,
 };
-use manarimo_lib::types::{Pose, Problem};
+use manarimo_lib::types::{Bonus, Pose, Problem};
 use rand::prelude::*;
 use std::time::Instant;
 
 #[derive(Eq, PartialEq, Copy, Clone)]
-enum Bonus {
+enum BonusEnum {
     None,
     Globalist,
 }
-impl ToString for Bonus {
+impl ToString for BonusEnum {
     fn to_string(&self) -> String {
         match self {
-            Bonus::None => "climb".to_string(),
-            Bonus::Globalist => "globalist".to_string(),
+            BonusEnum::None => "climb".to_string(),
+            BonusEnum::Globalist => "globalist".to_string(),
         }
     }
 }
@@ -28,10 +28,10 @@ fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let problem_id = args[1].parse::<i64>()?;
     let bonus = if args.len() < 3 {
-        Bonus::None
+        BonusEnum::None
     } else {
         match args[2].as_str() {
-            "globalist" => Bonus::Globalist,
+            "globalist" => BonusEnum::Globalist,
             _ => unimplemented!(),
         }
     };
@@ -57,16 +57,23 @@ fn main() -> Result<()> {
     let (state, dislike) = solve(&problem, &solution, bonus);
     log::info!("Solved dislike={}", dislike,);
 
+    let bonus = match bonus {
+        BonusEnum::None => None,
+        BonusEnum::Globalist => Some(vec![Bonus {
+            bonus: "GLOBALIST".to_string(),
+        }]),
+    };
+
     let pose = Pose {
         vertices: state.into_iter().map(|p| [p.x, p.y]).collect(),
-        bonuses: None,
+        bonuses: bonus,
     };
     output.write_json(&pose)?;
 
     Ok(())
 }
 
-fn solve(problem: &Problem, solution: &Pose, bonus: Bonus) -> (Vec<Point>, i64) {
+fn solve(problem: &Problem, solution: &Pose, bonus: BonusEnum) -> (Vec<Point>, i64) {
     let mut rng = StdRng::seed_from_u64(717);
 
     let hole: Vec<Point> = problem.hole.iter().map(Point::from).collect();
@@ -153,7 +160,7 @@ fn is_valid(
     edges: &[[usize; 2]],
     orig_pose: &[Point],
     eps: i64,
-    bonus: Bonus,
+    bonus: BonusEnum,
 ) -> bool {
     if count_contained_points(hole, solution) != solution.len() {
         return false;
@@ -162,7 +169,7 @@ fn is_valid(
         return false;
     }
 
-    if bonus != Bonus::Globalist {
+    if bonus != BonusEnum::Globalist {
         count_valid_edges(solution, edges, orig_pose, eps) == edges.len()
     } else {
         meet_globalist_budget(solution, edges, orig_pose, eps)

@@ -24,5 +24,5 @@ pub struct Pose {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Bonus {
-    bonus: String,
+    pub bonus: String,
 }
