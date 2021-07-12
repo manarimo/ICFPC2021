@@ -33,7 +33,6 @@ namespace manarimo {
         bool inside[MAX_C][MAX_C];
         bool inside_double[MAX_C * 2][MAX_C * 2];
         double dist[MAX_C][MAX_C];
-        //double dist_wall[MAX_C][MAX_C][MAX_W];
         int degree[MAX_P];
         number min_x = 1e18, min_y = 1e18, max_x = 0, max_y = 0;
 

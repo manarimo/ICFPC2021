@@ -319,6 +319,7 @@ void output_svg(const string &file, const vector<P>& hole, const vector<pair<int
 struct options {
     int start_temp = 100;
     int time_limit = 10;
+    double edge_penalty = 1000.0;
     string svg_file;
     string hint_file;
     string fixed_points_file;
@@ -343,6 +344,10 @@ options parse_options(char **argv) {
             case 'f':
                 ++argv;
                 opt.fixed_points_file = string(*argv);
+                break;
+            case 'e':
+                ++argv;
+                opt.edge_penalty = atof(*argv);
                 break;
             default:
                 std::cerr << "Unknown option " << *argv << std::endl;
@@ -439,7 +444,8 @@ int main(int argc, char* argv[]) {
     
     number dislike = problem.calc_dislike(figure);
     double weight = sqrt(dislike);
-    penalty_weight = dislike / edge.size();
+    //penalty_weight = dislike / edge.size();
+    penalty_weight = opt.edge_penalty;
     
     double penalty_vertex = calc_penalty_vertex(figure);
     double penalty_edge = calc_penalty_edge(hole, edge, figure);
