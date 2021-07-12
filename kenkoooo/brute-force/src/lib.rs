@@ -1,8 +1,9 @@
 use anyhow::{Context, Result};
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::fs::File;
-use std::io::BufReader;
-use std::path::PathBuf;
+use std::io::{BufReader, BufWriter};
+use std::path::{Path, PathBuf};
 
 pub mod amylase_bruteforce;
 
@@ -37,5 +38,21 @@ impl PathBufExt for PathBuf {
         let file = File::open(self)?;
         let solution: T = serde_json::from_reader(BufReader::new(file))?;
         Ok(solution)
+    }
+}
+
+pub trait PathRefExt {
+    fn write_json<T: Serialize>(&self, value: &T) -> Result<()>;
+}
+
+impl<P> PathRefExt for P
+where
+    P: AsRef<Path>,
+{
+    fn write_json<T: Serialize>(&self, value: &T) -> Result<()> {
+        let file = File::create(self.as_ref())?;
+        let writer = BufWriter::new(file);
+        serde_json::to_writer(writer, value)?;
+        Ok(())
     }
 }

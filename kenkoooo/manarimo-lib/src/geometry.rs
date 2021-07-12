@@ -15,6 +15,15 @@ impl From<[i64; 2]> for Point {
     }
 }
 
+impl From<&[i64; 2]> for Point {
+    fn from(pair: &[i64; 2]) -> Self {
+        Self {
+            x: pair[0],
+            y: pair[1],
+        }
+    }
+}
+
 pub struct Edge {
     pub src: Point,
     pub dst: Point,
