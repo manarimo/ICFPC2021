@@ -84,6 +84,7 @@ const UserPoseLayer = (props: {
   updateVertices: (vertices: [number, number][]) => void;
   bonusMode?: "WallHack" | "Globalist";
   toggleAVertex: (id: number) => void;
+  locatablePoints: [number, number][];
 }) => {
   const epsilon = BigInt(props.problem.epsilon);
   const originalVertices = props.problem.figure.vertices;
@@ -127,6 +128,9 @@ const UserPoseLayer = (props: {
         const [x, y] = bonus.position;
         const color = getBonusColor(bonus.bonus);
         return <circle key={idx} cx={x} cy={y} r="0.7" fill={color} />;
+      })}
+      {props.locatablePoints.map(([x, y], idx) => {
+        return <circle key={idx} cx={x} cy={y} r="0.7" fill={"#36FF33"} />;
       })}
       {props.bonusMode === "Globalist" ? (
         <GlobalistSvgEdges
@@ -278,6 +282,7 @@ interface Props {
   onRedo: () => void;
   toggleAVertex: (id: number) => void;
   slideSelectedVertices: (dir: string) => void;
+  locatablePoints: [number, number][];
 }
 
 export const SvgViewer = (props: Props) => {
@@ -351,6 +356,7 @@ export const SvgViewer = (props: Props) => {
         <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
         <UserPoseLayer
           problem={problem}
+          locatablePoints={props.locatablePoints}
           toggleAVertex={props.toggleAVertex}
           bonusMode={props.bonusMode}
           updateVertices={props.updateVertices}
