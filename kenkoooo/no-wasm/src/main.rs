@@ -1,5 +1,5 @@
-use anyhow::Result;
-use brute_force::{PathBufExt, PathRefExt};
+use anyhow::{Context, Result};
+use brute_force::{extract_valid_best_solutions, load_all_problems, load_solutions, PathRefExt};
 use manarimo_lib::geometry::{
     count_contained_edges, count_contained_points, count_valid_edges, dislike, Point,
 };
@@ -13,15 +13,22 @@ fn main() -> Result<()> {
     env_logger::init();
 
     let args: Vec<String> = std::env::args().collect();
-    let input = &args[1];
-    let solution = &args[2];
-    let output = &args[3];
+    let problem_id = args[1].parse::<i64>()?;
+    let output = format!("../solutions/kenkoooo-climb/{}.json", problem_id);
+    let problems = load_all_problems("../problems")?;
+    let solutions = load_solutions("../solutions")?;
+    let mut best_solutions = extract_valid_best_solutions(problems, solutions);
 
-    let problem: Problem = PathBuf::from(input).parse_json()?;
-    let solution: Pose = PathBuf::from(solution).parse_json()?;
+    let (_, problem, solution, solver) =
+        best_solutions.remove(&problem_id).context("no problem")?;
 
     let (state, dislike) = solve(&problem, &solution);
-    log::info!("dislike={}", dislike);
+    log::info!(
+        "problem={} dislike={} solver={}",
+        problem_id,
+        dislike,
+        solver
+    );
 
     let pose = Pose {
         vertices: state.into_iter().map(|p| [p.x, p.y]).collect(),
