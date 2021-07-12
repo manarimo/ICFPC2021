@@ -34,7 +34,14 @@ where
     F: FnMut(Pose, i64),
     G: Fn(usize) + Copy,
 {
-    solve_with_step_limit(problem, fixed, solution, report, progress_report, 1 << 60)
+    solve_with_step_limit(
+        problem,
+        fixed,
+        solution,
+        report,
+        progress_report,
+        1i32 << 30,
+    )
 }
 pub fn solve_with_step_limit<F, G>(
     problem: Problem,
@@ -42,7 +49,7 @@ pub fn solve_with_step_limit<F, G>(
     solution: Pose,
     report: F,
     progress_report: G,
-    step_limit: usize,
+    step_limit: i32,
 ) where
     F: FnMut(Pose, i64),
     G: Fn(usize) + Copy,
@@ -106,7 +113,7 @@ pub fn solve_with_step_limit<F, G>(
         template_solution: solution,
         is_fixed,
         progress_report,
-        max_step: step_limit,
+        max_step: step_limit as usize,
     };
     let mut report = report;
     dfs.dfs(&mut vec![], 1 << 60, &mut 0, &mut report);
