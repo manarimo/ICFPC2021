@@ -5,8 +5,21 @@ use manarimo_lib::geometry::{
 };
 use manarimo_lib::types::{Pose, Problem};
 use rand::prelude::*;
-use std::path::PathBuf;
 use std::time::Instant;
+
+#[derive(Eq, PartialEq, Copy, Clone)]
+enum Bonus {
+    None,
+    Globalist,
+}
+impl ToString for Bonus {
+    fn to_string(&self) -> String {
+        match self {
+            Bonus::None => "climb".to_string(),
+            Bonus::Globalist => "globalist".to_string(),
+        }
+    }
+}
 
 fn main() -> Result<()> {
     dotenv::dotenv()?;
@@ -14,21 +27,35 @@ fn main() -> Result<()> {
 
     let args: Vec<String> = std::env::args().collect();
     let problem_id = args[1].parse::<i64>()?;
-    let output = format!("../solutions/kenkoooo-climb/{}.json", problem_id);
+    let bonus = if args.len() < 3 {
+        Bonus::None
+    } else {
+        match args[2].as_str() {
+            "globalist" => Bonus::Globalist,
+            _ => unimplemented!(),
+        }
+    };
+
+    let output = format!(
+        "../solutions/kenkoooo-{}/{}.json",
+        bonus.to_string(),
+        problem_id
+    );
     let problems = load_all_problems("../problems")?;
     let solutions = load_solutions("../solutions")?;
     let mut best_solutions = extract_valid_best_solutions(problems, solutions);
 
-    let (_, problem, solution, solver) =
+    let (dislike, problem, solution, solver) =
         best_solutions.remove(&problem_id).context("no problem")?;
 
-    let (state, dislike) = solve(&problem, &solution);
     log::info!(
         "problem={} dislike={} solver={}",
         problem_id,
         dislike,
         solver
     );
+    let (state, dislike) = solve(&problem, &solution, bonus);
+    log::info!("Solved dislike={}", dislike,);
 
     let pose = Pose {
         vertices: state.into_iter().map(|p| [p.x, p.y]).collect(),
@@ -39,7 +66,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn solve(problem: &Problem, solution: &Pose) -> (Vec<Point>, i64) {
+fn solve(problem: &Problem, solution: &Pose, bonus: Bonus) -> (Vec<Point>, i64) {
     let mut rng = StdRng::seed_from_u64(717);
 
     let hole: Vec<Point> = problem.hole.iter().map(Point::from).collect();
@@ -52,26 +79,14 @@ fn solve(problem: &Problem, solution: &Pose) -> (Vec<Point>, i64) {
     let orig_pose = &orig_pose;
 
     let mut current_state: Vec<Point> = solution.vertices.iter().map(Point::from).collect();
-    assert_eq!(
-        count_valid_edges(&current_state, edges, orig_pose, eps),
-        edges.len(),
-        "invalid edges"
-    );
-    assert_eq!(
-        count_contained_points(hole, &current_state),
-        current_state.len(),
-        "out points"
-    );
-    assert_eq!(
-        count_contained_edges(hole, &current_state, edges),
-        edges.len(),
-        "out edges"
+    assert!(
+        is_valid(&current_state, hole, edges, orig_pose, eps, bonus),
+        "Can not start"
     );
 
     let mut best_dislike = dislike(hole, &current_state);
     let mut best_state = current_state.clone();
     let mut current_dislike = best_dislike;
-    log::info!("Start from {}", best_dislike);
 
     const UPDATE_TEMP_INTERVAL: usize = 0xfff;
     const REPORT_INTERVAL: u128 = 3000;
@@ -110,7 +125,7 @@ fn solve(problem: &Problem, solution: &Pose) -> (Vec<Point>, i64) {
         current_state[select].x += dx;
         current_state[select].y += dy;
 
-        if !is_valid(&current_state, hole, edges, orig_pose, eps) {
+        if !is_valid(&current_state, hole, edges, orig_pose, eps, bonus) {
             current_state[select] = prev;
             continue;
         }
@@ -138,8 +153,43 @@ fn is_valid(
     edges: &[[usize; 2]],
     orig_pose: &[Point],
     eps: i64,
+    bonus: Bonus,
 ) -> bool {
-    count_valid_edges(solution, edges, orig_pose, eps) == edges.len()
-        && count_contained_points(hole, solution) == solution.len()
-        && count_contained_edges(hole, solution, edges) == edges.len()
+    if count_contained_points(hole, solution) != solution.len() {
+        return false;
+    }
+    if count_contained_edges(hole, solution, edges) != edges.len() {
+        return false;
+    }
+
+    if bonus != Bonus::Globalist {
+        count_valid_edges(solution, edges, orig_pose, eps) == edges.len()
+    } else {
+        meet_globalist_budget(solution, edges, orig_pose, eps)
+    }
+}
+
+fn meet_globalist_budget(
+    solution: &[Point],
+    edges: &[[usize; 2]],
+    orig_pose: &[Point],
+    eps: i64,
+) -> bool {
+    let budges = (eps * edges.len() as i64) as f64;
+    let cost = edges
+        .iter()
+        .map(|&[from, to]| {
+            let p = orig_pose[from];
+            let q = orig_pose[to];
+            let d1 = p.d(&q);
+
+            let p = solution[from];
+            let q = solution[to];
+            let d2 = p.d(&q);
+
+            let difference = (d1 - d2).abs();
+            (difference * 1_000_000) as f64 / d1 as f64
+        })
+        .sum::<f64>();
+    cost <= budges
 }
