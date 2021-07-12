@@ -5,6 +5,7 @@ use manarimo_lib::geometry::{
 };
 use manarimo_lib::types::{Bonus, Pose, Problem};
 use rand::prelude::*;
+use std::collections::BTreeSet;
 use std::path::Path;
 
 fn main() -> Result<()> {
@@ -15,12 +16,26 @@ fn main() -> Result<()> {
 
     let problem: Problem = args[1].parse_json()?;
     let solution: Pose = args[2].parse_json()?;
-    solve(&problem, &solution, &args[3])?;
+    let mut prohibited = BTreeSet::new();
+    for s in args[4].split(',') {
+        let s = s.trim();
+        if s.len() == 0 {
+            continue;
+        }
+        let v = s.parse::<usize>()?;
+        prohibited.insert(v);
+    }
+    solve(&problem, &solution, &args[3], &prohibited)?;
 
     Ok(())
 }
 
-fn solve<P: AsRef<Path>>(problem: &Problem, solution: &Pose, output: P) -> Result<()> {
+fn solve<P: AsRef<Path>>(
+    problem: &Problem,
+    solution: &Pose,
+    output: P,
+    prohibited: &BTreeSet<usize>,
+) -> Result<()> {
     let mut rng = StdRng::seed_from_u64(717);
 
     let hole: Vec<Point> = problem.hole.iter().map(Point::from).collect();
@@ -40,6 +55,9 @@ fn solve<P: AsRef<Path>>(problem: &Problem, solution: &Pose, output: P) -> Resul
     loop {
         let n = current_state.len();
         let select = rng.gen_range(0..n);
+        if prohibited.contains(&select) {
+            continue;
+        }
 
         let dx = rng.gen_range(-1..=1);
         let dy = rng.gen_range(-1..=1);
