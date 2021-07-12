@@ -33,6 +33,11 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ hashFiles('amylase/requirements.txt') }}
+      - name: run checker
+        working-directory: checker
+        run: |
+          npm install
+          npm run check
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8'
@@ -41,7 +46,7 @@ jobs:
       - name: Generate submission report
         working-directory: amylase
         run: PYTHONPATH=$GITHUB_WORKSPACE python -m amylase.package_solutions
-      - name: run checker
+      - name: run checker again
         working-directory: checker
         run: |
           npm install

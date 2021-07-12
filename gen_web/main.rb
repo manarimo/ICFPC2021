@@ -163,8 +163,8 @@ def page_header(solution_names)
 <div style="margin-bottom: 32px">
   <div style="display: flex">
     <a href="best.html" style="margin-right: 10px"><h3>Best</h3></a>
-    <a href="_submission_report.html" style="margin-right: 10px"><h3>Submission</h3></a>
-    <a href="_submission_report.txt" style="margin-right: 10px">(details)</a>
+    <a href="_best_submission.html" style="margin-right: 10px"><h3>Submission</h3></a>
+    <a href="_submission_report.txt" style="margin-right: 10px"><h4>(details)</h4></a>
   </div>
   <div style="display: flex">
     使用：
