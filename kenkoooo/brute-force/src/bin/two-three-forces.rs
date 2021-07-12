@@ -39,7 +39,7 @@ fn main() -> Result<()> {
                         problem_id, force, best_dislike, solver_name
                     );
                     for fixed in fixed_lists {
-                        amylase_bruteforce::solve(
+                        amylase_bruteforce::solve_with_step_limit(
                             problem.clone(),
                             &fixed,
                             solution.clone(),
@@ -56,6 +56,7 @@ fn main() -> Result<()> {
                             |_| {
                                 // do nothing
                             },
+                            100_000_000,
                         );
                     }
                     println!("Solved {}", problem_id);
