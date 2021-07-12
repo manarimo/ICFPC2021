@@ -14,6 +14,8 @@ namespace manarimo {
     using E = pair<int, int>;
     using number = long long;
     constexpr int MAX_C = 2000;
+    constexpr int MAX_W = 150;
+    constexpr int MAX_P = 300;
 
     struct figure_t {
         vector<E> edges;
@@ -31,6 +33,8 @@ namespace manarimo {
         bool inside[MAX_C][MAX_C];
         bool inside_double[MAX_C * 2][MAX_C * 2];
         double dist[MAX_C][MAX_C];
+        //double dist_wall[MAX_C][MAX_C][MAX_W];
+        int degree[MAX_P];
         number min_x = 1e18, min_y = 1e18, max_x = 0, max_y = 0;
 
         void init();
@@ -111,6 +115,22 @@ void manarimo::problem_t::init() {
         for (int y = min_y * 2; y <= max_y * 2; y++) {
             inside_double[x - min_x * 2][y - min_y * 2] = is_point_inside(double_hole, make_pair(x, y));
         }
+    }
+
+/*
+    for (int x = min_x; x <= max_x; x++) {
+        for (int y = min_y; y <= max_y; y++) {
+            for (int i = 0; i < hole.size(); i++) {
+                int j = (i + 1) % hole.size();
+                dist_wall[x - min_x][y - min_y][i] = dist_line(hole[i], hole[j], make_pair(x, y));
+            }
+        }
+    }
+    */
+
+    for (auto e : figure.edges) {
+        degree[e.first]++;
+        degree[e.second]++;
     }
 }
 
