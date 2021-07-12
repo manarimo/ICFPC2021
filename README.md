@@ -12,4 +12,10 @@ ICFPC 2021 Team Manarimo
 * Yuki Kawata (@kawatea03)
 
 # AI
+## Solvers
 * 主にdislikeが0に出来る問題を手動で解いた (mkut)
+* amylase/bruteforce: our first automated solver. returns an optimal solution for small problems.
+* amylase/manten: an specialized solver for zero dislike problems. manten means full-score in Japanese.
+
+## Submission
+* amylase/package_solutions: Resolve bonus dependencies and maximize expected ranking point using Integer Programming solver.
