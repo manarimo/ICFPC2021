@@ -32,12 +32,21 @@ interface PointProps {
   isEditing: boolean;
   isSelected: boolean;
   isBrokenCenter: boolean;
-  onClick: () => void;
+  onBenriClick: () => void;
+  onSelectClick: () => void;
   onMouseDown: () => void;
 }
 const Point = (props: PointProps) => {
-  const { x, y, pointId, isEditing, isSelected, isBrokenCenter, onClick } =
-    props;
+  const {
+    x,
+    y,
+    pointId,
+    isEditing,
+    isSelected,
+    isBrokenCenter,
+    onBenriClick,
+    onSelectClick,
+  } = props;
   const color = isEditing
     ? "blue"
     : isSelected
@@ -54,7 +63,10 @@ const Point = (props: PointProps) => {
       fill={color}
       onClick={(e) => {
         if (e.shiftKey) {
-          onClick();
+          onBenriClick();
+        }
+        if (e.ctrlKey) {
+          onSelectClick();
         }
       }}
       onMouseDown={props.onMouseDown}
@@ -71,6 +83,7 @@ const UserPoseLayer = (props: {
   selectedVertices: number[];
   updateVertices: (vertices: [number, number][]) => void;
   bonusMode?: "WallHack" | "Globalist";
+  toggleAVertex: (id: number) => void;
 }) => {
   const epsilon = BigInt(props.problem.epsilon);
   const originalVertices = props.problem.figure.vertices;
@@ -223,7 +236,7 @@ const UserPoseLayer = (props: {
             y={y}
             pointId={pointId}
             onMouseDown={() => props.onEdit(pointId)}
-            onClick={() => {
+            onBenriClick={() => {
               if (isLegBroken) {
                 alert("便利クリック with BREAK_A_LEGは未実装");
                 return;
@@ -239,6 +252,7 @@ const UserPoseLayer = (props: {
                 props.updateVertices(nextVertices);
               }
             }}
+            onSelectClick={() => props.toggleAVertex(pointId)}
             isBrokenCenter={isLegBroken && brokenPointId === pointId}
             isEditing={props.editorState?.pointId === pointId}
             isSelected={props.selectedVertices.includes(pointId)}
@@ -262,6 +276,8 @@ interface Props {
   bonusMode?: "Globalist" | "WallHack";
   onUndo: () => void;
   onRedo: () => void;
+  toggleAVertex: (id: number) => void;
+  slideSelectedVertices: (dir: string) => void;
 }
 
 export const SvgViewer = (props: Props) => {
@@ -296,6 +312,14 @@ export const SvgViewer = (props: Props) => {
           props.onRedo();
         } else if (e.ctrlKey && e.code === "KeyZ") {
           props.onUndo();
+        } else if (e.ctrlKey && e.code === "ArrowDown") {
+          props.slideSelectedVertices("D");
+        } else if (e.ctrlKey && e.code === "ArrowUp") {
+          props.slideSelectedVertices("U");
+        } else if (e.ctrlKey && e.code === "ArrowLeft") {
+          props.slideSelectedVertices("L");
+        } else if (e.ctrlKey && e.code === "ArrowRight") {
+          props.slideSelectedVertices("R");
         }
       }}
       tabIndex={0}
@@ -327,6 +351,7 @@ export const SvgViewer = (props: Props) => {
         <polygon points={holePolygon} fill="#e1ddd1" stroke="none" />
         <UserPoseLayer
           problem={problem}
+          toggleAVertex={props.toggleAVertex}
           bonusMode={props.bonusMode}
           updateVertices={props.updateVertices}
           userFigure={props.userFigure}

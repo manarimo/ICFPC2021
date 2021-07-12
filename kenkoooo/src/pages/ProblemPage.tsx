@@ -385,6 +385,8 @@ const SvgEditor = (props: SvgEditorProps) => {
             onRedo={redoState}
             onUndo={undoState}
             editorState={editorState}
+            toggleAVertex={toggleAVertex}
+            slideSelectedVertices={slideSelectedVertices}
             selectedVertices={selectedVertices}
             forcedWidth={zoom ? zoomSize : undefined}
             updateVertices={updateVertices}
