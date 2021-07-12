@@ -31,7 +31,7 @@ loop do
     hint_path = "#{current_dir}/#{id}.json"
     out_path = "#{next_dir}/#{id}.json"
     log_path = "#{next_dir}/#{id}.log"
-    cmdline = "./a.out -s #{start_temp} -t 300 -e #{edge_penalties} /dev/null #{hint_path} < ../problems/#{id}.json > #{out_path} 2> #{log_path} &"
+    cmdline = "./a.out -s #{start_temp} -t 300 -e #{edge_penalty} /dev/null #{hint_path} < ../problems/#{id}.json > #{out_path} 2> #{log_path} &"
 
     puts cmdline
     system(cmdline)
