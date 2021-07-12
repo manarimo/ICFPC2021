@@ -1,0 +1,22 @@
+{
+    "isValid": true,
+    "bonusObtained": [
+        {
+            "bonus": "GLOBALIST",
+            "problem": 39,
+            "position": [
+                81,
+                45
+            ]
+        },
+        {
+            "bonus": "SUPERFLEX",
+            "problem": 8,
+            "position": [
+                57,
+                45
+            ]
+        }
+    ],
+    "score": 0
+}

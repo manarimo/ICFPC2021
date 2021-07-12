@@ -1,0 +1,14 @@
+{
+    "isValid": true,
+    "bonusObtained": [
+        {
+            "bonus": "BREAK_A_LEG",
+            "problem": 57,
+            "position": [
+                5,
+                5
+            ]
+        }
+    ],
+    "score": 116
+}

@@ -1,0 +1,22 @@
+{
+    "isValid": true,
+    "bonusObtained": [
+        {
+            "bonus": "GLOBALIST",
+            "problem": 60,
+            "position": [
+                45,
+                110
+            ]
+        },
+        {
+            "bonus": "GLOBALIST",
+            "problem": 81,
+            "position": [
+                39,
+                38
+            ]
+        }
+    ],
+    "score": 211
+}

@@ -1,0 +1,18 @@
+{
+    "isValid": false,
+    "score": 100000000,
+    "bonusObtained": [],
+    "error": {
+        "dstEdge": {
+            "src": {
+                "x": 69,
+                "y": 72
+            },
+            "dst": {
+                "x": 60,
+                "y": 79
+            }
+        },
+        "message": "Edge 61 is not in the hole. (1 edges are outside in total)"
+    }
+}
