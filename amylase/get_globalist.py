@@ -5,7 +5,7 @@ from amylase.bruteforce import solve
 
 
 def _load_hint(problem_id: int, spec):
-    with Path(f"../solutions/_best_submission_for_seed/{problem_id}.json").open() as f:
+    with Path(f"../solutions/infinite-train-best-loop-1/{problem_id}.json").open() as f:
         best_pose = json.load(f)
     hole_tuple = set(tuple(p) for p in spec["hole"])
     hint = {}
@@ -17,6 +17,7 @@ def _load_hint(problem_id: int, spec):
 
 def main(input_path, output_path, use_hint):
     try:
+        print(f"start: {input_path} -> {output_path}")
         with open(input_path) as f:
             spec = json.load(f)
         bonuses = [bonus for bonus in spec["bonuses"] if bonus["bonus"] == "GLOBALIST"]
@@ -33,7 +34,6 @@ def main(input_path, output_path, use_hint):
             return
 
         best = 10 ** 18
-        print(f"start: {input_path} -> {output_path}")
         for assignment in itertools.permutations(range(len(vertices)), len(bonuses)):
             hint = {}
             hint.update(base_hint)
@@ -60,13 +60,13 @@ def run_all(hint):
     import multiprocessing
     with ProcessPool(max_workers=multiprocessing.cpu_count() - 1) as pool:
         args = []
-        for problem_id in range(1, 133):
+        for problem_id in [28, 31, 33, 34, 36, 40, 45, 50, 56, 57, 58, 61, 62, 66, 71, 79, 80, 82]:
             input_path = f"../problems/{problem_id}.json"
             output_path = str(output_dir / f"{problem_id}.json")
             args.append((input_path, output_path, hint))
-        pool.map(_main, args, chunksize=1, timeout=60)
+        pool.map(_main, args, chunksize=1, timeout=300)
 
 
 if __name__ == '__main__':
     run_all(False)
-    run_all(True)
+    # run_all(True)
