@@ -173,12 +173,15 @@ number calc_dislike(const vector<P>& hole, const vector<P>& figure, const vector
 
 double calc_penalty_vertex(const vector<P>& figure) {
     double penalty = 0;
-    for (const P& p : figure) penalty += problem.dist[p.X - problem.min_x][p.Y - problem.min_y];
+    for (int i = 0; i < figure.size(); ++i) {
+        const P &p = figure[i];
+        penalty += problem.dist[p.X - problem.min_x][p.Y - problem.min_y] * problem.degree[i];
+    }
     return penalty;
 }
 
-double penalty_vertex_diff(const P& orig, const P& dest) {
-    return problem.dist[dest.X - problem.min_x][dest.Y - problem.min_y] - problem.dist[orig.X - problem.min_x][orig.Y - problem.min_y];
+double penalty_vertex_diff(const P& orig, const P& dest, int id) {
+    return (problem.dist[dest.X - problem.min_x][dest.Y - problem.min_y] - problem.dist[orig.X - problem.min_x][orig.Y - problem.min_y]) * problem.degree[id];
 }
 
 double calc_penalty_edge(const vector<P>& hole, const vector<pair<int, int>>& edge, const vector<P>& figure) {
@@ -316,6 +319,7 @@ void output_svg(const string &file, const vector<P>& hole, const vector<pair<int
 struct options {
     int start_temp = 100;
     int time_limit = 10;
+    double edge_penalty = 1000.0;
     string svg_file;
     string hint_file;
     string fixed_points_file;
@@ -340,6 +344,10 @@ options parse_options(char **argv) {
             case 'f':
                 ++argv;
                 opt.fixed_points_file = string(*argv);
+                break;
+            case 'e':
+                ++argv;
+                opt.edge_penalty = atof(*argv);
                 break;
             default:
                 std::cerr << "Unknown option " << *argv << std::endl;
@@ -436,7 +444,8 @@ int main(int argc, char* argv[]) {
     
     number dislike = problem.calc_dislike(figure);
     double weight = sqrt(dislike);
-    penalty_weight = dislike / edge.size();
+    //penalty_weight = dislike / edge.size();
+    penalty_weight = opt.edge_penalty;
     
     double penalty_vertex = calc_penalty_vertex(figure);
     double penalty_edge = calc_penalty_edge(hole, edge, figure);
@@ -567,15 +576,15 @@ int main(int argc, char* argv[]) {
             new_dislike = problem.calc_dislike(new_figure);
         } else if (update.size() == 1) {
             int v = update[0];
-            new_penalty_vertex += penalty_vertex_diff(figure[v], new_figure[v]);
+            new_penalty_vertex += penalty_vertex_diff(figure[v], new_figure[v], v);
             new_penalty_edge += penalty_edge_diff(hole, graph, figure, v, figure[v], new_figure[v]);
             new_penalty_length += penalty_length_diff(graph, figure, v, figure[v], new_figure[v]);
             new_dislike = calc_dislike(hole, figure, new_figure, update);
         } else {
             int v = update[0];
             int w = update[1];
-            new_penalty_vertex += penalty_vertex_diff(figure[v], new_figure[v]);
-            new_penalty_vertex += penalty_vertex_diff(figure[w], new_figure[w]);
+            new_penalty_vertex += penalty_vertex_diff(figure[v], new_figure[v], v);
+            new_penalty_vertex += penalty_vertex_diff(figure[w], new_figure[w], w);
             new_penalty_edge += penalty_edge_diff(hole, graph, figure, v, figure[v], new_figure[v], w, figure[w], new_figure[w]);
             new_penalty_length += penalty_length_diff(graph, figure, v, figure[v], new_figure[v], w, figure[w], new_figure[w]);
             new_dislike = calc_dislike(hole, figure, new_figure, update);

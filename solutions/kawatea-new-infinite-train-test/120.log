@@ -1,0 +1,2 @@
+terminate called after throwing an instance of 'nlohmann::detail::out_of_range'
+  what():  [json.exception.out_of_range.403] key 'vertices' not found
