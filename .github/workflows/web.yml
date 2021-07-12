@@ -40,7 +40,7 @@ jobs:
         run: pip install -r amylase/requirements.txt
       - name: Generate submission report
         working-directory: amylase
-        run: PYTHONPATH=${{ env.GITHUB_WORKSPACE }} python -m amylase.package_solutions
+        run: PYTHONPATH=${{ env.GITHUB_WORKSPACE }}/ICFPC2021 python -m amylase.package_solutions
       - name: run checker
         working-directory: checker
         run: |
