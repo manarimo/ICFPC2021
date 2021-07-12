@@ -67,6 +67,10 @@ def evaluate_score(solution, minimal_dislikes):
 
 
 def main(hide_betters: bool = False):
+    submission_dir = Path("../solutions/_best_submission/")
+    if submission_dir.exists():
+        shutil.rmtree(submission_dir)
+
     solutions = load_solutions()
     print(f"loaded {len(solutions)} solutions")
     with open("../problems/minimal_dislikes.txt") as f:
@@ -139,9 +143,6 @@ def main(hide_betters: bool = False):
                 print(f"using problem_id: {found_id} as a bonus provider for problem_id: {problem_id} (solver: {solution['solver_name']})")
                 using_bonus["problem"] = found_id
 
-    submission_dir = Path("../solutions/_best_submission/")
-    if submission_dir.exists():
-        shutil.rmtree(submission_dir)
     submission_dir.mkdir(parents=True)
 
     with open("../web/_submission_report.txt", "w") as report_f:
