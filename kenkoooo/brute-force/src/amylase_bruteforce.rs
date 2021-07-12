@@ -34,6 +34,19 @@ where
     F: FnMut(Pose, i64),
     G: Fn(usize) + Copy,
 {
+    solve_with_step_limit(problem, fixed, solution, report, progress_report, 1 << 60)
+}
+pub fn solve_with_step_limit<F, G>(
+    problem: Problem,
+    fixed: &[usize],
+    solution: Pose,
+    report: F,
+    progress_report: G,
+    step_limit: usize,
+) where
+    F: FnMut(Pose, i64),
+    G: Fn(usize) + Copy,
+{
     let mut rng = Xorshift(101);
     let hole = problem
         .hole
@@ -93,6 +106,7 @@ where
         template_solution: solution,
         is_fixed,
         progress_report,
+        max_step: step_limit,
     };
     let mut report = report;
     dfs.dfs(&mut vec![], 1 << 60, &mut 0, &mut report);
@@ -109,6 +123,7 @@ struct DfsSolver<G> {
     template_solution: Pose,
     is_fixed: Vec<bool>,
     progress_report: G,
+    max_step: usize,
 }
 
 impl<G: Fn(usize) + Copy> DfsSolver<G> {
@@ -121,6 +136,9 @@ impl<G: Fn(usize) + Copy> DfsSolver<G> {
     ) -> i64 {
         *step += 1;
         (self.progress_report)(*step);
+        if *step > self.max_step {
+            return best;
+        }
 
         if positions.len() >= self.original_pose.len() {
             let result = dislike(&self.hole, positions);
