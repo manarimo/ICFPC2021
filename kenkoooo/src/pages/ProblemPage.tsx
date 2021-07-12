@@ -138,7 +138,11 @@ const SvgEditor = (props: SvgEditorProps) => {
   }, [userSubmission]);
 
   useEffect(() => {
-    if (!!editorState && !!userSubmission && insiderProgram) {
+    if (!insiderProgram || breakALeg) {
+      return;
+    }
+
+    if (!!editorState && !!userSubmission) {
       const points = solveSinglePoints(
         userSubmission.vertices,
         problem,
@@ -148,7 +152,7 @@ const SvgEditor = (props: SvgEditorProps) => {
     } else if (!!userSubmission) {
       setLocatablePoints([]);
     }
-  }, [userSubmission, editorState, problem, insiderProgram]);
+  }, [userSubmission, editorState, problem, insiderProgram, breakALeg]);
 
   const onCopyOutput = async () => {
     setText(JSON.stringify(userSubmission));
