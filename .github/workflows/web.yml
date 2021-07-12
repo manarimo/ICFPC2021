@@ -38,13 +38,9 @@ jobs:
           python-version: '3.8'
       - name: Install Python dependencies
         run: pip install -r amylase/requirements.txt
-      - name: printf
-        run: ls ${{ env.GITHUB_WORKSPACE }}
       - name: Generate submission report
-        env:
-          PYTHONPATH: ${{ env.GITHUB_WORKSPACE }}
         working-directory: amylase
-        run: python -m amylase.package_solutions
+        run: PYTHONPATH=$GITHUB_WORKSPACE python -m amylase.package_solutions
       - name: run checker
         working-directory: checker
         run: |
