@@ -236,6 +236,7 @@ end
 def write_top_solutions(file, title, problems, solutions, dislikes, bonus_graph, bonus_solutions, &block)
   top_solutions = {}
   solutions.each do |name, list|
+    next if name == '_best_submission'
     list.each do |id, solution|
       next if solution.verdict == nil || !solution.verdict.valid
       if block_given?
