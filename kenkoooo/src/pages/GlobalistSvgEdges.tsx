@@ -35,9 +35,10 @@ export const GlobalistSvgEdges = (props: Props) => {
         const cost = edgeCosts[idx];
         const ratio =
           maxAbsCost === 0 ? 1.0 : (cost + maxAbsCost) / 2 / maxAbsCost;
+        const invert = 1.0 - ratio;
         // 240 - 300
         // cost==0 => 270
-        const color = hslToHex(lowH + ratio * (highH - lowH), 1.0, 0.5);
+        const color = hslToHex(lowH + invert * (highH - lowH), 1.0, 0.5);
 
         const key = `${i}-${j}`;
         return (
