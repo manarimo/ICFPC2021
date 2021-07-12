@@ -11,6 +11,10 @@ ICFPC 2021 Team Manarimo
 * Yu Fujikake (@yuusti)
 * Yuki Kawata (@kawatea03)
 
+# Portal site:
+* Problem listing http://icfpc2021-manarimo.s3-website-us-east-1.amazonaws.com/best.html
+* Manual solving http://icfpc2021-manarimo.s3-website-us-east-1.amazonaws.com/kenkoooo/#/problem/1
+
 # AI
 ## Solvers
 * 主にdislikeが0に出来る問題を手動で解いた (mkut)
