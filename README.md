@@ -5,7 +5,7 @@ ICFPC 2021 Team Manarimo
 * Keita Komuro
 * Kenkou Nakamura (@kenkoooo)
 * mkut
-* Osamu Koga (@osa_k)
+* Osamu Koga (@osa_k) ([Writeup](https://osak.jp/posts/en/icfpc-2021/))
 * Shunsuke Ohashi (@pepsin_amylase)
 * Yosuke Yano (@y3eadgbe)
 * Yu Fujikake (@yuusti)
